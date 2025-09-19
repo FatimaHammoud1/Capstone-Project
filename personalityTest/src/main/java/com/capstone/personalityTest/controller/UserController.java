@@ -49,7 +49,7 @@ public class UserController {
     // Removed the role checks here as they are already managed in SecurityConfig
 
     //logIn endpoint
-    @PostMapping("/logIn")
+    @PostMapping("/signIn")
     public JwtResponse authenticateAndGetToken(@Valid @RequestBody AuthRequest authRequest) {
         // Authenticate the user by creating a UsernamePasswordAuthenticationToken
         Authentication authentication = authenticationManager.authenticate(
