@@ -63,7 +63,7 @@ public class SecurityConfig {
                 // Configure endpoint authorization
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
-                        .requestMatchers("/auth/welcome", "/auth/signUp", "/auth/logIn").permitAll()
+                        .requestMatchers("/auth/welcome", "/auth/signUp", "/auth/signIn").permitAll()
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
