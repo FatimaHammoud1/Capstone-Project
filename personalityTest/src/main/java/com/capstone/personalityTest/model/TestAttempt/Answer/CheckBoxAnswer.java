@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class BinaryAnswer extends Answer {
+public class CheckBoxAnswer extends Answer {
 
     // 1 = YES/LIKE, 0 = NO/DISLIKE
     private boolean binaryValue;
