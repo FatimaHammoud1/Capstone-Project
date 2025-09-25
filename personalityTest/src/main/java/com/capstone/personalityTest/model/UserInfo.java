@@ -1,6 +1,7 @@
 package com.capstone.personalityTest.model;
 
 import com.capstone.personalityTest.model.Enum.Role;
+import com.capstone.personalityTest.model.Enum.TargetGender;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
@@ -31,6 +32,9 @@ public class UserInfo {
     private String email;
     @NotBlank (message = "password is required")
     private String password;
+    @Enumerated(EnumType.STRING)
+    private TargetGender gender;
+
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)

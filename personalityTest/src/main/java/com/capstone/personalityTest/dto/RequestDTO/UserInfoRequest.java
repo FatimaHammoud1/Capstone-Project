@@ -1,4 +1,7 @@
 package com.capstone.personalityTest.dto.RequestDTO;
+import com.capstone.personalityTest.model.Enum.TargetGender;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -18,4 +21,8 @@ public class UserInfoRequest {
 
     @NotBlank(message = "Password is required")
     private String password;
+
+    @NotBlank(message = "Gender is required")
+    @Enumerated(EnumType.STRING)
+    private TargetGender gender;
 }
