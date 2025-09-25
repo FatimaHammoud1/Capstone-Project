@@ -1,5 +1,5 @@
 package com.capstone.personalityTest.exception;
 
-public class FoundException extends RuntimeException{
-    public FoundException(String message) { super (message) ;}
+public class EntityExistsException extends RuntimeException{
+    public EntityExistsException(String message) { super (message) ;}
 }

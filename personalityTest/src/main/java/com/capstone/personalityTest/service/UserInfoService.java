@@ -3,8 +3,7 @@ package com.capstone.personalityTest.service;
 import com.capstone.personalityTest.dto.RequestDTO.UserUpdateRequest;
 import com.capstone.personalityTest.dto.ResponseDTO.UserInfoResponse;
 import com.capstone.personalityTest.dto.RequestDTO.UserInfoRequest;
-import com.capstone.personalityTest.exception.FoundException;
-import com.capstone.personalityTest.exception.NotFoundException;
+import com.capstone.personalityTest.exception.EntityExistsException;
 import com.capstone.personalityTest.mapper.UserMapper;
 import com.capstone.personalityTest.model.Enum.Role;
 import com.capstone.personalityTest.model.UserInfo;
@@ -57,7 +56,7 @@ public class UserInfoService implements UserDetailsService {
     public String addUser(UserInfoRequest userInfoRequest) {
         //No repetition for user
         if (userRepo.findByEmail(userInfoRequest.getEmail()).isPresent()) {
-            throw new FoundException("User with email " + userInfoRequest.getEmail() + " already exists");
+            throw new EntityExistsException("User with email " + userInfoRequest.getEmail() + " already exists");
         }
 
         // Encrypt password before saving
@@ -78,7 +77,10 @@ public class UserInfoService implements UserDetailsService {
     }
 
     public UserInfoResponse getUserById(int id) {
-        UserInfo userById = userRepo.findById(id).orElseThrow(()->new NotFoundException("User with id " + id + " not found"));
+        Optional<UserInfo> optionalUserInfo = userRepo.findById(id);
+        if(optionalUserInfo.isEmpty())
+            throw new UsernameNotFoundException("User with id " + id + " not found");
+        UserInfo userById = optionalUserInfo.get();
         return userMapper.toResponse(userById);
     }
 
