@@ -53,7 +53,7 @@ public class UserInfoService implements UserDetailsService {
     }
 
     // Add any additional methods for registering or managing users
-    public String addUser(UserInfoRequest userInfoRequest) {
+    public UserInfoResponse addUser(UserInfoRequest userInfoRequest) {
         //No repetition for user
         if (userRepo.findByEmail(userInfoRequest.getEmail()).isPresent()) {
             throw new EntityExistsException("User with email " + userInfoRequest.getEmail() + " already exists");
@@ -67,7 +67,7 @@ public class UserInfoService implements UserDetailsService {
         }
 
         userRepo.save(userInfo);
-        return "User added successfully!";
+        return userMapper.toResponse(userInfo);
     }
 
     public Page<UserInfoResponse> getAllUsers(Pageable pageable) {

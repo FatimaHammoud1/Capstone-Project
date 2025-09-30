@@ -42,8 +42,9 @@ public class UserController {
     }
 
     @PostMapping("/signUp")
-    public String addNewUser(@Valid @RequestBody UserInfoRequest userInfoRequest) {
-        return service.addUser(userInfoRequest);
+    public ResponseEntity<UserInfoResponse> addNewUser(@Valid @RequestBody UserInfoRequest userInfoRequest) {
+        UserInfoResponse userInfoResponse = service.addUser(userInfoRequest);
+        return new ResponseEntity<>(userInfoResponse , HttpStatus.CREATED);
     }
 
     // Removed the role checks here as they are already managed in SecurityConfig
