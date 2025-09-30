@@ -60,13 +60,12 @@ public class TestService {
 
         Test test = optionalTest.get();
 
-
         List<Section> sections = sectionRequests.stream()
                 .map(sectionMapper::toEntity)
                 .peek(section -> section.setTest(test)) // set parent
                 .collect(Collectors.toList());
 
-        sectionRepository.saveAll(sections);
+      //  sectionRepository.saveAll(sections);
 
         test.getSections().addAll(sections);
 
@@ -103,7 +102,7 @@ public class TestService {
                 .peek(q -> q.setSection(section))
                 .collect(Collectors.toList());
 
-        questionRepository.saveAll(questions);
+     //   questionRepository.saveAll(questions);
 
         // Add questions to section
         section.getQuestions().addAll(questions);
@@ -145,7 +144,7 @@ public class TestService {
                 .peek(sq -> sq.setQuestion(question))
                 .collect(Collectors.toList());
 
-        subQuestionRepository.saveAll(subQuestions);
+      //  subQuestionRepository.saveAll(subQuestions);
 
         // Add subquestions to the parent question
         question.getSubQuestions().addAll(subQuestions);

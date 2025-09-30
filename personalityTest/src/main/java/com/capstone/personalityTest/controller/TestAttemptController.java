@@ -1,10 +1,13 @@
 package com.capstone.personalityTest.controller;
 
+import com.capstone.personalityTest.dto.RequestDTO.AnswerRequest;
 import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse;
 import com.capstone.personalityTest.service.TestAttemptService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @CrossOrigin
@@ -22,13 +25,14 @@ public class TestAttemptController {
         return ResponseEntity.ok(response);
     }
 
-    // Endpoint to submit answers
-//    @PostMapping("/{attemptId}/answers")
-//    public ResponseEntity<String> submitAnswers(
-//            @PathVariable Long attemptId,
-//            @RequestBody List<AnswerRequest> answers) {
-//        // service logic to save answers (CheckBoxAnswer, ScaleAnswer, OpenAnswer)
-//        return ResponseEntity.ok("Answers submitted");
-//    }
+ //    Endpoint to submit answers
+ @PatchMapping("/{attemptId}/answers")
+ public ResponseEntity<String> submitAnswers(
+         @PathVariable Long attemptId,
+         @RequestBody List<AnswerRequest> answers) {
+     testAttemptService.submitAnswers(attemptId, answers);
+     return ResponseEntity.ok("Answers submitted successfully");
+ }
+
 }
 
