@@ -15,13 +15,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring", uses = {SubQuestionMapper.class})
+@Mapper(componentModel = "spring", uses = {SubQuestionMapper.class}, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface QuestionMapper {
 
     Question toEntity(QuestionRequest questionDto);
 
     @Mapping(target = "groupedSubQuestions", ignore = true)
     QuestionResponse toDto(Question question);
+
+    void updateQuestionFromDto(QuestionRequest request, @MappingTarget Question question);
 
     @AfterMapping
     default void groupSubQuestions(Question question, @MappingTarget QuestionResponse response) {

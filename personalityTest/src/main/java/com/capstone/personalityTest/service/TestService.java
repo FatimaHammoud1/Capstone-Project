@@ -51,7 +51,7 @@ public class TestService {
     }
 
     //  Add sections to test
-    public TestResponse addSections(Long testId, List<SectionRequest> sectionRequests) {
+    public TestResponse addSections(Long testId, SectionRequest sectionRequest) {
         Optional<Test> optionalTest = testRepository.findById(testId);
 
         if (optionalTest.isEmpty()) {
@@ -60,14 +60,16 @@ public class TestService {
 
         Test test = optionalTest.get();
 
-        List<Section> sections = sectionRequests.stream()
-                .map(sectionMapper::toEntity)
-                .peek(section -> section.setTest(test)) // set parent
-                .collect(Collectors.toList());
+//        List<Section> sections = sectionRequests.stream()
+//                .map(sectionMapper::toEntity)
+//                .peek(section -> section.setTest(test)) // set parent
+//                .collect(Collectors.toList());
+        Section section = sectionMapper.toEntity(sectionRequest);
+        section.setTest(test);
 
       //  sectionRepository.saveAll(sections);
 
-        test.getSections().addAll(sections);
+        test.getSections().add(section);
 
         test.setStatus(TestStatus.DRAFT);
 
@@ -77,7 +79,7 @@ public class TestService {
     }
 
     //  Add questions to a section
-    public TestResponse addQuestions(Long testId, Long sectionId, List<QuestionRequest> questionRequests) {
+    public TestResponse addQuestions(Long testId, Long sectionId, QuestionRequest questionRequest) {
         Optional<Test> optionalTest = testRepository.findById(testId);
 
         if (optionalTest.isEmpty()) {
@@ -97,15 +99,20 @@ public class TestService {
         }
 
         // Map and set parent references
-        List<Question> questions = questionRequests.stream()
-                .map(questionMapper::toEntity)
-                .peek(q -> q.setSection(section))
-                .collect(Collectors.toList());
+//        List<Question> questions = questionRequests.stream()
+//                .map(questionMapper::toEntity)
+//                .peek(q -> q.setSection(section))
+//                .collect(Collectors.toList());
 
      //   questionRepository.saveAll(questions);
 
+
+
         // Add questions to section
-        section.getQuestions().addAll(questions);
+
+        Question question = questionMapper.toEntity(questionRequest);
+        question.setSection(section);
+        section.getQuestions().add(question);
 
         test.setStatus(TestStatus.DRAFT);
 
@@ -118,7 +125,7 @@ public class TestService {
 
 
     //  Add subQuestions to a question
-    public TestResponse addSubQuestions(Long testId, Long questionId, List<SubQuestionRequest> subQuestionRequests) {
+    public TestResponse addSubQuestions(Long testId, Long questionId, SubQuestionRequest subQuestionRequest) {
         // Check if test exists
         Optional<Test> optionalTest = testRepository.findById(testId);
         if (optionalTest.isEmpty()) {
@@ -139,15 +146,18 @@ public class TestService {
         }
 
         // Map and set parent references
-        List<SubQuestion> subQuestions = subQuestionRequests.stream()
-                .map(subQuestionMapper::toEntity)
-                .peek(sq -> sq.setQuestion(question))
-                .collect(Collectors.toList());
+//        List<SubQuestion> subQuestions = subQuestionRequests.stream()
+//                .map(subQuestionMapper::toEntity)
+//                .peek(sq -> sq.setQuestion(question))
+//                .collect(Collectors.toList());
 
       //  subQuestionRepository.saveAll(subQuestions);
 
         // Add subquestions to the parent question
-        question.getSubQuestions().addAll(subQuestions);
+        SubQuestion subQuestion = subQuestionMapper.toEntity(subQuestionRequest);
+        subQuestion.setQuestion(question);
+
+        question.getSubQuestions().add(subQuestion);
 
         test.setStatus(TestStatus.DRAFT);
 
@@ -191,24 +201,16 @@ public class TestService {
     }
 
     //Update Title and description
-    public TestResponse updateTest(Long id, UpdateTestRequest updateTestRequest) {
-        Optional<Test> optionalTest = testRepository.findById(id);
-        if (optionalTest.isEmpty())
-            throw new EntityNotFoundException("Test not found with id " + id);
+    @Transactional
+    public TestResponse updateTest(Long id, TestRequest testRequest) {
+        Test test = testRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Test not found with id " + id));
 
-        Test test = optionalTest.get();
+        testMapper.updateTestFromDto(testRequest, test); // MapStruct updates only non-null fields
 
-        if (updateTestRequest.getTitle() != null) {
-            test.setTitle(updateTestRequest.getTitle());
-        }
-        if (updateTestRequest.getDescription() != null) {
-            test.setDescription(updateTestRequest.getDescription());
-        }
+        testRepository.save(test); // Persist changes
 
-        Test updatedTest = testRepository.save(test);
-        return testMapper.toDto(updatedTest);
-
-
+        return testMapper.toDto(test);
     }
 
     @Transactional
@@ -265,11 +267,78 @@ public class TestService {
     }
 
 
+    // Update Section
+    public TestResponse updateSection(Long testId, Long sectionId, SectionRequest sectionRequest) {
+        Optional<Test> optionalTest = testRepository.findById(testId);
+        if(optionalTest.isEmpty())
+            throw new EntityNotFoundException("Test not found: " + testId);
+
+        Test test = optionalTest.get();
+
+        Optional<Section> optionalSection = sectionRepository.findById(sectionId);
+        if(optionalSection.isEmpty()) throw  new EntityNotFoundException("Section not found: " + sectionId);
+
+        Section section = optionalSection.get();
+
+        if (!section.getTest().getId().equals(testId)) {
+            throw new IllegalArgumentException("Section does not belong to test " + testId);
+        }
+
+        sectionMapper.updateSectionFromDto(sectionRequest, section);
+        testRepository.save(test);
+        return testMapper.toDto(test);
+    }
+
+    // Update Question
+    public TestResponse updateQuestion(Long testId, Long sectionId, Long questionId, QuestionRequest questionRequest) {
+        Optional<Test> optionalTest = testRepository.findById(testId);
+        if(optionalTest.isEmpty())
+                throw new EntityNotFoundException("Test not found: " + testId);
+
+        Test test = optionalTest.get();
+
+        Optional<Section> optionalSection = sectionRepository.findById(sectionId);
+        if(optionalSection.isEmpty()) throw  new EntityNotFoundException("Section not found: " + sectionId);
 
 
+        Optional<Question> optionalQuestion = questionRepository.findById(questionId);
+        if(optionalQuestion.isEmpty()) throw new EntityNotFoundException("Question not found: " + questionId);
 
+        Question question = optionalQuestion.get();
 
+        if (!question.getSection().getId().equals(sectionId)) {
+            throw new IllegalArgumentException("Question does not belong to section " + sectionId);
+        }
 
+        questionMapper.updateQuestionFromDto(questionRequest, question);
+        testRepository.save(test);
+        return testMapper.toDto(test);
+    }
+
+    // Update SubQuestion
+    public TestResponse updateSubQuestion(Long testId, Long questionId, Long subQuestionId, SubQuestionRequest subQuestionRequest) {
+        Optional<Test> optionalTest = testRepository.findById(testId);
+        if(optionalTest.isEmpty())
+            throw new EntityNotFoundException("Test not found: " + testId);
+
+        Test test = optionalTest.get();
+
+        Optional<Question> optionalQuestion = questionRepository.findById(questionId);
+        if(optionalQuestion.isEmpty()) throw new EntityNotFoundException("Question not found: " + questionId);
+
+        Optional<SubQuestion> optionalSubQuestion = subQuestionRepository.findById(subQuestionId);
+        if(optionalSubQuestion.isEmpty()) throw new EntityNotFoundException("SubQuestion not found: " + subQuestionId);
+
+        SubQuestion subQuestion = optionalSubQuestion.get();
+
+        if (!subQuestion.getQuestion().getId().equals(questionId)) {
+            throw new IllegalArgumentException("SubQuestion does not belong to question " + questionId);
+        }
+
+        subQuestionMapper.updateSubQuestionFromDto(subQuestionRequest, subQuestion);
+        testRepository.save(test);
+        return testMapper.toDto(test);
+    }
 
 }
 

@@ -33,8 +33,8 @@ public class TestController {
     @PatchMapping("/{testId}/sections")
     public ResponseEntity<TestResponse> addSections(
             @PathVariable Long testId,
-            @Valid @RequestBody List<SectionRequest> sections) {
-        TestResponse updatedTest = testService.addSections(testId, sections);
+            @Valid @RequestBody SectionRequest section) {
+        TestResponse updatedTest = testService.addSections(testId, section);
 
         return new ResponseEntity<>(updatedTest, HttpStatus.CREATED);
     }
@@ -45,8 +45,8 @@ public class TestController {
     public ResponseEntity<TestResponse> addQuestions(
             @PathVariable Long testId,
             @PathVariable Long sectionId,
-            @Valid @RequestBody List<QuestionRequest> questions) {
-        TestResponse updatedTest = testService.addQuestions(testId, sectionId, questions);
+            @Valid @RequestBody QuestionRequest question) {
+        TestResponse updatedTest = testService.addQuestions(testId, sectionId, question);
         return new ResponseEntity<>(updatedTest, HttpStatus.CREATED);
     }
 
@@ -56,8 +56,8 @@ public class TestController {
     public ResponseEntity<TestResponse> addSubQuestions(
             @PathVariable Long testId,
             @PathVariable Long questionId,
-            @Valid @RequestBody List<SubQuestionRequest> subQuestions) {
-        TestResponse updatedTest = testService.addSubQuestions(testId, questionId, subQuestions);
+            @Valid @RequestBody SubQuestionRequest subQuestion) {
+        TestResponse updatedTest = testService.addSubQuestions(testId, questionId, subQuestion);
         return new ResponseEntity<>(updatedTest, HttpStatus.CREATED);
     }
 
@@ -73,8 +73,8 @@ public class TestController {
     @PatchMapping("/{id}")
     public ResponseEntity<TestResponse> updateTest(
             @PathVariable Long id,
-            @RequestBody UpdateTestRequest updateTestDto) {
-        TestResponse updatedTest = testService.updateTest(id, updateTestDto);
+            @RequestBody TestRequest updateTest) {
+        TestResponse updatedTest = testService.updateTest(id, updateTest);
         return ResponseEntity.ok(updatedTest);
     }
 
@@ -117,6 +117,44 @@ public class TestController {
     public ResponseEntity<String> deleteSubQuestion(@PathVariable Long testId, @PathVariable Long subQuestionId) {
         testService.deleteSubQuestion(testId, subQuestionId);
         return new ResponseEntity<>("SubQuestion deleted successfully", HttpStatus.OK);
+    }
+
+
+    // --- UPDATE APIs ---
+
+    // Update Section
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{testId}/sections/{sectionId}")
+    public ResponseEntity<TestResponse> updateSection(
+            @PathVariable Long testId,
+            @PathVariable Long sectionId,
+            @Valid @RequestBody SectionRequest sectionRequest) {
+        TestResponse updatedTest = testService.updateSection(testId, sectionId, sectionRequest);
+        return ResponseEntity.ok(updatedTest);
+    }
+
+    // Update Question
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{testId}/sections/{sectionId}/questions/{questionId}")
+    public ResponseEntity<TestResponse> updateQuestion(
+            @PathVariable Long testId,
+            @PathVariable Long sectionId,
+            @PathVariable Long questionId,
+            @Valid @RequestBody QuestionRequest questionRequest) {
+        TestResponse updatedTest = testService.updateQuestion(testId, sectionId, questionId, questionRequest);
+        return ResponseEntity.ok(updatedTest);
+    }
+
+    // Update SubQuestion
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{testId}/questions/{questionId}/subquestions/{subQuestionId}")
+    public ResponseEntity<TestResponse> updateSubQuestion(
+            @PathVariable Long testId,
+            @PathVariable Long questionId,
+            @PathVariable Long subQuestionId,
+            @Valid @RequestBody SubQuestionRequest subQuestionRequest) {
+        TestResponse updatedTest = testService.updateSubQuestion(testId, questionId, subQuestionId, subQuestionRequest);
+        return ResponseEntity.ok(updatedTest);
     }
 
 
