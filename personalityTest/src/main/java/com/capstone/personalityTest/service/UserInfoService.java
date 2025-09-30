@@ -76,7 +76,7 @@ public class UserInfoService implements UserDetailsService {
 
     }
 
-    public UserInfoResponse getUserById(int id) {
+    public UserInfoResponse getUserById(Long id) {
         Optional<UserInfo> optionalUserInfo = userRepo.findById(id);
         if(optionalUserInfo.isEmpty())
             throw new UsernameNotFoundException("User with id " + id + " not found");
@@ -84,13 +84,13 @@ public class UserInfoService implements UserDetailsService {
         return userMapper.toResponse(userById);
     }
 
-    public boolean deleteUser(int id, Pageable pageable) {
+    public boolean deleteUser(Long id, Pageable pageable) {
         Optional<UserInfo> optionalUser = userRepo.findById(id);
             userRepo.deleteById(id);
             return true;
     }
 
-    public boolean updateUser(int id, UserUpdateRequest userUpdateRequest) {
+    public boolean updateUser(Long id, UserUpdateRequest userUpdateRequest) {
         Optional<UserInfo> optionalUser = userRepo.findById(id);
         if(optionalUser.isPresent()){
             UserInfo user = optionalUser.get();

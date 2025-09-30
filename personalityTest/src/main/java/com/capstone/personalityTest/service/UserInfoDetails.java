@@ -18,8 +18,7 @@ import java.util.stream.Collectors;
 
 public class UserInfoDetails implements UserDetails {
     @Getter
-    private final Integer id;
-
+    private final Long id;
     private final String username; // Stores the user's email as the username
     private final String password; // Stores the user's hashed password
     private final List<GrantedAuthority> authorities; // Stores roles/authorities in a format Spring Security understands
