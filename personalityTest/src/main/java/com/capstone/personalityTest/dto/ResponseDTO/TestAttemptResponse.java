@@ -12,6 +12,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TestAttemptResponse {
+    private Long Id;
     private Long testId;
     private String testTitle;
     private String testDescription;
