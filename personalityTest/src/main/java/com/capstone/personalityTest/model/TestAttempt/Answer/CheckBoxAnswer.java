@@ -16,6 +16,6 @@ import lombok.NoArgsConstructor;
 public class CheckBoxAnswer extends Answer {
 
     // 1 = YES/LIKE, 0 = NO/DISLIKE
-    private boolean binaryValue;
+    private Boolean binaryValue;
 
 }

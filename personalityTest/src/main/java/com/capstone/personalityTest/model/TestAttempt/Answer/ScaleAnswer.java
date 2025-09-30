@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ScaleAnswer extends Answer {
 
-    private int scaleValue; // 1–7
+    private Integer scaleValue; // 1–7
 
     public String getLevel() {
         if (scaleValue >= 5) return "High";
