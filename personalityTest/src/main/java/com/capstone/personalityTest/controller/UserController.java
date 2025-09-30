@@ -79,20 +79,20 @@ public class UserController {
 
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
     @GetMapping("/users/{id}")
-    public ResponseEntity<UserInfoResponse> getUserById (@PathVariable int id){
+    public ResponseEntity<UserInfoResponse> getUserById (@PathVariable Long id){
         UserInfoResponse userById = service.getUserById(id);
         return new ResponseEntity<>(userById , HttpStatus.OK);
     }
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<String> deleteUser (@PathVariable int id, Pageable pageable){
+    public ResponseEntity<String> deleteUser (@PathVariable Long id, Pageable pageable){
         if(service.deleteUser(id , pageable))
             return new ResponseEntity<>("User deleted successfully" , HttpStatus.OK);
         return new ResponseEntity<>(null , HttpStatus.BAD_REQUEST);
     }
     @PreAuthorize("hasRole('USER')")
     @PutMapping("/users/{id}")
-    public ResponseEntity<String> updateUser (@PathVariable int id ,
+    public ResponseEntity<String> updateUser (@PathVariable Long id ,
                                               @RequestBody UserUpdateRequest userUpdateRequest){
         if(service.updateUser(id , userUpdateRequest))
             return new ResponseEntity<>("User updated Successfully" , HttpStatus.OK);

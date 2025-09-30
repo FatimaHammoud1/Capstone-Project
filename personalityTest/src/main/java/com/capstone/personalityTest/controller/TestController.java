@@ -35,6 +35,7 @@ public class TestController {
             @PathVariable Long testId,
             @Valid @RequestBody List<SectionRequest> sections) {
         TestResponse updatedTest = testService.addSections(testId, sections);
+
         return new ResponseEntity<>(updatedTest, HttpStatus.CREATED);
     }
 
@@ -97,18 +98,21 @@ public class TestController {
         return new ResponseEntity<>("Test deleted successfully", HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{testId}/sections/{sectionId}")
     public ResponseEntity<String> deleteSection(@PathVariable Long testId, @PathVariable Long sectionId) {
         testService.deleteSection(testId, sectionId);
         return new ResponseEntity<>("Section deleted successfully", HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{testId}/questions/{questionId}")
     public ResponseEntity<String> deleteQuestion(@PathVariable Long testId, @PathVariable Long questionId) {
         testService.deleteQuestion(testId, questionId);
         return new ResponseEntity<>("Question deleted successfully", HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{testId}/subquestions/{subQuestionId}")
     public ResponseEntity<String> deleteSubQuestion(@PathVariable Long testId, @PathVariable Long subQuestionId) {
         testService.deleteSubQuestion(testId, subQuestionId);

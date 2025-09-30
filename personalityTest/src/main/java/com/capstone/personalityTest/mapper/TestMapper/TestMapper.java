@@ -7,7 +7,7 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",uses = { SectionMapper.class, QuestionMapper.class, SubQuestionMapper.class })
 public interface TestMapper {
 
     Test toEntity(TestRequest testDto);

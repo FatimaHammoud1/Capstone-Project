@@ -11,9 +11,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class QuestionRequest{
+//  private Long sectionId;
     private String questionText;
     private AnswerType answerType;
     private TargetGender targetGender;
-    private List<SubQuestionRequest> subQuestions;
+//  private List<SubQuestionRequest> subQuestions;
 }
 

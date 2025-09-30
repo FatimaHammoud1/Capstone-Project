@@ -32,7 +32,7 @@ public class JwtService {
                 .setClaims(claims)
                 .setSubject(email) // Store username/email in token
                 .setIssuedAt(new Date())  // Token creation time
-                .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24 * 2)) // Token expires in 2 days
+                .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24 * 30)) // Token expires in 30 days
                 .signWith(getSignKey(), SignatureAlgorithm.HS256) // Sign token with secret key
                 .compact(); // Build token string
     }

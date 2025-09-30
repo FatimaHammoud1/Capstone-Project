@@ -1,11 +1,13 @@
 package com.capstone.personalityTest.service;
 
 import com.capstone.personalityTest.dto.RequestDTO.TestRequest.*;
+import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.SubQuestionResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.TestResponse;
 import com.capstone.personalityTest.mapper.TestMapper.QuestionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SectionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SubQuestionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.TestMapper;
+import com.capstone.personalityTest.model.Enum.PersonalityTrait;
 import com.capstone.personalityTest.model.Enum.TestStatus;
 import com.capstone.personalityTest.model.Test.Question;
 import com.capstone.personalityTest.model.Test.Section;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -43,9 +46,6 @@ public class TestService {
         // Map DTO → Entity
         Test test = testMapper.toEntity(testRequest);
 
-        // Remove nested sections/questions for initial creation
-        test.setSections(new ArrayList<>());
-
         Test savedTest = testRepository.save(test);
         return testMapper.toDto(savedTest);
     }
@@ -66,7 +66,12 @@ public class TestService {
                 .peek(section -> section.setTest(test)) // set parent
                 .collect(Collectors.toList());
 
+        sectionRepository.saveAll(sections);
+
         test.getSections().addAll(sections);
+
+        test.setStatus(TestStatus.DRAFT);
+
         testRepository.save(test);
 
         return testMapper.toDto(test);
@@ -98,8 +103,12 @@ public class TestService {
                 .peek(q -> q.setSection(section))
                 .collect(Collectors.toList());
 
+        questionRepository.saveAll(questions);
+
         // Add questions to section
         section.getQuestions().addAll(questions);
+
+        test.setStatus(TestStatus.DRAFT);
 
         //  Save test (cascades to sections/questions if cascade is configured)
         testRepository.save(test);
@@ -136,11 +145,16 @@ public class TestService {
                 .peek(sq -> sq.setQuestion(question))
                 .collect(Collectors.toList());
 
+        subQuestionRepository.saveAll(subQuestions);
+
         // Add subquestions to the parent question
         question.getSubQuestions().addAll(subQuestions);
 
+        test.setStatus(TestStatus.DRAFT);
+
         // Save parent test (cascade will save everything if configured)
         testRepository.save(test);
+
 
         return testMapper.toDto(test);
     }
