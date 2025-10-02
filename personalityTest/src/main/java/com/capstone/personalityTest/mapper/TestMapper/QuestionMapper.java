@@ -22,6 +22,7 @@ public interface QuestionMapper {
 
     @Mapping(target = "groupedSubQuestions", ignore = true)
     QuestionResponse toDto(Question question);
+    List<QuestionResponse> toDtoList(List<Question> questions);
 
     void updateQuestionFromDto(QuestionRequest request, @MappingTarget Question question);
 

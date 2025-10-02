@@ -9,6 +9,8 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.factory.Mappers;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring" , nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface SubQuestionMapper {
 
@@ -18,6 +20,7 @@ public interface SubQuestionMapper {
     SubQuestion toEntity(SubQuestionRequest subQuestionDto);
 
     SubQuestionResponse toDto(SubQuestion subQuestion);
+    List<SubQuestionResponse> toDtoList(List<SubQuestion> subQuestions);
 
     void updateSubQuestionFromDto(SubQuestionRequest request, @MappingTarget SubQuestion subQuestion);
 }
