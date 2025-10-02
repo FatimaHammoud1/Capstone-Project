@@ -290,25 +290,17 @@ public class TestService {
     }
 
     // Update Question
-    public TestResponse updateQuestion(Long testId, Long sectionId, Long questionId, QuestionRequest questionRequest) {
+    public TestResponse updateQuestion(Long testId, Long questionId, QuestionRequest questionRequest) {
         Optional<Test> optionalTest = testRepository.findById(testId);
         if(optionalTest.isEmpty())
                 throw new EntityNotFoundException("Test not found: " + testId);
 
         Test test = optionalTest.get();
 
-        Optional<Section> optionalSection = sectionRepository.findById(sectionId);
-        if(optionalSection.isEmpty()) throw  new EntityNotFoundException("Section not found: " + sectionId);
-
-
         Optional<Question> optionalQuestion = questionRepository.findById(questionId);
         if(optionalQuestion.isEmpty()) throw new EntityNotFoundException("Question not found: " + questionId);
 
         Question question = optionalQuestion.get();
-
-        if (!question.getSection().getId().equals(sectionId)) {
-            throw new IllegalArgumentException("Question does not belong to section " + sectionId);
-        }
 
         questionMapper.updateQuestionFromDto(questionRequest, question);
         testRepository.save(test);
@@ -316,24 +308,17 @@ public class TestService {
     }
 
     // Update SubQuestion
-    public TestResponse updateSubQuestion(Long testId, Long questionId, Long subQuestionId, SubQuestionRequest subQuestionRequest) {
+    public TestResponse updateSubQuestion(Long testId, Long subQuestionId, SubQuestionRequest subQuestionRequest) {
         Optional<Test> optionalTest = testRepository.findById(testId);
         if(optionalTest.isEmpty())
             throw new EntityNotFoundException("Test not found: " + testId);
 
         Test test = optionalTest.get();
 
-        Optional<Question> optionalQuestion = questionRepository.findById(questionId);
-        if(optionalQuestion.isEmpty()) throw new EntityNotFoundException("Question not found: " + questionId);
-
         Optional<SubQuestion> optionalSubQuestion = subQuestionRepository.findById(subQuestionId);
         if(optionalSubQuestion.isEmpty()) throw new EntityNotFoundException("SubQuestion not found: " + subQuestionId);
 
         SubQuestion subQuestion = optionalSubQuestion.get();
-
-        if (!subQuestion.getQuestion().getId().equals(questionId)) {
-            throw new IllegalArgumentException("SubQuestion does not belong to question " + questionId);
-        }
 
         subQuestionMapper.updateSubQuestionFromDto(subQuestionRequest, subQuestion);
         testRepository.save(test);

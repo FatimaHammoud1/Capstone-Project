@@ -135,25 +135,23 @@ public class TestController {
 
     // Update Question
     @PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/{testId}/sections/{sectionId}/questions/{questionId}")
+    @PatchMapping("/{testId}/questions/{questionId}")
     public ResponseEntity<TestResponse> updateQuestion(
             @PathVariable Long testId,
-            @PathVariable Long sectionId,
             @PathVariable Long questionId,
             @Valid @RequestBody QuestionRequest questionRequest) {
-        TestResponse updatedTest = testService.updateQuestion(testId, sectionId, questionId, questionRequest);
+        TestResponse updatedTest = testService.updateQuestion(testId, questionId, questionRequest);
         return ResponseEntity.ok(updatedTest);
     }
 
     // Update SubQuestion
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{testId}/questions/{questionId}/subquestions/{subQuestionId}")
+    @PatchMapping("/{testId}/subquestions/{subQuestionId}")
     public ResponseEntity<TestResponse> updateSubQuestion(
             @PathVariable Long testId,
-            @PathVariable Long questionId,
             @PathVariable Long subQuestionId,
             @Valid @RequestBody SubQuestionRequest subQuestionRequest) {
-        TestResponse updatedTest = testService.updateSubQuestion(testId, questionId, subQuestionId, subQuestionRequest);
+        TestResponse updatedTest = testService.updateSubQuestion(testId, subQuestionId, subQuestionRequest);
         return ResponseEntity.ok(updatedTest);
     }
 
