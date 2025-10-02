@@ -1,4 +1,4 @@
-package com.capstone.personalityTest.dto.ResponseDTO;
+package com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse;
 
 import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.SectionResponse;
 import lombok.AllArgsConstructor;

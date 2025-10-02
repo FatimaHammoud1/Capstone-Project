@@ -1,15 +1,17 @@
 package com.capstone.personalityTest.service;
 
-import com.capstone.personalityTest.dto.RequestDTO.AnswerRequest;
-import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse;
-import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.QuestionResponse;
+import com.capstone.personalityTest.dto.RequestDTO.TestAttemptRequest.AnswerRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptWithAnswersResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.SectionResponse;
+import com.capstone.personalityTest.mapper.TestAttemptMapper;
 import com.capstone.personalityTest.mapper.TestMapper.QuestionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SectionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SubQuestionMapper;
 import com.capstone.personalityTest.model.Enum.AnswerType;
 import com.capstone.personalityTest.model.Enum.TargetGender;
 import com.capstone.personalityTest.model.Test.Question;
+import com.capstone.personalityTest.model.Test.Section;
 import com.capstone.personalityTest.model.Test.SubQuestion;
 import com.capstone.personalityTest.model.Test.Test;
 import com.capstone.personalityTest.model.TestAttempt.Answer.Answer;
@@ -45,6 +47,8 @@ public class TestAttemptService {
     private final SubQuestionRepository subQuestionRepository;
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
+    private final TestAttemptMapper testAttemptMapper;
+
 
     public TestAttemptResponse startTest(Long testId, Long studentId) {
         Optional<UserInfo> optionalStudent = userInfoRepository.findById(studentId);
@@ -65,30 +69,22 @@ public class TestAttemptService {
 
         testAttemptRepository.save(testAttempt);
 
-        // Map to DTO with filtering
-        List<SectionResponse> sectionsResponse = test.getSections().stream()
-                .map(section -> {
-                    SectionResponse sectionResponse = sectionMapper.toDto(section);
-
-                    List<QuestionResponse> questionsResponse = section.getQuestions().stream()
+        //Pre-filter questions & sub questions
+        List<Section> filteredSections = test.getSections().stream()
+                .peek(section -> {
+                    List<Question> filteredQuestions = section.getQuestions().stream()
                             .filter(q -> isQuestionVisible(q, student))
-                            .map(q -> {
-                                // filter subQuestions based on student gender
-                                List<SubQuestion> filteredSubQuestions = q.getSubQuestions().stream()
-                                        .filter(sq -> isSubQuestionVisible(sq, student))
-                                        .toList();
+                            .peek(q -> q.setSubQuestions(
+                                    q.getSubQuestions().stream()
+                                            .filter(sq -> isSubQuestionVisible(sq, student))
+                                            .toList()
+                            )).toList();
 
-                                // replace the original subQuestions with filtered ones
-                                q.setSubQuestions(filteredSubQuestions);
-
-                                // now map to DTO (mapper will group them)
-                                return questionMapper.toDto(q);
-                            }).toList();
-
-
-                    sectionResponse.setQuestions(questionsResponse);
-                    return sectionResponse;
+                    section.setQuestions(filteredQuestions);
                 }).toList();
+
+       // MapStruct handles mapping
+        List<SectionResponse> sectionsResponse = sectionMapper.toDtoList(filteredSections);
 
         TestAttemptResponse response = new TestAttemptResponse();
         response.setId(testAttempt.getId());
@@ -184,5 +180,15 @@ public class TestAttemptService {
     }
 
 
+    @Transactional
+    public List<TestAttemptWithAnswersResponse> getAllTestAttempts() {
+        return testAttemptMapper.toAdminDtoList(testAttemptRepository.findAll());
+    }
+
+    @Transactional
+    public List<TestAttemptWithAnswersResponse> getAttemptsByStudent(Long studentId) {
+        List<TestAttempt> attempts = testAttemptRepository.findByStudentId(studentId);
+        return testAttemptMapper.toAdminDtoList(attempts);
+    }
 
 }

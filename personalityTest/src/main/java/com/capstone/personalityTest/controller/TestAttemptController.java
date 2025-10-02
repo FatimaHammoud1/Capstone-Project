@@ -1,10 +1,12 @@
 package com.capstone.personalityTest.controller;
 
-import com.capstone.personalityTest.dto.RequestDTO.AnswerRequest;
-import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse;
+import com.capstone.personalityTest.dto.RequestDTO.TestAttemptRequest.AnswerRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptWithAnswersResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptResponse;
 import com.capstone.personalityTest.service.TestAttemptService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,14 +27,28 @@ public class TestAttemptController {
         return ResponseEntity.ok(response);
     }
 
- //    Endpoint to submit answers
- @PatchMapping("/{attemptId}/answers")
- public ResponseEntity<String> submitAnswers(
-         @PathVariable Long attemptId,
-         @RequestBody List<AnswerRequest> answers) {
-     testAttemptService.submitAnswers(attemptId, answers);
-     return ResponseEntity.ok("Answers submitted successfully");
- }
+    //    Endpoint to submit answers
+    @PatchMapping("/{attemptId}/answers")
+    public ResponseEntity<String> submitAnswers(
+            @PathVariable Long attemptId,
+            @RequestBody List<AnswerRequest> answers) {
+        testAttemptService.submitAnswers(attemptId, answers);
+        return ResponseEntity.ok("Answers submitted successfully");
+    }
+
+
+
+    @PreAuthorize("hasRole('ADMIN')")
+    // Get all test attempts (for admin)
+    @GetMapping
+    public ResponseEntity<List<TestAttemptWithAnswersResponse>> getAllTestAttempts() {
+        List<TestAttemptWithAnswersResponse> attempts = testAttemptService.getAllTestAttempts();
+        return ResponseEntity.ok(attempts);
+    }
+
+    @GetMapping("/students/{studentId}")
+    public ResponseEntity<List<TestAttemptWithAnswersResponse>> getAttemptsByStudent(@PathVariable Long studentId) {
+        return ResponseEntity.ok(testAttemptService.getAttemptsByStudent(studentId));
+    }
 
 }
-
