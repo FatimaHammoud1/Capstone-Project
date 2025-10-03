@@ -9,7 +9,9 @@ import com.capstone.personalityTest.mapper.TestMapper.QuestionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SectionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SubQuestionMapper;
 import com.capstone.personalityTest.model.Enum.AnswerType;
+import com.capstone.personalityTest.model.Enum.PersonalityTrait;
 import com.capstone.personalityTest.model.Enum.TargetGender;
+import com.capstone.personalityTest.model.PersonalityResult;
 import com.capstone.personalityTest.model.Test.Question;
 import com.capstone.personalityTest.model.Test.Section;
 import com.capstone.personalityTest.model.Test.SubQuestion;
@@ -31,7 +33,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -147,7 +151,33 @@ public class TestAttemptService {
             answerRepository.save(answer);
         }
 
+        // After saving answers → compute personality result
+        PersonalityResult result = calculatePersonalityResult(attempt.getAnswers());
+        attempt.setPersonalityResult(result);
+
+        testAttemptRepository.save(attempt); // persist with result
+
     }
+//helper function for submitAnswer to calculate the results
+    private PersonalityResult calculatePersonalityResult(List<Answer> answers) {
+        Map<PersonalityTrait, Integer> scores = new HashMap<>();
+        for (Answer answer : answers) {
+            if (answer instanceof CheckBoxAnswer cb && cb.getSubQuestion() != null && Boolean.TRUE.equals(cb.getBinaryValue())) {
+                PersonalityTrait trait = cb.getSubQuestion().getPersonalityTrait();
+                scores.merge(trait, 1, Integer::sum);
+            }
+            else if (answer instanceof ScaleAnswer sa && sa.getSubQuestion() != null && sa.getScaleValue() != null) {
+                PersonalityTrait trait = sa.getSubQuestion().getPersonalityTrait();
+                scores.merge(trait, sa.getScaleValue(), Integer::sum);
+            }
+            // OPEN answers are ignored for scoring
+        }
+        PersonalityResult result = new PersonalityResult();
+        result.setTraitScores(scores);
+        result.calculateTopTraits();
+        return result;
+    }
+
 
     private Answer getAnswer(AnswerRequest req) {
         Answer answer;
