@@ -63,10 +63,19 @@ public class TestController {
 
     // 5. Confirm test (finalize)
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{testId}/confirm")
-    public ResponseEntity<TestResponse> confirmTest(@PathVariable Long testId) {
-        TestResponse confirmedTest = testService.confirmTest(testId);
+    @PutMapping("/{testId}/publish")
+    public ResponseEntity<TestResponse> publishTest(@PathVariable Long testId) {
+        TestResponse confirmedTest = testService.publishTest(testId);
         return new ResponseEntity<>(confirmedTest, HttpStatus.OK);
+    }
+
+    @PutMapping("/{testId}/active")
+    public ResponseEntity<TestResponse> setTestActive(
+            @PathVariable Long testId,
+            @RequestParam boolean active
+    ) {
+        TestResponse response = testService.setTestActive(testId, active);
+        return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasRole('ADMIN')")

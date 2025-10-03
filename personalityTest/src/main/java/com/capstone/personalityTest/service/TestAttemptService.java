@@ -11,6 +11,7 @@ import com.capstone.personalityTest.mapper.TestMapper.SubQuestionMapper;
 import com.capstone.personalityTest.model.Enum.AnswerType;
 import com.capstone.personalityTest.model.Enum.PersonalityTrait;
 import com.capstone.personalityTest.model.Enum.TargetGender;
+import com.capstone.personalityTest.model.Enum.TestStatus;
 import com.capstone.personalityTest.model.PersonalityResult;
 import com.capstone.personalityTest.model.Test.Question;
 import com.capstone.personalityTest.model.Test.Section;
@@ -65,6 +66,10 @@ public class TestAttemptService {
 
         UserInfo student = optionalStudent.get();
         Test test = optionalTest.get();
+
+        if (test.getStatus() != TestStatus.PUBLISHED || !test.isActive()) {
+            throw new IllegalStateException("Test is not available for attempts");
+        }
 
         // Create TestAttempt
         TestAttempt testAttempt = new TestAttempt();
@@ -151,14 +156,29 @@ public class TestAttemptService {
             answerRepository.save(answer);
         }
 
-        // After saving answers → compute personality result
-        PersonalityResult result = calculatePersonalityResult(attempt.getAnswers());
-        attempt.setPersonalityResult(result);
-
         testAttemptRepository.save(attempt); // persist with result
 
     }
-//helper function for submitAnswer to calculate the results
+
+    @Transactional
+    public PersonalityResult finalizeAttempt(Long attemptId) {
+        TestAttempt attempt = testAttemptRepository.findById(attemptId)
+                .orElseThrow(() -> new EntityNotFoundException("TestAttempt not found"));
+
+        if (attempt.isFinalized()) {
+            throw new IllegalStateException("Test attempt already finalized.");
+        }
+
+        // calculate final result
+        PersonalityResult result = calculatePersonalityResult(attempt.getAnswers());
+        attempt.setPersonalityResult(result);
+        attempt.setFinalized(true); // lock it
+
+        testAttemptRepository.save(attempt);
+        return result;
+    }
+
+    //helper function for submitAnswer to calculate the results
     private PersonalityResult calculatePersonalityResult(List<Answer> answers) {
         Map<PersonalityTrait, Integer> scores = new HashMap<>();
         for (Answer answer : answers) {

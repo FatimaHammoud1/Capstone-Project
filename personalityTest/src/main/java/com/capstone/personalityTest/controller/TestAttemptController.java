@@ -3,6 +3,7 @@ package com.capstone.personalityTest.controller;
 import com.capstone.personalityTest.dto.RequestDTO.TestAttemptRequest.AnswerRequest;
 import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptWithAnswersResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptResponse;
+import com.capstone.personalityTest.model.PersonalityResult;
 import com.capstone.personalityTest.service.TestAttemptService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,12 @@ public class TestAttemptController {
             @RequestBody List<AnswerRequest> answers) {
         testAttemptService.submitAnswers(attemptId, answers);
         return ResponseEntity.ok("Answers submitted successfully");
+    }
+
+    @PatchMapping("/{attemptId}/finalize")
+    public ResponseEntity<PersonalityResult> finalizeAttempt(@PathVariable Long attemptId) {
+        PersonalityResult result = testAttemptService.finalizeAttempt(attemptId);
+        return ResponseEntity.ok(result);
     }
 
 

@@ -60,6 +60,10 @@ public class TestService {
 
         Test test = optionalTest.get();
 
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot modify a published test");
+        }
+
 //        List<Section> sections = sectionRequests.stream()
 //                .map(sectionMapper::toEntity)
 //                .peek(section -> section.setTest(test)) // set parent
@@ -70,8 +74,6 @@ public class TestService {
       //  sectionRepository.saveAll(sections);
 
         test.getSections().add(section);
-
-        test.setStatus(TestStatus.DRAFT);
 
         testRepository.save(test);
 
@@ -87,6 +89,11 @@ public class TestService {
         }
 
         Test test = optionalTest.get();
+
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot modify a published test");
+        }
+
         Optional<Section> optionalSection = sectionRepository.findById(sectionId);
         if(optionalSection.isEmpty()){
                 throw new EntityNotFoundException("Section not found: " + sectionId);
@@ -114,8 +121,6 @@ public class TestService {
         question.setSection(section);
         section.getQuestions().add(question);
 
-        test.setStatus(TestStatus.DRAFT);
-
         //  Save test (cascades to sections/questions if cascade is configured)
         testRepository.save(test);
 
@@ -132,6 +137,10 @@ public class TestService {
             throw new EntityNotFoundException("Test not found: " + testId);
         }
         Test test = optionalTest.get();
+
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot modify a published test");
+        }
 
         // Fetch question by repository
         Optional<Question> optionalQuestion = questionRepository.findById(questionId);
@@ -159,8 +168,6 @@ public class TestService {
 
         question.getSubQuestions().add(subQuestion);
 
-        test.setStatus(TestStatus.DRAFT);
-
         // Save parent test (cascade will save everything if configured)
         testRepository.save(test);
 
@@ -169,18 +176,38 @@ public class TestService {
     }
 
     //  Confirm test (finalize)
-    public TestResponse confirmTest(Long testId) {
+    public TestResponse publishTest(Long testId) {
         Optional<Test> optionalTest = testRepository.findById(testId);
         if(optionalTest.isEmpty()){
                 throw new EntityNotFoundException("Test not found: " + testId);
         }
         Test test = optionalTest.get();
 
-        test.setStatus(TestStatus.PUBLISHED); // you should have a status enum: DRAFT / PUBLISHED
+        if (test.getSections().isEmpty()) {
+            throw new IllegalStateException("Cannot publish an empty test");
+        }
+
+        test.setStatus(TestStatus.PUBLISHED); //lock
         testRepository.save(test);
 
         return testMapper.toDto(test);
     }
+
+    @Transactional
+    public TestResponse setTestActive(Long testId, boolean active) {
+        Test test = testRepository.findById(testId)
+                .orElseThrow(() -> new EntityNotFoundException("Test not found"));
+
+        if (test.getStatus() != TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Only published tests can be activated/deactivated");
+        }
+
+        test.setActive(active);
+        testRepository.save(test);
+
+        return testMapper.toDto(test);
+    }
+
 
 
     // Get all tests
@@ -206,6 +233,10 @@ public class TestService {
         Test test = testRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Test not found with id " + id));
 
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot modify a published test");
+        }
+
         testMapper.updateTestFromDto(testRequest, test); // MapStruct updates only non-null fields
 
         testRepository.save(test); // Persist changes
@@ -215,8 +246,11 @@ public class TestService {
 
     @Transactional
     public void deleteTest(Long testId) {
-        if (!testRepository.existsById(testId)) {
-            throw new EntityNotFoundException("Test not found with id " + testId);
+        Test test = testRepository.findById(testId)
+                .orElseThrow(() -> new EntityNotFoundException("Test not found with id " + testId));
+
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot delete a published test");
         }
         testRepository.deleteById(testId);
     }
@@ -226,6 +260,10 @@ public class TestService {
         Optional<Section> optionalSection = sectionRepository.findById(sectionId);
         if (optionalSection.isEmpty()) throw new EntityNotFoundException("Section not found with id " + sectionId);
         Section section = optionalSection.get();
+
+        if (section.getTest().getStatus()==TestStatus.PUBLISHED){
+            throw new IllegalStateException("Cannot delete a section in published test");
+        }
 
         if (!section.getTest().getId().equals(testId)) {
             throw new IllegalArgumentException("Section does not belong to test with id " + testId);
@@ -242,6 +280,9 @@ public class TestService {
         }
 
         Question question = optionalQuestion.get();
+        if (question.getSection().getTest().getStatus()==TestStatus.PUBLISHED){
+            throw new IllegalStateException("Cannot delete a question in a published test");
+        }
 
         if (!question.getSection().getTest().getId().equals(testId)) {
             throw new IllegalArgumentException("Question does not belong to test with id " + testId);
@@ -258,6 +299,9 @@ public class TestService {
         }
 
         SubQuestion subQuestion = optionalSubQuestion.get();
+        if (subQuestion.getQuestion().getSection().getTest().getStatus()==TestStatus.PUBLISHED){
+            throw new IllegalStateException("Cannot delete a published test");
+        }
 
         if (!subQuestion.getQuestion().getSection().getTest().getId().equals(testId)) {
             throw new IllegalArgumentException("SubQuestion does not belong to test with id " + testId);
@@ -274,6 +318,10 @@ public class TestService {
             throw new EntityNotFoundException("Test not found: " + testId);
 
         Test test = optionalTest.get();
+
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot modify a section in a published test");
+        }
 
         Optional<Section> optionalSection = sectionRepository.findById(sectionId);
         if(optionalSection.isEmpty()) throw  new EntityNotFoundException("Section not found: " + sectionId);
@@ -296,6 +344,9 @@ public class TestService {
                 throw new EntityNotFoundException("Test not found: " + testId);
 
         Test test = optionalTest.get();
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot modify a question in a test");
+        }
 
         Optional<Question> optionalQuestion = questionRepository.findById(questionId);
         if(optionalQuestion.isEmpty()) throw new EntityNotFoundException("Question not found: " + questionId);
@@ -314,6 +365,9 @@ public class TestService {
             throw new EntityNotFoundException("Test not found: " + testId);
 
         Test test = optionalTest.get();
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot modify a subquestion in a published test");
+        }
 
         Optional<SubQuestion> optionalSubQuestion = subQuestionRepository.findById(subQuestionId);
         if(optionalSubQuestion.isEmpty()) throw new EntityNotFoundException("SubQuestion not found: " + subQuestionId);
