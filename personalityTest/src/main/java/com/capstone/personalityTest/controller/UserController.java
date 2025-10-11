@@ -51,18 +51,9 @@ public class UserController {
 
     //logIn endpoint
     @PostMapping("/signIn")
-    public JwtResponse authenticateAndGetToken(@Valid @RequestBody AuthRequest authRequest) {
-        // Authenticate the user by creating a UsernamePasswordAuthenticationToken
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
-        );
-        // If authentication is successful, generate a JWT token for the user ,else throw an exception
-        if (authentication.isAuthenticated()) {
-            String token =  jwtService.generateToken(authRequest.getUsername());
-            return new JwtResponse(token);
-        } else {
-            throw new UsernameNotFoundException("Invalid user request!");
-        }
+    public ResponseEntity<JwtResponse> signIn(@Valid @RequestBody AuthRequest authRequest) {
+        JwtResponse response = service.authenticate(authRequest);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/logout")

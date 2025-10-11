@@ -1,6 +1,8 @@
 package com.capstone.personalityTest.service;
 
+import com.capstone.personalityTest.dto.RequestDTO.AuthRequest;
 import com.capstone.personalityTest.dto.RequestDTO.UserUpdateRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.JwtResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.UserInfoResponse;
 import com.capstone.personalityTest.dto.RequestDTO.UserInfoRequest;
 import com.capstone.personalityTest.exception.EntityExistsException;
@@ -11,6 +13,9 @@ import com.capstone.personalityTest.repository.UserInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -28,11 +33,16 @@ public class UserInfoService implements UserDetailsService {
     private final PasswordEncoder encoder;
 
     private final UserMapper userMapper;
+
+    private final JwtService jwtService;  // ✅ Inject JwtService
+    private final AuthenticationManager authenticationManager;
     @Autowired
-    public UserInfoService(UserInfoRepository userRepo, PasswordEncoder encoder, UserMapper userMapper) {
+    public UserInfoService(UserInfoRepository userRepo, PasswordEncoder encoder, UserMapper userMapper , JwtService jwtService , AuthenticationManager authenticationManager) {
         this.userRepo = userRepo;
         this.encoder = encoder;
         this.userMapper = userMapper;
+        this.jwtService = jwtService;
+        this.authenticationManager = authenticationManager;
     }
 
     // Method to load user details by username (email)
@@ -68,6 +78,22 @@ public class UserInfoService implements UserDetailsService {
 
         userRepo.save(userInfo);
         return userMapper.toResponse(userInfo);
+    }
+
+    public JwtResponse authenticate(AuthRequest authRequest) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
+        );
+
+        if (!authentication.isAuthenticated()) {
+            throw new UsernameNotFoundException("Invalid user credentials");
+        }
+
+        UserInfo user = userRepo.findByEmail(authRequest.getUsername())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        String token = jwtService.generateToken(user);
+        return new JwtResponse(token);
     }
 
     public Page<UserInfoResponse> getAllUsers(Pageable pageable) {

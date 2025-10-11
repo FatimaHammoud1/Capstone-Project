@@ -1,5 +1,6 @@
 package com.capstone.personalityTest.service;
 
+import com.capstone.personalityTest.model.UserInfo;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -9,9 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 @Component
@@ -21,10 +20,15 @@ public class JwtService {
     public static final String SECRET = "5367566859703373367639792F423F452848284D6251655468576D5A71347437";
 
     // Secret key used to sign and verify JWTs. Should be kept safe.
-    public String generateToken(String email) { // Use email as username
-        Map<String, Object> claims = new HashMap<>(); // You can add extra data here if needed
-        return createToken(claims, email); // Call helper to build the token
+    public String generateToken(UserInfo user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", user.getRoles());  // 👈 add roles to JWT
+        return createToken(claims, user.getEmail());
     }
+//    public String generateToken(String email) { // Use email as username
+//        Map<String, Object> claims = new HashMap<>(); // You can add extra data here if needed
+//        return createToken(claims, email); // Call helper to build the token
+//    }
 
     // Build the actual JWT token
     private String createToken(Map<String, Object> claims, String email) {
@@ -46,6 +50,17 @@ public class JwtService {
     // Extract username (email) from JWT
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public List<String> extractRoles(String token) {
+        Claims claims = extractAllClaims(token);
+        Object rolesObject = claims.get("roles");
+        if (rolesObject instanceof List<?>) {
+            return ((List<?>) rolesObject).stream()
+                    .map(Object::toString)
+                    .toList();
+        }
+        return Collections.emptyList();
     }
 
     // Extract expiration date from JWT

@@ -211,12 +211,23 @@ public class TestService {
 
 
     // Get all tests
-    public List<TestResponse> getAllTests() {
-        List<Test> tests = testRepository.findAll();
+    @Transactional
+    public List<TestResponse> getAllTests(String role) {
+        List<Test> tests;
+
+        if (role.equals("ROLE_ADMIN")) {
+            // Admin sees all tests
+            tests = testRepository.findAll();
+        } else {
+            // User sees only published & active tests
+            tests = testRepository.findByStatusAndActive(TestStatus.PUBLISHED, true);
+        }
+
         return tests.stream()
                 .map(testMapper::toDto)
                 .collect(Collectors.toList());
     }
+
 
     // Get test by ID
     public TestResponse getTestById(Long id) {

@@ -2,6 +2,7 @@ package com.capstone.personalityTest.controller;
 
 import com.capstone.personalityTest.dto.RequestDTO.TestRequest.*;
 import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.TestResponse;
+import com.capstone.personalityTest.service.JwtService;
 import com.capstone.personalityTest.service.TestService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.List;
 public class TestController {
 
     private final TestService testService;
+    private final JwtService jwtService;
 
     // 1. Create a test (title + description only)
     @PreAuthorize("hasRole('ADMIN')")
@@ -87,12 +89,14 @@ public class TestController {
         return ResponseEntity.ok(updatedTest);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<List<TestResponse>> getAllTests() {
-        List<TestResponse> tests = testService.getAllTests();
-        return ResponseEntity.ok(tests);
+    public List<TestResponse> getAllTests(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7); // remove "Bearer "
+        String role = jwtService.extractRoles(token).get(0); // get the first role
+
+        return testService.getAllTests(role);
     }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
