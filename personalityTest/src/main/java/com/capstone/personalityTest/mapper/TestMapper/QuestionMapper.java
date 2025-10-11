@@ -32,6 +32,7 @@ public interface QuestionMapper {
             Map<PersonalityTrait, List<SubQuestionResponse>> grouped =
                     question.getSubQuestions().stream()
                             .map(subQuestion -> SubQuestionMapper.INSTANCE.toDto(subQuestion))
+                            .filter(sq -> sq.getPersonalityTrait() != null)
                             .collect(Collectors.groupingBy(SubQuestionResponse::getPersonalityTrait));
             response.setGroupedSubQuestions(grouped);
         }
