@@ -101,6 +101,7 @@ public class TestController {
         return ResponseEntity.ok(test);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{testId}")
     public ResponseEntity<String> deleteTest(@PathVariable Long testId) {
         testService.deleteTest(testId);
