@@ -23,6 +23,7 @@ public class JwtService {
     public String generateToken(UserInfo user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", user.getRoles());  // 👈 add roles to JWT
+        claims.put("userId", user.getId());
         return createToken(claims, user.getEmail());
     }
 //    public String generateToken(String email) { // Use email as username
@@ -62,6 +63,12 @@ public class JwtService {
         }
         return Collections.emptyList();
     }
+
+    public Long extractUserId(String token) {
+        Claims claims = extractAllClaims(token);
+        return claims.get("userId", Long.class);
+    }
+
 
     // Extract expiration date from JWT
     public Date extractExpiration(String token) {

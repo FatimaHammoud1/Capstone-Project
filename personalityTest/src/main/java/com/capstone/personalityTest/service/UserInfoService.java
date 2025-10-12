@@ -63,7 +63,7 @@ public class UserInfoService implements UserDetailsService {
     }
 
     // Add any additional methods for registering or managing users
-    public UserInfoResponse addUser(UserInfoRequest userInfoRequest) {
+    public void addUser(UserInfoRequest userInfoRequest) {
         //No repetition for user
         if (userRepo.findByEmail(userInfoRequest.getEmail()).isPresent()) {
             throw new EntityExistsException("User with email " + userInfoRequest.getEmail() + " already exists");
@@ -77,7 +77,6 @@ public class UserInfoService implements UserDetailsService {
         }
 
         userRepo.save(userInfo);
-        return userMapper.toResponse(userInfo);
     }
 
     public JwtResponse authenticate(AuthRequest authRequest) {
