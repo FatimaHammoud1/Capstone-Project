@@ -71,6 +71,7 @@ public class TestController {
         return new ResponseEntity<>(confirmedTest, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{testId}/active")
     public ResponseEntity<TestResponse> setTestActive(
             @PathVariable Long testId,

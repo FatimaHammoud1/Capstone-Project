@@ -15,6 +15,7 @@ public class TestResponse {
     private String title;
     private String description;
     private TestStatus status;
+    private boolean active;
     private List<SectionResponse> sections;
 }
 
