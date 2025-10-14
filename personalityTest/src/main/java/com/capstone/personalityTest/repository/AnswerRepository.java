@@ -1,13 +1,17 @@
 package com.capstone.personalityTest.repository;
 
 import com.capstone.personalityTest.model.TestAttempt.Answer.Answer;
+import com.capstone.personalityTest.model.TestAttempt.TestAttempt;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface AnswerRepository extends JpaRepository<Answer, Long> {
+
+    List<Answer> findByTestAttempt(TestAttempt testAttempt);
 
     @Query("SELECT a FROM Answer a " +
             "WHERE a.testAttempt.id = :attemptId " +

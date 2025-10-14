@@ -1,6 +1,7 @@
 package com.capstone.personalityTest.controller;
 
 import com.capstone.personalityTest.dto.RequestDTO.TestAttemptRequest.AnswerRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.AnswerResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptWithAnswersResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptResponse;
 import com.capstone.personalityTest.model.PersonalityResult;
@@ -57,5 +58,12 @@ public class TestAttemptController {
     public ResponseEntity<List<TestAttemptWithAnswersResponse>> getAttemptsByStudent(@PathVariable Long studentId) {
         return ResponseEntity.ok(testAttemptService.getAttemptsByStudent(studentId));
     }
+
+    @GetMapping("/{attemptId}/answers")
+    public ResponseEntity<List<AnswerResponse>> getAnswersByTestAttempt(@PathVariable Long attemptId) {
+        List<AnswerResponse> answers = testAttemptService.getAnswersByTestAttempt(attemptId);
+        return ResponseEntity.ok(answers);
+    }
+
 
 }

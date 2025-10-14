@@ -1,9 +1,11 @@
 package com.capstone.personalityTest.service;
 
 import com.capstone.personalityTest.dto.RequestDTO.TestAttemptRequest.AnswerRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.AnswerResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptWithAnswersResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.SectionResponse;
+import com.capstone.personalityTest.mapper.AnswerMapper;
 import com.capstone.personalityTest.mapper.TestAttemptMapper;
 import com.capstone.personalityTest.mapper.TestMapper.QuestionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SectionMapper;
@@ -50,6 +52,7 @@ public class TestAttemptService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final TestAttemptMapper testAttemptMapper;
+    private final AnswerMapper answerMapper;
 
 
     public TestAttemptResponse startTest(Long testId, Long studentId) {
@@ -285,6 +288,18 @@ public class TestAttemptService {
         List<TestAttempt> attempts = testAttemptRepository.findByStudentId(studentId);
         return testAttemptMapper.toAdminDtoList(attempts);
     }
+
+    @Transactional
+    public List<AnswerResponse> getAnswersByTestAttempt(Long attemptId) {
+        TestAttempt attempt = testAttemptRepository.findById(attemptId)
+                .orElseThrow(() -> new EntityNotFoundException("TestAttempt not found"));
+
+        List<Answer> answers = answerRepository.findByTestAttempt(attempt);
+
+        // Map to DTOs
+        return answerMapper.toDtoList(answers);
+    }
+
 
 
 }
