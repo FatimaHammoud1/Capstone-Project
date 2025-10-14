@@ -34,10 +34,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -139,6 +136,13 @@ public class TestAttemptService {
             Answer answer;
             if (existing.isPresent()) {
                 answer = existing.get(); // update existing
+                if (answer instanceof OpenAnswer && req.getOpenValues() != null) {
+                    ((OpenAnswer) answer).setValues(new ArrayList<>(req.getOpenValues()));
+                } else if (answer instanceof CheckBoxAnswer && req.getBinaryValue() != null) {
+                    ((CheckBoxAnswer) answer).setBinaryValue(req.getBinaryValue());
+                } else if (answer instanceof ScaleAnswer && req.getScaleValue() != null) {
+                    ((ScaleAnswer) answer).setScaleValue(req.getScaleValue());
+                }
             } else {
                 answer = getAnswer(req); // create new
             }
