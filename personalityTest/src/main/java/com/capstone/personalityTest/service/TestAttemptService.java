@@ -197,12 +197,19 @@ public class TestAttemptService {
                 .sum();
 
         // Count answered items
-        int answeredItems = (int) attempt.getAnswers().stream()
+        long answeredItems = attempt.getAnswers().stream()
+                .filter(a -> {
+                    if (a instanceof CheckBoxAnswer cb) return cb.getBinaryValue() != null;
+                    if (a instanceof ScaleAnswer sa) return sa.getScaleValue() != null;
+                    if (a instanceof OpenAnswer oa) return oa.getValues() != null && !oa.getValues().isEmpty();
+                    return false;
+                })
                 .map(a -> a.getSubQuestion() != null
                         ? "S" + a.getSubQuestion().getId()
                         : "Q" + a.getQuestion().getId())
                 .distinct()
                 .count();
+
 
         if (answeredItems < totalVisibleItems) {
             throw new IllegalStateException(
