@@ -119,6 +119,10 @@ public class TestAttemptService {
         if(optionalTestAttempt.isEmpty()) throw new EntityNotFoundException("TestAttempt not found");
         TestAttempt attempt = optionalTestAttempt.get();
 
+        if (attempt.isFinalized()) {
+            throw new IllegalStateException("Cannot submit answers: this test attempt is already finalized.");
+        }
+
 
         for (AnswerRequest req : answers) {
             Question question = questionRepository.findById(req.getQuestionId())
@@ -169,9 +173,42 @@ public class TestAttemptService {
         TestAttempt attempt = testAttemptRepository.findById(attemptId)
                 .orElseThrow(() -> new EntityNotFoundException("TestAttempt not found"));
 
+        UserInfo student = attempt.getStudent();
+        Test test = attempt.getTest();
+
         if (attempt.isFinalized()) {
             throw new IllegalStateException("Test attempt already finalized.");
         }
+
+        //make sure all questions are being answered
+        int totalVisibleItems = test.getSections().stream()
+                .flatMap(section -> section.getQuestions().stream())
+                .filter(q -> isQuestionVisible(q, student)) // only visible questions
+                .mapToInt(q -> {
+                    // If it has visible subquestions → count them individually
+                    long visibleSubCount = q.getSubQuestions().stream()
+                            .filter(sq -> isSubQuestionVisible(sq, student))
+                            .count();
+                    return visibleSubCount > 0 ? (int) visibleSubCount : 1; // if no subs, count the question itself
+                })
+                .sum();
+
+        // Count answered items
+        int answeredItems = (int) attempt.getAnswers().stream()
+                .map(a -> a.getSubQuestion() != null
+                        ? "S" + a.getSubQuestion().getId()
+                        : "Q" + a.getQuestion().getId())
+                .distinct()
+                .count();
+
+        if (answeredItems < totalVisibleItems) {
+            throw new IllegalStateException(
+                    String.format("Cannot finalize: only %d/%d visible questions answered.",
+                            answeredItems, totalVisibleItems)
+            );
+        }
+
+
 
         // calculate final result
         PersonalityResult result = calculatePersonalityResult(attempt.getAnswers());
@@ -184,7 +221,11 @@ public class TestAttemptService {
 
     //helper function for submitAnswer to calculate the results
     private PersonalityResult calculatePersonalityResult(List<Answer> answers) {
-        Map<PersonalityTrait, Integer> scores = new HashMap<>();
+
+        Map<PersonalityTrait, Integer> scores = new EnumMap<>(PersonalityTrait.class);
+        for (PersonalityTrait trait : PersonalityTrait.values()) {
+            scores.put(trait, 0);
+        }
         for (Answer answer : answers) {
             if (answer instanceof CheckBoxAnswer cb && cb.getSubQuestion() != null && Boolean.TRUE.equals(cb.getBinaryValue())) {
                 PersonalityTrait trait = cb.getSubQuestion().getPersonalityTrait();
@@ -244,5 +285,6 @@ public class TestAttemptService {
         List<TestAttempt> attempts = testAttemptRepository.findByStudentId(studentId);
         return testAttemptMapper.toAdminDtoList(attempts);
     }
+
 
 }
