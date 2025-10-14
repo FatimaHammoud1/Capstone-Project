@@ -31,9 +31,8 @@ public class PersonalityResult {
             joinColumns = @JoinColumn(name = "test_attempt_id")
     )
     @MapKeyColumn(name = "trait")   // <-- KEY
+    @MapKeyEnumerated(EnumType.STRING)     // store enum as string
     @Column(name = "score")         // <-- VALUE
-    @Enumerated(EnumType.STRING)
-    //@MapKeyEnumerated(EnumType.STRING)
     private Map<PersonalityTrait, Integer> traitScores;
 
     // e.g., { "R"=5, "I"=7, "C"=3, "S"=4, "E"=6, "A"=2 }
