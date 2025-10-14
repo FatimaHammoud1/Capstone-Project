@@ -33,8 +33,8 @@ public class TestAttemptController {
     @PatchMapping("/{attemptId}/answers")
     public ResponseEntity<String> submitAnswers(
             @PathVariable Long attemptId,
-            @RequestBody List<AnswerRequest> answers) {
-        testAttemptService.submitAnswers(attemptId, answers);
+            @RequestBody AnswerRequest answer) {
+        testAttemptService.submitAnswers(attemptId, answer);
         return ResponseEntity.ok("Answers submitted successfully");
     }
 

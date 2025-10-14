@@ -117,7 +117,7 @@ public class TestAttemptService {
 
 
     @Transactional
-    public void submitAnswers(Long attemptId, List<AnswerRequest> answers) {
+    public void submitAnswers(Long attemptId, AnswerRequest answers) {
         Optional<TestAttempt> optionalTestAttempt = testAttemptRepository.findById(attemptId);
         if(optionalTestAttempt.isEmpty()) throw new EntityNotFoundException("TestAttempt not found");
         TestAttempt attempt = optionalTestAttempt.get();
@@ -127,31 +127,31 @@ public class TestAttemptService {
         }
 
 
-        for (AnswerRequest req : answers) {
-            Question question = questionRepository.findById(req.getQuestionId())
+
+            Question question = questionRepository.findById(answers.getQuestionId())
                     .orElseThrow(() -> new EntityNotFoundException("Question not found"));
 
             SubQuestion subQuestion = null;
-            if (req.getSubQuestionId() != null) {
-                subQuestion = subQuestionRepository.findById(req.getSubQuestionId())
+            if (answers.getSubQuestionId() != null) {
+                subQuestion = subQuestionRepository.findById(answers.getSubQuestionId())
                         .orElseThrow(() -> new EntityNotFoundException("SubQuestion not found"));
             }
 
             Optional<Answer> existing = answerRepository.findByAttemptAndQuestionAndSubQuestion(
-                    attemptId, req.getQuestionId(), req.getSubQuestionId());
+                    attemptId, answers.getQuestionId(), answers.getSubQuestionId());
 
             Answer answer;
             if (existing.isPresent()) {
                 answer = existing.get(); // update existing
-                if (answer instanceof OpenAnswer && req.getOpenValues() != null) {
-                    ((OpenAnswer) answer).setValues(new ArrayList<>(req.getOpenValues()));
-                } else if (answer instanceof CheckBoxAnswer && req.getBinaryValue() != null) {
-                    ((CheckBoxAnswer) answer).setBinaryValue(req.getBinaryValue());
-                } else if (answer instanceof ScaleAnswer && req.getScaleValue() != null) {
-                    ((ScaleAnswer) answer).setScaleValue(req.getScaleValue());
+                if (answer instanceof OpenAnswer && answers.getOpenValues() != null) {
+                    ((OpenAnswer) answer).setValues(new ArrayList<>(answers.getOpenValues()));
+                } else if (answer instanceof CheckBoxAnswer && answers.getBinaryValue() != null) {
+                    ((CheckBoxAnswer) answer).setBinaryValue(answers.getBinaryValue());
+                } else if (answer instanceof ScaleAnswer && answers.getScaleValue() != null) {
+                    ((ScaleAnswer) answer).setScaleValue(answers.getScaleValue());
                 }
             } else {
-                answer = getAnswer(req); // create new
+                answer = getAnswer(answers); // create new
             }
 
             // Set common fields
@@ -165,7 +165,7 @@ public class TestAttemptService {
             }
 
             answerRepository.save(answer);
-        }
+
 
         testAttemptRepository.save(attempt); // persist with result
 
