@@ -65,5 +65,12 @@ public class TestAttemptController {
         return ResponseEntity.ok(answers);
     }
 
+    @GetMapping("/attempts/{attemptId}")
+    public ResponseEntity<TestAttemptWithAnswersResponse> getTestAttemptById(@PathVariable Long attemptId) {
+        TestAttemptWithAnswersResponse response = testAttemptService.getTestAttemptById(attemptId);
+        return ResponseEntity.ok(response);
+    }
+
+
 
 }

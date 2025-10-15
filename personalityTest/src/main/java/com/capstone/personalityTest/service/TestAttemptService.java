@@ -308,5 +308,12 @@ public class TestAttemptService {
     }
 
 
+    public TestAttemptWithAnswersResponse getTestAttemptById(Long attemptId) {
+        Optional<TestAttempt> testAttemptOptional = testAttemptRepository.findById(attemptId);
+        if (testAttemptOptional.isEmpty())
+            throw new EntityNotFoundException("TestAttempt not found with id " + attemptId);
+        TestAttempt testAttempt = testAttemptOptional.get();
+        return testAttemptMapper.toAdminDto(testAttempt);
 
+    }
 }
