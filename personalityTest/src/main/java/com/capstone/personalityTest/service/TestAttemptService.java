@@ -308,12 +308,33 @@ public class TestAttemptService {
     }
 
 
-    public TestAttemptWithAnswersResponse getTestAttemptById(Long attemptId) {
+    public TestAttemptWithAnswersResponse getTestAttemptWithAnswersById(Long attemptId) {
         Optional<TestAttempt> testAttemptOptional = testAttemptRepository.findById(attemptId);
         if (testAttemptOptional.isEmpty())
             throw new EntityNotFoundException("TestAttempt not found with id " + attemptId);
         TestAttempt testAttempt = testAttemptOptional.get();
         return testAttemptMapper.toAdminDto(testAttempt);
 
+    }
+
+    public TestAttemptResponse getTestAttemptById(Long attemptId) {
+        Optional<TestAttempt> testAttemptOptional = testAttemptRepository.findById(attemptId);
+        if (testAttemptOptional.isEmpty())
+            throw new EntityNotFoundException("TestAttempt not found with id " + attemptId);
+        TestAttempt testAttempt = testAttemptOptional.get();
+        Test test = testAttempt.getTest();
+
+        TestAttemptResponse response = new TestAttemptResponse();
+        response.setId(attemptId);
+        response.setTestId(test.getId());
+        response.setTestTitle(test.getTitle());
+        response.setTestDescription(test.getDescription());
+        response.setSections(sectionMapper.toDtoList(test.getSections()));
+
+        return response;
+    }
+
+    public List<AnswerResponse> getAllAnswers() {
+        return answerMapper.toDtoList(answerRepository.findAll());
     }
 }

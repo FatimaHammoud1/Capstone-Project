@@ -65,10 +65,22 @@ public class TestAttemptController {
         return ResponseEntity.ok(answers);
     }
 
-    @GetMapping("/attempts/{attemptId}")
-    public ResponseEntity<TestAttemptWithAnswersResponse> getTestAttemptById(@PathVariable Long attemptId) {
-        TestAttemptWithAnswersResponse response = testAttemptService.getTestAttemptById(attemptId);
+    @GetMapping("/fullAttempt/{attemptId}")
+    public ResponseEntity<TestAttemptWithAnswersResponse> getTestAttemptWithAnswersById(@PathVariable Long attemptId) {
+        TestAttemptWithAnswersResponse response = testAttemptService.getTestAttemptWithAnswersById(attemptId);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/attempts/{attemptId}")
+    public ResponseEntity<TestAttemptResponse> getTestAttemptById(@PathVariable Long attemptId) {
+        TestAttemptResponse response = testAttemptService.getTestAttemptById(attemptId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/answers")
+    public ResponseEntity<List<AnswerResponse>> getAllAnswers(){
+        List<AnswerResponse> answers = testAttemptService.getAllAnswers();
+        return ResponseEntity.ok(answers);
     }
 
 
