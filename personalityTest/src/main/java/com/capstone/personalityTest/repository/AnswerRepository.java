@@ -13,6 +13,8 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
 
     List<Answer> findByTestAttempt(TestAttempt testAttempt);
 
+    List<Answer> findByTestAttemptId(Long testAttemptId);
+
     @Query("SELECT a FROM Answer a " +
             "WHERE a.testAttempt.id = :attemptId " +
             "AND a.question.id = :questionId " +

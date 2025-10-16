@@ -77,9 +77,9 @@ public class TestAttemptController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/answers")
-    public ResponseEntity<List<AnswerResponse>> getAllAnswers(){
-        List<AnswerResponse> answers = testAttemptService.getAllAnswers();
+    @GetMapping("/answers/{attemptId}")
+    public ResponseEntity<List<AnswerResponse>> getAllAnswersByTestAttemptId(@PathVariable Long attemptId){
+        List<AnswerResponse> answers = testAttemptService.getAllAnswersByTestAttemptId(attemptId);
         return ResponseEntity.ok(answers);
     }
 

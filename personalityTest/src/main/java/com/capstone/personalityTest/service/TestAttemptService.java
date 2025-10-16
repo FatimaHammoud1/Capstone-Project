@@ -334,7 +334,9 @@ public class TestAttemptService {
         return response;
     }
 
-    public List<AnswerResponse> getAllAnswers() {
-        return answerMapper.toDtoList(answerRepository.findAll());
+    public List<AnswerResponse> getAllAnswersByTestAttemptId(Long testAttemptId) {
+        List<Answer> answers = answerRepository.findByTestAttemptId(testAttemptId);
+        return answerMapper.toDtoList(answers);
     }
+
 }
