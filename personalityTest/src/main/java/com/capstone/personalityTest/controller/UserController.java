@@ -5,7 +5,10 @@ import com.capstone.personalityTest.dto.RequestDTO.UserInfoRequest;
 import com.capstone.personalityTest.dto.RequestDTO.UserUpdateRequest;
 import com.capstone.personalityTest.dto.ResponseDTO.JwtResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.UserInfoResponse;
+import com.capstone.personalityTest.model.RefreshToken;
+import com.capstone.personalityTest.model.UserInfo;
 import com.capstone.personalityTest.service.JwtService;
+import com.capstone.personalityTest.service.RefreshTokenService;
 import com.capstone.personalityTest.service.UserInfoService;
 
 import jakarta.validation.Valid;
@@ -22,6 +25,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -29,6 +34,8 @@ public class UserController {
 
     // Service for user operations (adding/fetching users)
     private final UserInfoService service;
+
+    private final RefreshTokenService refreshTokenService;
 
     // Service for handling JWT token creation/validation
     private final JwtService jwtService;
@@ -55,9 +62,26 @@ public class UserController {
         JwtResponse response = service.authenticate(authRequest);
         return ResponseEntity.ok(response);
     }
+    public ResponseEntity<JwtResponse> refreshAccessToken(@RequestBody Map<String, String> request) {
+        String refreshTokenStr = request.get("refreshToken");
+
+        // Validate refresh token via DB
+        UserInfo user = refreshTokenService.verifyRefreshToken(refreshTokenStr);
+
+        // Generate new access token
+        String newAccessToken = jwtService.generateToken(user);
+
+        // Rotate refresh token (optional but recommended)
+        refreshTokenService.deleteRefreshToken(refreshTokenStr); // delete old token
+        RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user);
+
+        return ResponseEntity.ok(new JwtResponse(newAccessToken, newRefreshToken.getToken()));
+    }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout() {
+    public ResponseEntity<String> logout(@RequestBody Map<String, String> request) {
+        String refreshTokenStr = request.get("refreshToken");
+        refreshTokenService.deleteRefreshToken(refreshTokenStr); // call service, not repo directly
         return ResponseEntity.ok("Logged out successfully");
     }
 

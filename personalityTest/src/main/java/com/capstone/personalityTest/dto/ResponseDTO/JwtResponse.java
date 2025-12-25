@@ -1,17 +1,16 @@
 package com.capstone.personalityTest.dto.ResponseDTO;
 
-import lombok.Getter;
+import lombok.*;
 
-@Getter
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class JwtResponse {
 
-    private String token;
+    private String accessToken;
 
-    public JwtResponse(String token) {
-        this.token = token;
-    }
+    private String refreshToken;
 
-    public void setToken(String token) {
-        this.token = token;
-    }
+
+
 }

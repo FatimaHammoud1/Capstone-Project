@@ -8,7 +8,9 @@ import com.capstone.personalityTest.dto.RequestDTO.UserInfoRequest;
 import com.capstone.personalityTest.exception.EntityExistsException;
 import com.capstone.personalityTest.mapper.UserMapper;
 import com.capstone.personalityTest.model.Enum.Role;
+import com.capstone.personalityTest.model.RefreshToken;
 import com.capstone.personalityTest.model.UserInfo;
+import com.capstone.personalityTest.repository.RefreshTokenRepository;
 import com.capstone.personalityTest.repository.UserInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,6 +24,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.Set;
 
@@ -30,19 +34,23 @@ public class UserInfoService implements UserDetailsService {
 
     private final UserInfoRepository userRepo;
 
+    private final RefreshTokenService refreshTokenService;
+
     private final PasswordEncoder encoder;
 
     private final UserMapper userMapper;
 
-    private final JwtService jwtService;  // ✅ Inject JwtService
+    private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     @Autowired
-    public UserInfoService(UserInfoRepository userRepo, PasswordEncoder encoder, UserMapper userMapper , JwtService jwtService , AuthenticationManager authenticationManager) {
+    public UserInfoService(UserInfoRepository userRepo, PasswordEncoder encoder, UserMapper userMapper , JwtService jwtService , AuthenticationManager authenticationManager , RefreshTokenService refreshTokenService) {
         this.userRepo = userRepo;
         this.encoder = encoder;
         this.userMapper = userMapper;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
+        this.refreshTokenService = refreshTokenService;
+
     }
 
     // Method to load user details by username (email)
@@ -80,6 +88,7 @@ public class UserInfoService implements UserDetailsService {
     }
 
     public JwtResponse authenticate(AuthRequest authRequest) {
+        // Authenticate user credentials
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
         );
@@ -88,12 +97,20 @@ public class UserInfoService implements UserDetailsService {
             throw new UsernameNotFoundException("Invalid user credentials");
         }
 
+        // Fetch user
         UserInfo user = userRepo.findByEmail(authRequest.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        String token = jwtService.generateToken(user);
-        return new JwtResponse(token);
+        // Generate short-lived JWT access token
+        String accessToken = jwtService.generateToken(user);
+
+        // Generate DB-stored opaque refresh token
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+
+        // Return both tokens
+        return new JwtResponse(accessToken, refreshToken.getToken());
     }
+
 
     public Page<UserInfoResponse> getAllUsers(Pageable pageable) {
         Page<UserInfo> userPages = userRepo.findAll(pageable);
@@ -129,6 +146,6 @@ public class UserInfoService implements UserDetailsService {
     }
 
 
-
-
+    public void logout(String email) {
+    }
 }

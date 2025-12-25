@@ -1,13 +1,11 @@
 package com.capstone.personalityTest.service;
 
 import com.capstone.personalityTest.dto.RequestDTO.TestRequest.*;
-import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.SubQuestionResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.TestResponse;
 import com.capstone.personalityTest.mapper.TestMapper.QuestionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SectionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SubQuestionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.TestMapper;
-import com.capstone.personalityTest.model.Enum.PersonalityTrait;
 import com.capstone.personalityTest.model.Enum.TestStatus;
 import com.capstone.personalityTest.model.Test.Question;
 import com.capstone.personalityTest.model.Test.Section;
@@ -22,9 +20,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -321,7 +317,7 @@ public class TestService {
         subQuestionRepository.delete(subQuestion);
     }
 
-
+    @Transactional
     // Update Section
     public TestResponse updateSection(Long testId, Long sectionId, SectionRequest sectionRequest) {
         Optional<Test> optionalTest = testRepository.findById(testId);
@@ -348,6 +344,7 @@ public class TestService {
         return testMapper.toDto(test);
     }
 
+    @Transactional
     // Update Question
     public TestResponse updateQuestion(Long testId, Long questionId, QuestionRequest questionRequest) {
         Optional<Test> optionalTest = testRepository.findById(testId);
@@ -369,6 +366,7 @@ public class TestService {
         return testMapper.toDto(test);
     }
 
+    @Transactional
     // Update SubQuestion
     public TestResponse updateSubQuestion(Long testId, Long subQuestionId, SubQuestionRequest subQuestionRequest) {
         Optional<Test> optionalTest = testRepository.findById(testId);
