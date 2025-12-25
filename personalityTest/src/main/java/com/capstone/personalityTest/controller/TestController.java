@@ -2,6 +2,7 @@ package com.capstone.personalityTest.controller;
 
 import com.capstone.personalityTest.dto.RequestDTO.TestRequest.*;
 import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.TestResponse;
+import com.capstone.personalityTest.service.JwtService;
 import com.capstone.personalityTest.service.TestService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.List;
 public class TestController {
 
     private final TestService testService;
+    private final JwtService jwtService;
 
     // 1. Create a test (title + description only)
     @PreAuthorize("hasRole('ADMIN')")
@@ -33,8 +35,9 @@ public class TestController {
     @PatchMapping("/{testId}/sections")
     public ResponseEntity<TestResponse> addSections(
             @PathVariable Long testId,
-            @Valid @RequestBody List<SectionRequest> sections) {
-        TestResponse updatedTest = testService.addSections(testId, sections);
+            @Valid @RequestBody SectionRequest section) {
+        TestResponse updatedTest = testService.addSections(testId, section);
+
         return new ResponseEntity<>(updatedTest, HttpStatus.CREATED);
     }
 
@@ -44,8 +47,8 @@ public class TestController {
     public ResponseEntity<TestResponse> addQuestions(
             @PathVariable Long testId,
             @PathVariable Long sectionId,
-            @Valid @RequestBody List<QuestionRequest> questions) {
-        TestResponse updatedTest = testService.addQuestions(testId, sectionId, questions);
+            @Valid @RequestBody QuestionRequest question) {
+        TestResponse updatedTest = testService.addQuestions(testId, sectionId, question);
         return new ResponseEntity<>(updatedTest, HttpStatus.CREATED);
     }
 
@@ -55,34 +58,46 @@ public class TestController {
     public ResponseEntity<TestResponse> addSubQuestions(
             @PathVariable Long testId,
             @PathVariable Long questionId,
-            @Valid @RequestBody List<SubQuestionRequest> subQuestions) {
-        TestResponse updatedTest = testService.addSubQuestions(testId, questionId, subQuestions);
+            @Valid @RequestBody SubQuestionRequest subQuestion) {
+        TestResponse updatedTest = testService.addSubQuestions(testId, questionId, subQuestion);
         return new ResponseEntity<>(updatedTest, HttpStatus.CREATED);
     }
 
     // 5. Confirm test (finalize)
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{testId}/confirm")
-    public ResponseEntity<TestResponse> confirmTest(@PathVariable Long testId) {
-        TestResponse confirmedTest = testService.confirmTest(testId);
+    @PutMapping("/{testId}/publish")
+    public ResponseEntity<TestResponse> publishTest(@PathVariable Long testId) {
+        TestResponse confirmedTest = testService.publishTest(testId);
         return new ResponseEntity<>(confirmedTest, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{testId}/active")
+    public ResponseEntity<TestResponse> setTestActive(
+            @PathVariable Long testId,
+            @RequestParam boolean active
+    ) {
+        TestResponse response = testService.setTestActive(testId, active);
+        return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}")
     public ResponseEntity<TestResponse> updateTest(
             @PathVariable Long id,
-            @RequestBody UpdateTestRequest updateTestDto) {
-        TestResponse updatedTest = testService.updateTest(id, updateTestDto);
+            @RequestBody TestRequest updateTest) {
+        TestResponse updatedTest = testService.updateTest(id, updateTest);
         return ResponseEntity.ok(updatedTest);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<List<TestResponse>> getAllTests() {
-        List<TestResponse> tests = testService.getAllTests();
-        return ResponseEntity.ok(tests);
+    public List<TestResponse> getAllTests(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7); // remove "Bearer "
+        String role = jwtService.extractRoles(token).get(0); // get the first role
+
+        return testService.getAllTests(role);
     }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
@@ -91,28 +106,68 @@ public class TestController {
         return ResponseEntity.ok(test);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{testId}")
     public ResponseEntity<String> deleteTest(@PathVariable Long testId) {
         testService.deleteTest(testId);
         return new ResponseEntity<>("Test deleted successfully", HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{testId}/sections/{sectionId}")
     public ResponseEntity<String> deleteSection(@PathVariable Long testId, @PathVariable Long sectionId) {
         testService.deleteSection(testId, sectionId);
         return new ResponseEntity<>("Section deleted successfully", HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{testId}/questions/{questionId}")
     public ResponseEntity<String> deleteQuestion(@PathVariable Long testId, @PathVariable Long questionId) {
         testService.deleteQuestion(testId, questionId);
         return new ResponseEntity<>("Question deleted successfully", HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{testId}/subquestions/{subQuestionId}")
     public ResponseEntity<String> deleteSubQuestion(@PathVariable Long testId, @PathVariable Long subQuestionId) {
         testService.deleteSubQuestion(testId, subQuestionId);
         return new ResponseEntity<>("SubQuestion deleted successfully", HttpStatus.OK);
+    }
+
+
+    // --- UPDATE APIs ---
+
+    // Update Section
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{testId}/sections/{sectionId}")
+    public ResponseEntity<TestResponse> updateSection(
+            @PathVariable Long testId,
+            @PathVariable Long sectionId,
+            @Valid @RequestBody SectionRequest sectionRequest) {
+        TestResponse updatedTest = testService.updateSection(testId, sectionId, sectionRequest);
+        return ResponseEntity.ok(updatedTest);
+    }
+
+    // Update Question
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{testId}/questions/{questionId}")
+    public ResponseEntity<TestResponse> updateQuestion(
+            @PathVariable Long testId,
+            @PathVariable Long questionId,
+            @Valid @RequestBody QuestionRequest questionRequest) {
+        TestResponse updatedTest = testService.updateQuestion(testId, questionId, questionRequest);
+        return ResponseEntity.ok(updatedTest);
+    }
+
+    // Update SubQuestion
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{testId}/subquestions/{subQuestionId}")
+    public ResponseEntity<TestResponse> updateSubQuestion(
+            @PathVariable Long testId,
+            @PathVariable Long subQuestionId,
+            @Valid @RequestBody SubQuestionRequest subQuestionRequest) {
+        TestResponse updatedTest = testService.updateSubQuestion(testId, subQuestionId, subQuestionRequest);
+        return ResponseEntity.ok(updatedTest);
     }
 
 

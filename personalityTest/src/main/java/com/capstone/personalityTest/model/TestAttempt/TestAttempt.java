@@ -35,4 +35,6 @@ public class TestAttempt {
 
     @Embedded
     private PersonalityResult personalityResult;
+
+    private boolean finalized = false;
 }

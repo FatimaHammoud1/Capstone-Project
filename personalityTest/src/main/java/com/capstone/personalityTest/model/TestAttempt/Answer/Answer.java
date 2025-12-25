@@ -6,8 +6,10 @@ import com.capstone.personalityTest.model.TestAttempt.TestAttempt;
 import jakarta.persistence.*;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import lombok.Data;
 
 @Entity
+@Data
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "answer_type")
 public abstract class Answer {

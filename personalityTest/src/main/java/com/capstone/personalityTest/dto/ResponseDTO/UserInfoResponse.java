@@ -11,6 +11,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserInfoResponse {
+    private Long id;
     private String name;
     private String email;
     private Set<String> roles;

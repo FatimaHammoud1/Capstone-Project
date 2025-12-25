@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubQuestionRequest{
+//    private Long questionId;
     private String subQuestionText;
     private TargetGender targetGender;
     private PersonalityTrait personalityTrait;

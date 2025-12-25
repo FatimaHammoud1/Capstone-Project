@@ -6,13 +6,16 @@ import com.capstone.personalityTest.model.Test.Test;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",uses = { SectionMapper.class, QuestionMapper.class, SubQuestionMapper.class } ,nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface TestMapper {
 
     Test toEntity(TestRequest testDto);
 
     TestResponse toDto(Test test);
+
+    void updateTestFromDto(TestRequest request, @MappingTarget Test test);
 
     @AfterMapping
     default void setParentReferences(TestRequest testDto, @MappingTarget Test test) {

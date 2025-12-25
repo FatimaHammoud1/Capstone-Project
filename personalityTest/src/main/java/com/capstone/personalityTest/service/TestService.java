@@ -20,7 +20,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -43,15 +42,12 @@ public class TestService {
         // Map DTO → Entity
         Test test = testMapper.toEntity(testRequest);
 
-        // Remove nested sections/questions for initial creation
-        test.setSections(new ArrayList<>());
-
         Test savedTest = testRepository.save(test);
         return testMapper.toDto(savedTest);
     }
 
     //  Add sections to test
-    public TestResponse addSections(Long testId, List<SectionRequest> sectionRequests) {
+    public TestResponse addSections(Long testId, SectionRequest sectionRequest) {
         Optional<Test> optionalTest = testRepository.findById(testId);
 
         if (optionalTest.isEmpty()) {
@@ -60,20 +56,28 @@ public class TestService {
 
         Test test = optionalTest.get();
 
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot modify a published test");
+        }
 
-        List<Section> sections = sectionRequests.stream()
-                .map(sectionMapper::toEntity)
-                .peek(section -> section.setTest(test)) // set parent
-                .collect(Collectors.toList());
+//        List<Section> sections = sectionRequests.stream()
+//                .map(sectionMapper::toEntity)
+//                .peek(section -> section.setTest(test)) // set parent
+//                .collect(Collectors.toList());
+        Section section = sectionMapper.toEntity(sectionRequest);
+        section.setTest(test);
 
-        test.getSections().addAll(sections);
+      //  sectionRepository.saveAll(sections);
+
+        test.getSections().add(section);
+
         testRepository.save(test);
 
         return testMapper.toDto(test);
     }
 
     //  Add questions to a section
-    public TestResponse addQuestions(Long testId, Long sectionId, List<QuestionRequest> questionRequests) {
+    public TestResponse addQuestions(Long testId, Long sectionId, QuestionRequest questionRequest) {
         Optional<Test> optionalTest = testRepository.findById(testId);
 
         if (optionalTest.isEmpty()) {
@@ -81,6 +85,11 @@ public class TestService {
         }
 
         Test test = optionalTest.get();
+
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot modify a published test");
+        }
+
         Optional<Section> optionalSection = sectionRepository.findById(sectionId);
         if(optionalSection.isEmpty()){
                 throw new EntityNotFoundException("Section not found: " + sectionId);
@@ -93,13 +102,20 @@ public class TestService {
         }
 
         // Map and set parent references
-        List<Question> questions = questionRequests.stream()
-                .map(questionMapper::toEntity)
-                .peek(q -> q.setSection(section))
-                .collect(Collectors.toList());
+//        List<Question> questions = questionRequests.stream()
+//                .map(questionMapper::toEntity)
+//                .peek(q -> q.setSection(section))
+//                .collect(Collectors.toList());
+
+     //   questionRepository.saveAll(questions);
+
+
 
         // Add questions to section
-        section.getQuestions().addAll(questions);
+
+        Question question = questionMapper.toEntity(questionRequest);
+        question.setSection(section);
+        section.getQuestions().add(question);
 
         //  Save test (cascades to sections/questions if cascade is configured)
         testRepository.save(test);
@@ -110,13 +126,17 @@ public class TestService {
 
 
     //  Add subQuestions to a question
-    public TestResponse addSubQuestions(Long testId, Long questionId, List<SubQuestionRequest> subQuestionRequests) {
+    public TestResponse addSubQuestions(Long testId, Long questionId, SubQuestionRequest subQuestionRequest) {
         // Check if test exists
         Optional<Test> optionalTest = testRepository.findById(testId);
         if (optionalTest.isEmpty()) {
             throw new EntityNotFoundException("Test not found: " + testId);
         }
         Test test = optionalTest.get();
+
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot modify a published test");
+        }
 
         // Fetch question by repository
         Optional<Question> optionalQuestion = questionRepository.findById(questionId);
@@ -131,42 +151,79 @@ public class TestService {
         }
 
         // Map and set parent references
-        List<SubQuestion> subQuestions = subQuestionRequests.stream()
-                .map(subQuestionMapper::toEntity)
-                .peek(sq -> sq.setQuestion(question))
-                .collect(Collectors.toList());
+//        List<SubQuestion> subQuestions = subQuestionRequests.stream()
+//                .map(subQuestionMapper::toEntity)
+//                .peek(sq -> sq.setQuestion(question))
+//                .collect(Collectors.toList());
+
+      //  subQuestionRepository.saveAll(subQuestions);
 
         // Add subquestions to the parent question
-        question.getSubQuestions().addAll(subQuestions);
+        SubQuestion subQuestion = subQuestionMapper.toEntity(subQuestionRequest);
+        subQuestion.setQuestion(question);
+
+        question.getSubQuestions().add(subQuestion);
 
         // Save parent test (cascade will save everything if configured)
         testRepository.save(test);
+
 
         return testMapper.toDto(test);
     }
 
     //  Confirm test (finalize)
-    public TestResponse confirmTest(Long testId) {
+    public TestResponse publishTest(Long testId) {
         Optional<Test> optionalTest = testRepository.findById(testId);
         if(optionalTest.isEmpty()){
                 throw new EntityNotFoundException("Test not found: " + testId);
         }
         Test test = optionalTest.get();
 
-        test.setStatus(TestStatus.PUBLISHED); // you should have a status enum: DRAFT / PUBLISHED
+        if (test.getSections().isEmpty()) {
+            throw new IllegalStateException("Cannot publish an empty test");
+        }
+
+        test.setStatus(TestStatus.PUBLISHED); //lock
+        testRepository.save(test);
+
+        return testMapper.toDto(test);
+    }
+
+    @Transactional
+    public TestResponse setTestActive(Long testId, boolean active) {
+        Test test = testRepository.findById(testId)
+                .orElseThrow(() -> new EntityNotFoundException("Test not found"));
+
+        if (test.getStatus() != TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Only published tests can be activated/deactivated");
+        }
+
+        test.setActive(active);
         testRepository.save(test);
 
         return testMapper.toDto(test);
     }
 
 
+
     // Get all tests
-    public List<TestResponse> getAllTests() {
-        List<Test> tests = testRepository.findAll();
+    @Transactional
+    public List<TestResponse> getAllTests(String role) {
+        List<Test> tests;
+
+        if (role.equals("ROLE_ADMIN")) {
+            // Admin sees all tests
+            tests = testRepository.findAll();
+        } else {
+            // User sees only published & active tests
+            tests = testRepository.findByStatusAndActive(TestStatus.PUBLISHED, true);
+        }
+
         return tests.stream()
                 .map(testMapper::toDto)
                 .collect(Collectors.toList());
     }
+
 
     // Get test by ID
     public TestResponse getTestById(Long id) {
@@ -178,30 +235,29 @@ public class TestService {
     }
 
     //Update Title and description
-    public TestResponse updateTest(Long id, UpdateTestRequest updateTestRequest) {
-        Optional<Test> optionalTest = testRepository.findById(id);
-        if (optionalTest.isEmpty())
-            throw new EntityNotFoundException("Test not found with id " + id);
+    @Transactional
+    public TestResponse updateTest(Long id, TestRequest testRequest) {
+        Test test = testRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Test not found with id " + id));
 
-        Test test = optionalTest.get();
-
-        if (updateTestRequest.getTitle() != null) {
-            test.setTitle(updateTestRequest.getTitle());
-        }
-        if (updateTestRequest.getDescription() != null) {
-            test.setDescription(updateTestRequest.getDescription());
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot modify a published test");
         }
 
-        Test updatedTest = testRepository.save(test);
-        return testMapper.toDto(updatedTest);
+        testMapper.updateTestFromDto(testRequest, test); // MapStruct updates only non-null fields
 
+        testRepository.save(test); // Persist changes
 
+        return testMapper.toDto(test);
     }
 
     @Transactional
     public void deleteTest(Long testId) {
-        if (!testRepository.existsById(testId)) {
-            throw new EntityNotFoundException("Test not found with id " + testId);
+        Test test = testRepository.findById(testId)
+                .orElseThrow(() -> new EntityNotFoundException("Test not found with id " + testId));
+
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot delete a published test");
         }
         testRepository.deleteById(testId);
     }
@@ -211,6 +267,10 @@ public class TestService {
         Optional<Section> optionalSection = sectionRepository.findById(sectionId);
         if (optionalSection.isEmpty()) throw new EntityNotFoundException("Section not found with id " + sectionId);
         Section section = optionalSection.get();
+
+        if (section.getTest().getStatus()==TestStatus.PUBLISHED){
+            throw new IllegalStateException("Cannot delete a section in published test");
+        }
 
         if (!section.getTest().getId().equals(testId)) {
             throw new IllegalArgumentException("Section does not belong to test with id " + testId);
@@ -227,6 +287,9 @@ public class TestService {
         }
 
         Question question = optionalQuestion.get();
+        if (question.getSection().getTest().getStatus()==TestStatus.PUBLISHED){
+            throw new IllegalStateException("Cannot delete a question in a published test");
+        }
 
         if (!question.getSection().getTest().getId().equals(testId)) {
             throw new IllegalArgumentException("Question does not belong to test with id " + testId);
@@ -243,6 +306,9 @@ public class TestService {
         }
 
         SubQuestion subQuestion = optionalSubQuestion.get();
+        if (subQuestion.getQuestion().getSection().getTest().getStatus()==TestStatus.PUBLISHED){
+            throw new IllegalStateException("Cannot delete a published test");
+        }
 
         if (!subQuestion.getQuestion().getSection().getTest().getId().equals(testId)) {
             throw new IllegalArgumentException("SubQuestion does not belong to test with id " + testId);
@@ -251,12 +317,76 @@ public class TestService {
         subQuestionRepository.delete(subQuestion);
     }
 
+    @Transactional
+    // Update Section
+    public TestResponse updateSection(Long testId, Long sectionId, SectionRequest sectionRequest) {
+        Optional<Test> optionalTest = testRepository.findById(testId);
+        if(optionalTest.isEmpty())
+            throw new EntityNotFoundException("Test not found: " + testId);
 
+        Test test = optionalTest.get();
 
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot modify a section in a published test");
+        }
 
+        Optional<Section> optionalSection = sectionRepository.findById(sectionId);
+        if(optionalSection.isEmpty()) throw  new EntityNotFoundException("Section not found: " + sectionId);
 
+        Section section = optionalSection.get();
 
+        if (!section.getTest().getId().equals(testId)) {
+            throw new IllegalArgumentException("Section does not belong to test " + testId);
+        }
 
+        sectionMapper.updateSectionFromDto(sectionRequest, section);
+        testRepository.save(test);
+        return testMapper.toDto(test);
+    }
+
+    @Transactional
+    // Update Question
+    public TestResponse updateQuestion(Long testId, Long questionId, QuestionRequest questionRequest) {
+        Optional<Test> optionalTest = testRepository.findById(testId);
+        if(optionalTest.isEmpty())
+                throw new EntityNotFoundException("Test not found: " + testId);
+
+        Test test = optionalTest.get();
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot modify a question in a test");
+        }
+
+        Optional<Question> optionalQuestion = questionRepository.findById(questionId);
+        if(optionalQuestion.isEmpty()) throw new EntityNotFoundException("Question not found: " + questionId);
+
+        Question question = optionalQuestion.get();
+
+        questionMapper.updateQuestionFromDto(questionRequest, question);
+        testRepository.save(test);
+        return testMapper.toDto(test);
+    }
+
+    @Transactional
+    // Update SubQuestion
+    public TestResponse updateSubQuestion(Long testId, Long subQuestionId, SubQuestionRequest subQuestionRequest) {
+        Optional<Test> optionalTest = testRepository.findById(testId);
+        if(optionalTest.isEmpty())
+            throw new EntityNotFoundException("Test not found: " + testId);
+
+        Test test = optionalTest.get();
+        if (test.getStatus() == TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot modify a subquestion in a published test");
+        }
+
+        Optional<SubQuestion> optionalSubQuestion = subQuestionRepository.findById(subQuestionId);
+        if(optionalSubQuestion.isEmpty()) throw new EntityNotFoundException("SubQuestion not found: " + subQuestionId);
+
+        SubQuestion subQuestion = optionalSubQuestion.get();
+
+        subQuestionMapper.updateSubQuestionFromDto(subQuestionRequest, subQuestion);
+        testRepository.save(test);
+        return testMapper.toDto(test);
+    }
 
 }
 

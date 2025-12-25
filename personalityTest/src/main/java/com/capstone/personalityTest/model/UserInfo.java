@@ -1,10 +1,12 @@
 package com.capstone.personalityTest.model;
 
 import com.capstone.personalityTest.model.Enum.Role;
+import com.capstone.personalityTest.model.Enum.TargetGender;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,13 +26,17 @@ public class UserInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
     @NotBlank(message = "name is required")
     private String name;
     @NotBlank(message = "email is required")
     private String email;
     @NotBlank (message = "password is required")
     private String password;
+    @NotNull(message = "Gender is required")
+    @Enumerated(EnumType.STRING)
+    private TargetGender gender;
+
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
@@ -45,6 +51,6 @@ public class UserInfo {
 
     @Override
     public int hashCode() {
-        return Integer.hashCode(id);
+        return Long.hashCode(id);
     }
 }

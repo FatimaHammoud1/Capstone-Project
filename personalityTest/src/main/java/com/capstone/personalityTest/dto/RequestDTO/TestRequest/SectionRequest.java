@@ -9,7 +9,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SectionRequest{
+
+//    private Long testId;
     private String title;
-    private List<QuestionRequest> questions;
+//    private List<QuestionRequest> questions;
 }
 

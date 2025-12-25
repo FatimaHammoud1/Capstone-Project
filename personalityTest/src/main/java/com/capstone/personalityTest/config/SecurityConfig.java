@@ -4,6 +4,7 @@ import com.capstone.personalityTest.filter.JwtAuthFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -38,11 +39,11 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
 
     //loads user information (username, password, roles) from DB for authentication.
-    private final UserDetailsService userDetailsService;
+    private final @Lazy UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
 
     // Constructor injection for required dependencies
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter ,UserDetailsService userDetailsService , PasswordEncoder passwordEncoder) {
+    public SecurityConfig(@Lazy JwtAuthFilter jwtAuthFilter ,@Lazy UserDetailsService userDetailsService , PasswordEncoder passwordEncoder) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;

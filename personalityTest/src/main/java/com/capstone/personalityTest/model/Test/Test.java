@@ -26,6 +26,8 @@ public class Test {
     @Enumerated(EnumType.STRING)
     private TestStatus status = TestStatus.DRAFT;
 
+    private boolean active = false;
+
     @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Section> sections = new ArrayList<>();
 }
