@@ -6,11 +6,13 @@ import com.capstone.personalityTest.mapper.TestMapper.QuestionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SectionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SubQuestionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.TestMapper;
+import com.capstone.personalityTest.model.BaseTest;
 import com.capstone.personalityTest.model.Enum.TestStatus;
 import com.capstone.personalityTest.model.Test.Question;
 import com.capstone.personalityTest.model.Test.Section;
 import com.capstone.personalityTest.model.Test.SubQuestion;
 import com.capstone.personalityTest.model.Test.Test;
+import com.capstone.personalityTest.repository.BaseTestRepository;
 import com.capstone.personalityTest.repository.TestRepo.QuestionRepository;
 import com.capstone.personalityTest.repository.TestRepo.SectionRepository;
 import com.capstone.personalityTest.repository.TestRepo.SubQuestionRepository;
@@ -36,14 +38,19 @@ public class TestService {
     private final SectionMapper sectionMapper;
     private final QuestionMapper questionMapper;
     private final SubQuestionMapper subQuestionMapper;
+    private final BaseTestRepository baseTestRepository;
 
     //  Create test (title + description only)
     public TestResponse createTest(TestRequest testRequest) {
-        // Map DTO → Entity
+        BaseTest baseTest = baseTestRepository.findById(testRequest.getBaseTestId())
+                .orElseThrow(() -> new EntityNotFoundException("BaseTest not found"));
+
         Test test = testMapper.toEntity(testRequest);
+        test.setBaseTest(baseTest);
 
         Test savedTest = testRepository.save(test);
         return testMapper.toDto(savedTest);
+
     }
 
     //  Add sections to test
