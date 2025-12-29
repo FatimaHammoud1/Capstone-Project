@@ -31,4 +31,12 @@ public class SubQuestion {
 
     @Enumerated(EnumType.STRING)
     private PersonalityTrait personalityTrait;
+
+    public SubQuestion copy() {
+        SubQuestion sq = new SubQuestion();
+        sq.setSubQuestionText(this.subQuestionText);
+        sq.setTargetGender(this.targetGender);
+        sq.setPersonalityTrait(this.personalityTrait);
+        return sq;
+    }
 }

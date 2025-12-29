@@ -40,7 +40,7 @@ public class TestService {
     private final SubQuestionMapper subQuestionMapper;
     private final BaseTestRepository baseTestRepository;
 
-    //  Create test (title + description only)
+    //  Create test for first time , then versions will be created by createVersion after publishing
     public TestResponse createTest(TestRequest testRequest) {
         BaseTest baseTest = baseTestRepository.findById(testRequest.getBaseTestId())
                 .orElseThrow(() -> new EntityNotFoundException("BaseTest not found"));
@@ -394,6 +394,45 @@ public class TestService {
         testRepository.save(test);
         return testMapper.toDto(test);
     }
+
+
+
+    //A version can only be created from a published test
+    @Transactional
+    public TestResponse createVersion(CreateVersionRequest request) {
+
+        BaseTest baseTest = baseTestRepository.findById(request.getBaseTestId())
+                .orElseThrow(() -> new EntityNotFoundException("BaseTest not found"));
+
+        Test source = testRepository.findById(request.getSourceTestId())
+                .orElseThrow(() -> new EntityNotFoundException("Source test not found"));
+
+        if (source.getStatus() != TestStatus.PUBLISHED) {
+            throw new IllegalStateException("Only published tests can be versioned");
+        }
+
+        if (!source.getBaseTest().getId().equals(baseTest.getId())) {
+            throw new IllegalArgumentException("Source test does not belong to this BaseTest");
+        }
+
+        Test newTest = new Test();
+        newTest.setBaseTest(baseTest);
+        newTest.setVersionName(request.getVersionName());
+        newTest.setTitle(source.getTitle());
+        newTest.setDescription(source.getDescription());
+        newTest.setStatus(TestStatus.DRAFT);
+        newTest.setActive(false);
+
+        for (Section s : source.getSections()) {
+            Section newSection = s.copy();
+            newSection.setTest(newTest);
+            newTest.getSections().add(newSection);
+        }
+
+        return testMapper.toDto(testRepository.save(newTest));
+    }
+
+
 
 }
 

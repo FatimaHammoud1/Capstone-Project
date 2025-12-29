@@ -16,6 +16,7 @@ public class TestResponse {
     private String description;
     private TestStatus status;
     private boolean active;
+    private String versionName;
     private List<SectionResponse> sections;
 }
 

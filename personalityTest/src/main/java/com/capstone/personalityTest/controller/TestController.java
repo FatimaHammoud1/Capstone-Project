@@ -170,6 +170,12 @@ public class TestController {
         return ResponseEntity.ok(updatedTest);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/versions")
+    public TestResponse createVersion(@RequestBody CreateVersionRequest request) {
+        return testService.createVersion(request);
+    }
+
 
 }
 
