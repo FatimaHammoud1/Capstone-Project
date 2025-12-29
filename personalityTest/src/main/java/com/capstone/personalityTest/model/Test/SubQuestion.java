@@ -1,6 +1,5 @@
 package com.capstone.personalityTest.model.Test;
 
-import com.capstone.personalityTest.model.Enum.PersonalityTrait;
 import com.capstone.personalityTest.model.Enum.TargetGender;
 
 import jakarta.persistence.*;
@@ -29,14 +28,16 @@ public class SubQuestion {
     @JoinColumn(name = "question_id")
     private Question question;
 
-    @Enumerated(EnumType.STRING)
-    private PersonalityTrait personalityTrait;
+    @ManyToOne
+    @JoinColumn(name = "metric_id")
+    private Metric metric;
+
 
     public SubQuestion copy() {
         SubQuestion sq = new SubQuestion();
         sq.setSubQuestionText(this.subQuestionText);
         sq.setTargetGender(this.targetGender);
-        sq.setPersonalityTrait(this.personalityTrait);
+        sq.setMetric(this.metric);
         return sq;
     }
 }

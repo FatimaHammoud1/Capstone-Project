@@ -11,10 +11,9 @@ import com.capstone.personalityTest.mapper.TestMapper.QuestionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SectionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SubQuestionMapper;
 import com.capstone.personalityTest.model.Enum.AnswerType;
-import com.capstone.personalityTest.model.Enum.PersonalityTrait;
 import com.capstone.personalityTest.model.Enum.TargetGender;
 import com.capstone.personalityTest.model.Enum.TestStatus;
-import com.capstone.personalityTest.model.PersonalityResult;
+import com.capstone.personalityTest.model.EvaluationResult;
 import com.capstone.personalityTest.model.Test.Question;
 import com.capstone.personalityTest.model.Test.Section;
 import com.capstone.personalityTest.model.Test.SubQuestion;
@@ -172,7 +171,7 @@ public class TestAttemptService {
     }
 
     @Transactional
-    public PersonalityResult finalizeAttempt(Long attemptId) {
+    public EvaluationResult finalizeAttempt(Long attemptId) {
         TestAttempt attempt = testAttemptRepository.findById(attemptId)
                 .orElseThrow(() -> new EntityNotFoundException("TestAttempt not found"));
 
@@ -221,8 +220,8 @@ public class TestAttemptService {
 
 
         // calculate final result
-        PersonalityResult result = calculatePersonalityResult(attempt.getAnswers());
-        attempt.setPersonalityResult(result);
+        EvaluationResult result = calculateResult(attempt.getAnswers());
+        attempt.setEvaluationResult(result);
         attempt.setFinalized(true); // lock it
 
         testAttemptRepository.save(attempt);
@@ -230,28 +229,44 @@ public class TestAttemptService {
     }
 
     //helper function for submitAnswer to calculate the results
-    private PersonalityResult calculatePersonalityResult(List<Answer> answers) {
+    private EvaluationResult calculateResult(List<Answer> answers) {
 
-        Map<PersonalityTrait, Integer> scores = new EnumMap<>(PersonalityTrait.class);
-        for (PersonalityTrait trait : PersonalityTrait.values()) {
-            scores.put(trait, 0);
-        }
+        Map<String, Integer> scores = new HashMap<>();
+
         for (Answer answer : answers) {
-            if (answer instanceof CheckBoxAnswer cb && cb.getSubQuestion() != null && Boolean.TRUE.equals(cb.getBinaryValue())) {
-                PersonalityTrait trait = cb.getSubQuestion().getPersonalityTrait();
-                scores.merge(trait, 1, Integer::sum);
+
+            if (answer.getSubQuestion() == null) continue;
+
+            String metricCode = answer.getSubQuestion()
+                    .getMetric()
+                    .getCode();
+
+            if (metricCode == null) continue;
+
+            // CHECKBOX → +1
+            if (answer instanceof CheckBoxAnswer cb &&
+                    Boolean.TRUE.equals(cb.getBinaryValue())) {
+
+                scores.merge(metricCode, 1, Integer::sum);
             }
-            else if (answer instanceof ScaleAnswer sa && sa.getSubQuestion() != null && sa.getScaleValue() != null) {
-                PersonalityTrait trait = sa.getSubQuestion().getPersonalityTrait();
-                scores.merge(trait, sa.getScaleValue(), Integer::sum);
+
+            // SCALE → +scaleValue
+            else if (answer instanceof ScaleAnswer sa &&
+                    sa.getScaleValue() != null) {
+
+                scores.merge(metricCode, sa.getScaleValue(), Integer::sum);
             }
-            // OPEN answers are ignored for scoring
+
+            // OPEN answers → ignored
         }
-        PersonalityResult result = new PersonalityResult();
-        result.setTraitScores(scores);
-        result.calculateTopTraits();
+
+        EvaluationResult result = new EvaluationResult();
+        result.setMetricScores(scores);
+        result.calculateTopMetrics(); // renamed method
+
         return result;
     }
+
 
 
     private Answer getAnswer(AnswerRequest req) {

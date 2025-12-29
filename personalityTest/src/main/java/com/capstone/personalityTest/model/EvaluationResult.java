@@ -1,7 +1,5 @@
 package com.capstone.personalityTest.model;
 
-import com.capstone.personalityTest.PersonalityTestApplication;
-import com.capstone.personalityTest.model.Enum.PersonalityTrait;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,50 +13,57 @@ import java.util.Map;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PersonalityResult {
+public class EvaluationResult {
 
-    @Enumerated(EnumType.STRING)
-    private PersonalityTrait firstTrait;// Highest score, e.g., "Investigative"
-    @Enumerated(EnumType.STRING)
-    private PersonalityTrait secondTrait;// Second highest, e.g., "Social
-    @Enumerated(EnumType.STRING)
-    private PersonalityTrait thirdTrait;   // Third highest, e.g., "Artistic"
+    // Top metrics by score (dynamic, not enum)
+    @Column(name = "first_metric_code")
+    private String firstMetric;
 
+    @Column(name = "second_metric_code")
+    private String secondMetric;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @Column(name = "third_metric_code")
+    private String thirdMetric;
+
+    @ElementCollection
     @CollectionTable(
-            name = "personality_result_scores",
+            name = "evaluation_scores",
             joinColumns = @JoinColumn(name = "test_attempt_id")
     )
-    @MapKeyColumn(name = "trait")   // <-- KEY
-    @MapKeyEnumerated(EnumType.STRING)     // store enum as string
-    @Column(name = "score")         // <-- VALUE
-    private Map<PersonalityTrait, Integer> traitScores;
+    @MapKeyColumn(name = "metric_code")
+    @Column(name = "score")
+    private Map<String, Integer> metricScores;
 
-    // e.g., { "R"=5, "I"=7, "C"=3, "S"=4, "E"=6, "A"=2 }
-
-    // Helper to compute top 3 traits automatically
-    public void calculateTopTraits() {
-        List<PersonalityTrait> topTraits = traitScores.entrySet().stream()
-                .sorted(Map.Entry.<PersonalityTrait, Integer>comparingByValue(Comparator.reverseOrder()))
+    /**
+     * Example:
+     * metricScores = {
+     *   "R"=5,
+     *   "I"=7,
+     *   "LOGIC"=10,
+     *   "MEMORY"=6
+     * }
+     */
+    public void calculateTopMetrics() {
+        List<String> topMetrics = metricScores.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder()))
                 .limit(3)
-                .map(Map.Entry::getKey) // extract the PersonalityTrait keys
+                .map(Map.Entry::getKey)
                 .toList();
 
-        firstTrait = !topTraits.isEmpty() ? topTraits.get(0) : null;
-        secondTrait = topTraits.size() > 1 ? topTraits.get(1) : null;
-        thirdTrait = topTraits.size() > 2 ? topTraits.get(2) : null;
+        firstMetric = topMetrics.size() > 0 ? topMetrics.get(0) : null;
+        secondMetric = topMetrics.size() > 1 ? topMetrics.get(1) : null;
+        thirdMetric = topMetrics.size() > 2 ? topMetrics.get(2) : null;
     }
 
     @Override
     public String toString() {
         return String.join("-",
-                firstTrait != null ? firstTrait.name() : "",
-                secondTrait != null ? secondTrait.name() : "",
-                thirdTrait != null ? thirdTrait.name() : "");
+                firstMetric != null ? firstMetric : "",
+                secondMetric != null ? secondMetric : "",
+                thirdMetric != null ? thirdMetric : "");
     }
-
 }
+
 
 
 //Great question 👍

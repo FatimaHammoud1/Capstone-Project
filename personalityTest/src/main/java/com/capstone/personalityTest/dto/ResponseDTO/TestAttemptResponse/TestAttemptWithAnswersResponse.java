@@ -1,7 +1,7 @@
 package com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse;
 
 
-import com.capstone.personalityTest.model.PersonalityResult;
+import com.capstone.personalityTest.model.EvaluationResult;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +18,6 @@ public class TestAttemptWithAnswersResponse {
     private Long studentId;
     private String studentName;
     private List<AnswerResponse> answers;
-    private PersonalityResult personalityResult;
+    private EvaluationResult evaluationResult;
 
 }

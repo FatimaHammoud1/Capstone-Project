@@ -1,7 +1,7 @@
 package com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse;
 
 import com.capstone.personalityTest.model.Enum.AnswerType;
-import com.capstone.personalityTest.model.Enum.PersonalityTrait;
+import com.capstone.personalityTest.model.Test.Metric;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,7 +15,7 @@ public class AnswerResponse {
     private String questionText;
     private Long subQuestionId;
     private String subQuestionText;
-    private PersonalityTrait trait;
+    private Metric metric;
     private AnswerType answerType;
     private Boolean binaryValue;
     private Integer scaleValue;

@@ -21,7 +21,7 @@ public interface AnswerMapper {
     @Mapping(source = "question.questionText", target = "questionText")
     @Mapping(source = "subQuestion.id", target = "subQuestionId")
     @Mapping(source = "subQuestion.subQuestionText", target = "subQuestionText")
-    @Mapping(source= "subQuestion.personalityTrait" , target = "trait")
+    @Mapping(source= "subQuestion.metric" , target = "metric")
     AnswerResponse toDto(Answer answer);
 
     @Mapping(source = "answers", target = "answers")

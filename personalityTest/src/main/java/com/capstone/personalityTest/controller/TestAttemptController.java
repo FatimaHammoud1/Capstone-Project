@@ -4,7 +4,7 @@ import com.capstone.personalityTest.dto.RequestDTO.TestAttemptRequest.AnswerRequ
 import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.AnswerResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptWithAnswersResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptResponse;
-import com.capstone.personalityTest.model.PersonalityResult;
+import com.capstone.personalityTest.model.EvaluationResult;
 import com.capstone.personalityTest.service.TestAttemptService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -39,8 +39,8 @@ public class TestAttemptController {
     }
 
     @PatchMapping("/{attemptId}/finalize")
-    public ResponseEntity<PersonalityResult> finalizeAttempt(@PathVariable Long attemptId) {
-        PersonalityResult result = testAttemptService.finalizeAttempt(attemptId);
+    public ResponseEntity<EvaluationResult> finalizeAttempt(@PathVariable Long attemptId) {
+        EvaluationResult result = testAttemptService.finalizeAttempt(attemptId);
         return ResponseEntity.ok(result);
     }
 
