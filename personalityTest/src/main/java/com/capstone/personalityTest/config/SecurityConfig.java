@@ -64,7 +64,8 @@ public class SecurityConfig {
                 // Configure endpoint authorization
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
-                        .requestMatchers("/auth/welcome", "/auth/signUp", "/auth/signIn").permitAll()
+                        .requestMatchers("/auth/welcome", "/auth/signUp", "/auth/signIn" ,"/swagger-ui/**",
+                                "/v3/api-docs/**").permitAll()
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated()

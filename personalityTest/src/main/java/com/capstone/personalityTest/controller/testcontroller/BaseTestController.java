@@ -1,8 +1,9 @@
-package com.capstone.personalityTest.controller;
+package com.capstone.personalityTest.controller.testcontroller;
 
 import com.capstone.personalityTest.dto.RequestDTO.TestRequest.BaseTestRequest;
 import com.capstone.personalityTest.model.BaseTest;
-import com.capstone.personalityTest.service.BaseTestService;
+import com.capstone.personalityTest.service.testservice.BaseTestService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

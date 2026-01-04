@@ -1,4 +1,4 @@
-package com.capstone.personalityTest.service;
+package com.capstone.personalityTest.service.testservice;
 
 import com.capstone.personalityTest.dto.RequestDTO.TestRequest.BaseTestRequest;
 import com.capstone.personalityTest.mapper.TestMapper.BaseTestMapper;
