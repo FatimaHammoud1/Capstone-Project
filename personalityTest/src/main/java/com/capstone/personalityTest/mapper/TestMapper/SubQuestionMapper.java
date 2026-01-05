@@ -17,10 +17,12 @@ public interface SubQuestionMapper {
     SubQuestionMapper INSTANCE = Mappers.getMapper(SubQuestionMapper.class);
 
     @Mapping(target = "question", ignore = true)
+    @Mapping(source = "metricId", target = "metric.id")
     SubQuestion toEntity(SubQuestionRequest subQuestionDto);
 
     SubQuestionResponse toDto(SubQuestion subQuestion);
     List<SubQuestionResponse> toDtoList(List<SubQuestion> subQuestions);
 
+    @Mapping(source = "metricId", target = "metric.id")
     void updateSubQuestionFromDto(SubQuestionRequest request, @MappingTarget SubQuestion subQuestion);
 }
