@@ -54,6 +54,7 @@ public class TestAttemptService {
     private final AnswerRepository answerRepository;
     private final TestAttemptMapper testAttemptMapper;
     private final AnswerMapper answerMapper;
+    private final AIIntegrationService aiIntegrationService;
     
     private final MetricRepository metricRepository;
 
