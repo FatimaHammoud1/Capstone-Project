@@ -14,6 +14,7 @@ import com.capstone.personalityTest.model.Enum.AnswerType;
 import com.capstone.personalityTest.model.Enum.TargetGender;
 import com.capstone.personalityTest.model.Enum.TestStatus;
 import com.capstone.personalityTest.model.EvaluationResult;
+import com.capstone.personalityTest.model.Test.Metric;
 import com.capstone.personalityTest.model.Test.Question;
 import com.capstone.personalityTest.model.Test.Section;
 import com.capstone.personalityTest.model.Test.SubQuestion;
@@ -26,6 +27,7 @@ import com.capstone.personalityTest.model.TestAttempt.TestAttempt;
 import com.capstone.personalityTest.model.UserInfo;
 import com.capstone.personalityTest.repository.AnswerRepository;
 import com.capstone.personalityTest.repository.TestAttemptRepository;
+import com.capstone.personalityTest.repository.TestRepo.MetricRepository;
 import com.capstone.personalityTest.repository.TestRepo.QuestionRepository;
 import com.capstone.personalityTest.repository.TestRepo.SubQuestionRepository;
 import com.capstone.personalityTest.repository.TestRepo.TestRepository;
@@ -53,9 +55,7 @@ public class TestAttemptService {
     private final TestAttemptMapper testAttemptMapper;
     private final AnswerMapper answerMapper;
     
-    // 🆕 NEW: AI Integration Service
-    // Handles communication with Python AI service for complete personality analysis
-    private final AIIntegrationService aiIntegrationService;
+    private final MetricRepository metricRepository;
 
 
     public TestAttemptResponse startTest(Long testId, Long studentId) {
@@ -224,7 +224,7 @@ public class TestAttemptService {
 
 
         // Calculate final result (personality code + metric scores)
-        EvaluationResult result = calculateResult(attempt.getAnswers());
+        EvaluationResult result = calculateResult(attempt.getAnswers(), test);
         attempt.setEvaluationResult(result);
         attempt.setFinalized(true); // Lock the test attempt
 
@@ -238,9 +238,17 @@ public class TestAttemptService {
     }
 
     //helper function for submitAnswer to calculate the results
-    private EvaluationResult calculateResult(List<Answer> answers) {
+    private EvaluationResult calculateResult(List<Answer> answers, Test test) {
 
         Map<String, Integer> scores = new HashMap<>();
+
+        // Initialize all metrics with 0 from the BaseTest
+        if (test.getBaseTest() != null) {
+            List<Metric> metrics = metricRepository.findByBaseTestId(test.getBaseTest().getId());
+            for (Metric metric : metrics) {
+                scores.put(metric.getCode(), 0);
+            }
+        }
 
         for (Answer answer : answers) {
 

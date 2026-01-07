@@ -18,7 +18,7 @@ import jakarta.servlet.MultipartConfigElement;
  */
 @Configuration
 @EnableAsync
-public class AppConfig {
+public class AppConfig { //setup instructions
 
     /**
      * RestTemplate bean for making REST API calls to the Python AI service.

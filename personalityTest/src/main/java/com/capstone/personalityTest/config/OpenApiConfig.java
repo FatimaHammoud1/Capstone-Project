@@ -9,10 +9,10 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
+@Configuration //Spring scans it automatically
 public class OpenApiConfig {
 
-    @Bean
+    @Bean //object that tells swagger the api endpoints
     public OpenAPI openAPI() {
         return new OpenAPI()
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))

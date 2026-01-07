@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +19,9 @@ public class JwtService {
 
     // Secret key used to sign and verify JWTs. Should be kept safe.
     public static final String SECRET = "5367566859703373367639792F423F452848284D6251655468576D5A71347437";
+
+    @Value("${app.jwtExpirationMs:3600000}")
+    private long jwtExpirationMs;
 
     // Secret key used to sign and verify JWTs. Should be kept safe.
     public String generateToken(UserInfo user) {
@@ -37,7 +41,7 @@ public class JwtService {
                 .setClaims(claims)
                 .setSubject(email) // Store username/email in token
                 .setIssuedAt(new Date())  // Token creation time
-                .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24 * 30)) // Token expires in 30 days
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs)) // Token expires based on config
                 .signWith(getSignKey(), SignatureAlgorithm.HS256) // Sign token with secret key
                 .compact(); // Build token string
     }
