@@ -52,6 +52,10 @@ public class TestAttemptService {
     private final AnswerRepository answerRepository;
     private final TestAttemptMapper testAttemptMapper;
     private final AnswerMapper answerMapper;
+    
+    // 🆕 NEW: AI Integration Service
+    // Handles communication with Python AI service for complete personality analysis
+    private final AIIntegrationService aiIntegrationService;
 
 
     public TestAttemptResponse startTest(Long testId, Long studentId) {
@@ -219,12 +223,17 @@ public class TestAttemptService {
 
 
 
-        // calculate final result
+        // Calculate final result (personality code + metric scores)
         EvaluationResult result = calculateResult(attempt.getAnswers());
         attempt.setEvaluationResult(result);
-        attempt.setFinalized(true); // lock it
+        attempt.setFinalized(true); // Lock the test attempt
 
+        // Save to database
         testAttemptRepository.save(attempt);
+        
+        // Note: AI analysis is now triggered manually via separate endpoint
+        // See: POST /api/test-attempts/{attemptId}/analyze
+        
         return result;
     }
 
@@ -352,6 +361,47 @@ public class TestAttemptService {
     public List<AnswerResponse> getAllAnswersByTestAttemptId(Long testAttemptId) {
         List<Answer> answers = answerRepository.findByTestAttemptId(testAttemptId);
         return answerMapper.toDtoList(answers);
+    }
+
+    /**
+     * Manually trigger AI analysis for a finalized test attempt.
+     * This method should be called AFTER the test has been finalized.
+     * 
+     * Validates:
+     * - Test attempt exists
+     * - Test attempt is finalized
+     * - AI analysis hasn't already been run
+     * 
+     * Then triggers async AI analysis via AIIntegrationService.
+     * 
+     * @param attemptId ID of the finalized test attempt
+     * @throws IllegalStateException if test is not finalized or AI already run
+     */
+    @Transactional
+    public void triggerAIAnalysis(Long attemptId) {
+        // Fetch test attempt
+        TestAttempt attempt = testAttemptRepository.findById(attemptId)
+            .orElseThrow(() -> new EntityNotFoundException("Test attempt not found: " + attemptId));
+        
+        // Validate test is finalized
+        if (!attempt.isFinalized()) {
+            throw new IllegalStateException(
+                "Cannot trigger AI analysis: Test attempt must be finalized first. " +
+                "Please call PATCH /api/test-attempts/" + attemptId + "/finalize first."
+            );
+        }
+        
+        // Check if AI analysis already exists
+        if (aiIntegrationService.getAIResultByAttemptId(attemptId) != null) {
+            throw new IllegalStateException(
+                "AI analysis already exists for this test attempt. " +
+                "Results can be retrieved at GET /api/ai-results/attempt/" + attemptId
+            );
+        }
+        
+        // Trigger AI analysis asynchronously
+        // Results saved to ai_results table
+        aiIntegrationService.triggerCompleteAIAnalysis(attempt.getId());
     }
 
 }
