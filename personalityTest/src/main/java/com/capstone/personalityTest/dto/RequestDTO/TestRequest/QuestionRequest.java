@@ -5,7 +5,6 @@ import com.capstone.personalityTest.model.Enum.TargetGender;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.List;
 
 @Data
 @NoArgsConstructor

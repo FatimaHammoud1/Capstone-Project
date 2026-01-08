@@ -1,0 +1,63 @@
+package com.capstone.personalityTest.controller.testcontroller;
+
+import com.capstone.personalityTest.dto.RequestDTO.MetricRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.MetricResponse;
+import com.capstone.personalityTest.service.testservice.MetricService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@CrossOrigin
+@RequestMapping("/api/metrics")
+@RequiredArgsConstructor
+public class MetricController {
+
+    private final MetricService metricService;
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping
+    public ResponseEntity<MetricResponse> createMetric(@Valid @RequestBody MetricRequest metricRequest) {
+        MetricResponse createdMetric = metricService.createMetric(metricRequest);
+        return new ResponseEntity<>(createdMetric, HttpStatus.CREATED);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<MetricResponse>> getAllMetrics() {
+        List<MetricResponse> metrics = metricService.getAllMetrics();
+        return ResponseEntity.ok(metrics);
+    }
+
+    @GetMapping("/base-test/{baseTestId}")
+    public ResponseEntity<List<MetricResponse>> getMetricsByBaseTestId(@PathVariable Long baseTestId) {
+        List<MetricResponse> metrics = metricService.getMetricsByBaseTestId(baseTestId);
+        return ResponseEntity.ok(metrics);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<MetricResponse> getMetricById(@PathVariable Long id) {
+        MetricResponse metric = metricService.getMetricById(id);
+        return ResponseEntity.ok(metric);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}")
+    public ResponseEntity<MetricResponse> updateMetric(
+            @PathVariable Long id,
+            @Valid @RequestBody MetricRequest metricRequest) {
+        MetricResponse updatedMetric = metricService.updateMetric(id, metricRequest);
+        return ResponseEntity.ok(updatedMetric);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteMetric(@PathVariable Long id) {
+        metricService.deleteMetric(id);
+        return new ResponseEntity<>("Metric deleted successfully", HttpStatus.OK);
+    }
+}

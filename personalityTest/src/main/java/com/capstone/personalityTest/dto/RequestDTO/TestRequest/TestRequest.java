@@ -12,6 +12,7 @@ import java.util.List;
 public class TestRequest {
     private String title;
     private String description;
-//  private List<SectionRequest> sections;
+    private String versionName;
+    private Long baseTestId;
 }
 

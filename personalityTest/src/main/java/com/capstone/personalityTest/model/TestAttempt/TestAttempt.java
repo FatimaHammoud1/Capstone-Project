@@ -1,6 +1,6 @@
 package com.capstone.personalityTest.model.TestAttempt;
 
-import com.capstone.personalityTest.model.PersonalityResult;
+import com.capstone.personalityTest.model.EvaluationResult;
 import com.capstone.personalityTest.model.Test.Test;
 import com.capstone.personalityTest.model.TestAttempt.Answer.Answer;
 import com.capstone.personalityTest.model.UserInfo;
@@ -34,7 +34,7 @@ public class TestAttempt {
     private List<Answer> answers = new ArrayList<>();
 
     @Embedded
-    private PersonalityResult personalityResult;
+    private EvaluationResult evaluationResult;
 
     private boolean finalized = false;
 }

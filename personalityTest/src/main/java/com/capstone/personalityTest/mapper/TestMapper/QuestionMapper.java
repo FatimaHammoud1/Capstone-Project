@@ -4,7 +4,6 @@ package com.capstone.personalityTest.mapper.TestMapper;
 import com.capstone.personalityTest.dto.RequestDTO.TestRequest.QuestionRequest;
 import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.QuestionResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.SubQuestionResponse;
-import com.capstone.personalityTest.model.Enum.PersonalityTrait;
 import com.capstone.personalityTest.model.Test.Question;
 import com.capstone.personalityTest.model.Test.SubQuestion;
 import org.mapstruct.*;
@@ -29,11 +28,14 @@ public interface QuestionMapper {
     @AfterMapping
     default void groupSubQuestions(Question question, @MappingTarget QuestionResponse response) {
         if (question.getSubQuestions() != null && !question.getSubQuestions().isEmpty()) {
-            Map<PersonalityTrait, List<SubQuestionResponse>> grouped =
+            Map<String, List<SubQuestionResponse>> grouped =
                     question.getSubQuestions().stream()
                             .map(subQuestion -> SubQuestionMapper.INSTANCE.toDto(subQuestion))
-                            .filter(sq -> sq.getPersonalityTrait() != null)
-                            .collect(Collectors.groupingBy(SubQuestionResponse::getPersonalityTrait));
+                            .filter(sq -> sq.getMetric() != null)
+                            .collect(Collectors.groupingBy(
+                                    sq -> sq.getMetric().getCode()
+                            ));
+
             response.setGroupedSubQuestions(grouped);
         }
     }

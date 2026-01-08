@@ -4,7 +4,7 @@ import com.capstone.personalityTest.dto.RequestDTO.TestAttemptRequest.AnswerRequ
 import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.AnswerResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptWithAnswersResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptResponse;
-import com.capstone.personalityTest.model.PersonalityResult;
+import com.capstone.personalityTest.model.EvaluationResult;
 import com.capstone.personalityTest.service.TestAttemptService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @CrossOrigin
@@ -38,12 +39,46 @@ public class TestAttemptController {
         return ResponseEntity.ok("Answers submitted successfully");
     }
 
+
     @PatchMapping("/{attemptId}/finalize")
-    public ResponseEntity<PersonalityResult> finalizeAttempt(@PathVariable Long attemptId) {
-        PersonalityResult result = testAttemptService.finalizeAttempt(attemptId);
+    public ResponseEntity<EvaluationResult> finalizeAttempt(@PathVariable Long attemptId) {
+        EvaluationResult result = testAttemptService.finalizeAttempt(attemptId);
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * Manually trigger AI analysis for a finalized test attempt.
+     * This endpoint should be called AFTER finalizing the test.
+     * 
+     * Flow:
+     * 1. Student completes test
+     * 2. Call PATCH /api/test-attempts/{attemptId}/finalize (calculates personality code)
+     * 3. Call POST /api/test-attempts/{attemptId}/analyze (triggers AI analysis)
+     * 4. Poll GET /api/ai-results/attempt/{attemptId} to check if results are ready
+     * 
+     * @param attemptId ID of the finalized test attempt
+     * @return Success message
+     */
+    @PostMapping("/{attemptId}/analyze")
+    public ResponseEntity<?> triggerAIAnalysis(@PathVariable Long attemptId) {
+        try {
+            testAttemptService.triggerAIAnalysis(attemptId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "AI analysis triggered successfully. Results will be available shortly.",
+                "attemptId", attemptId
+            ));
+            
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "error", e.getMessage()));
+                
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of("success", false, "error", "Failed to trigger AI analysis: " + e.getMessage()));
+        }
+    }
 
 
     @PreAuthorize("hasRole('ADMIN')")

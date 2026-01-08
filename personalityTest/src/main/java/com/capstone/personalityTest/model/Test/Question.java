@@ -33,4 +33,19 @@ public class Question {
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SubQuestion> subQuestions = new ArrayList<>();
+
+    public Question copy() {
+        Question q = new Question();
+        q.setQuestionText(this.questionText);
+        q.setAnswerType(this.answerType);
+        q.setTargetGender(this.targetGender);
+
+        for (SubQuestion sq : this.subQuestions) {
+            SubQuestion newSq = sq.copy();
+            newSq.setQuestion(q);              // 🔴 parent reference
+            q.getSubQuestions().add(newSq);
+        }
+
+        return q;
+    }
 }

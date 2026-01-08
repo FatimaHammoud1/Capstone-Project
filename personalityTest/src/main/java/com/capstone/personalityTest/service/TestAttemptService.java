@@ -11,10 +11,10 @@ import com.capstone.personalityTest.mapper.TestMapper.QuestionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SectionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.SubQuestionMapper;
 import com.capstone.personalityTest.model.Enum.AnswerType;
-import com.capstone.personalityTest.model.Enum.PersonalityTrait;
 import com.capstone.personalityTest.model.Enum.TargetGender;
 import com.capstone.personalityTest.model.Enum.TestStatus;
-import com.capstone.personalityTest.model.PersonalityResult;
+import com.capstone.personalityTest.model.EvaluationResult;
+import com.capstone.personalityTest.model.Test.Metric;
 import com.capstone.personalityTest.model.Test.Question;
 import com.capstone.personalityTest.model.Test.Section;
 import com.capstone.personalityTest.model.Test.SubQuestion;
@@ -27,6 +27,7 @@ import com.capstone.personalityTest.model.TestAttempt.TestAttempt;
 import com.capstone.personalityTest.model.UserInfo;
 import com.capstone.personalityTest.repository.AnswerRepository;
 import com.capstone.personalityTest.repository.TestAttemptRepository;
+import com.capstone.personalityTest.repository.TestRepo.MetricRepository;
 import com.capstone.personalityTest.repository.TestRepo.QuestionRepository;
 import com.capstone.personalityTest.repository.TestRepo.SubQuestionRepository;
 import com.capstone.personalityTest.repository.TestRepo.TestRepository;
@@ -53,6 +54,9 @@ public class TestAttemptService {
     private final AnswerRepository answerRepository;
     private final TestAttemptMapper testAttemptMapper;
     private final AnswerMapper answerMapper;
+    private final AIIntegrationService aiIntegrationService;
+    
+    private final MetricRepository metricRepository;
 
 
     public TestAttemptResponse startTest(Long testId, Long studentId) {
@@ -128,20 +132,43 @@ public class TestAttemptService {
 
 
 
-            Question question = questionRepository.findById(answers.getQuestionId())
-                    .orElseThrow(() -> new EntityNotFoundException("Question not found"));
+        Question question = questionRepository.findById(answers.getQuestionId())
+                .orElseThrow(() -> new EntityNotFoundException("Question not found"));
 
-            SubQuestion subQuestion = null;
-            if (answers.getSubQuestionId() != null) {
-                subQuestion = subQuestionRepository.findById(answers.getSubQuestionId())
-                        .orElseThrow(() -> new EntityNotFoundException("SubQuestion not found"));
-            }
 
-            Optional<Answer> existing = answerRepository.findByAttemptAndQuestionAndSubQuestion(
-                    attemptId, answers.getQuestionId(), answers.getSubQuestionId());
+        SubQuestion subQuestion = null;
+        if (answers.getSubQuestionId() != null) {
+            // Validate relationship in single query
+            subQuestion = subQuestionRepository.findByIdAndQuestionId(
+                            answers.getSubQuestionId(),
+                            answers.getQuestionId()
+                    )
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            String.format(
+                                    "SubQuestion %d does not belong to Question %d or does not exist",
+                                    answers.getSubQuestionId(),
+                                    answers.getQuestionId()
+                            )
+                    ));
+        }
 
-            Answer answer;
-            if (existing.isPresent()) {
+        // Validate answer type
+        if (!question.getAnswerType().equals(answers.getAnswerType())) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "Answer type mismatch: Question %d expects %s but got %s",
+                            question.getId(),
+                            question.getAnswerType(),
+                            answers.getAnswerType()
+                    )
+            );
+        }
+
+        Optional<Answer> existing = answerRepository.findByAttemptAndQuestionAndSubQuestion(
+                attemptId, answers.getQuestionId(), answers.getSubQuestionId());
+
+        Answer answer;
+        if (existing.isPresent()) {
                 answer = existing.get(); // update existing
                 if (answer instanceof OpenAnswer && answers.getOpenValues() != null) {
                     ((OpenAnswer) answer).setValues(new ArrayList<>(answers.getOpenValues()));
@@ -150,9 +177,9 @@ public class TestAttemptService {
                 } else if (answer instanceof ScaleAnswer && answers.getScaleValue() != null) {
                     ((ScaleAnswer) answer).setScaleValue(answers.getScaleValue());
                 }
-            } else {
+        } else {
                 answer = getAnswer(answers); // create new
-            }
+        }
 
             // Set common fields
             answer.setQuestion(question);
@@ -172,7 +199,7 @@ public class TestAttemptService {
     }
 
     @Transactional
-    public PersonalityResult finalizeAttempt(Long attemptId) {
+    public EvaluationResult finalizeAttempt(Long attemptId) {
         TestAttempt attempt = testAttemptRepository.findById(attemptId)
                 .orElseThrow(() -> new EntityNotFoundException("TestAttempt not found"));
 
@@ -220,38 +247,67 @@ public class TestAttemptService {
 
 
 
-        // calculate final result
-        PersonalityResult result = calculatePersonalityResult(attempt.getAnswers());
-        attempt.setPersonalityResult(result);
-        attempt.setFinalized(true); // lock it
+        // Calculate final result (personality code + metric scores)
+        EvaluationResult result = calculateResult(attempt.getAnswers(), test);
+        attempt.setEvaluationResult(result);
+        attempt.setFinalized(true); // Lock the test attempt
 
+        // Save to database
         testAttemptRepository.save(attempt);
+        
+        // Note: AI analysis is now triggered manually via separate endpoint
+        // See: POST /api/test-attempts/{attemptId}/analyze
+        
         return result;
     }
 
     //helper function for submitAnswer to calculate the results
-    private PersonalityResult calculatePersonalityResult(List<Answer> answers) {
+    private EvaluationResult calculateResult(List<Answer> answers, Test test) {
 
-        Map<PersonalityTrait, Integer> scores = new EnumMap<>(PersonalityTrait.class);
-        for (PersonalityTrait trait : PersonalityTrait.values()) {
-            scores.put(trait, 0);
+        Map<String, Integer> scores = new HashMap<>();
+
+        // Initialize all metrics with 0 from the BaseTest
+        if (test.getBaseTest() != null) {
+            List<Metric> metrics = metricRepository.findByBaseTestId(test.getBaseTest().getId());
+            for (Metric metric : metrics) {
+                scores.put(metric.getCode(), 0);
+            }
         }
+
         for (Answer answer : answers) {
-            if (answer instanceof CheckBoxAnswer cb && cb.getSubQuestion() != null && Boolean.TRUE.equals(cb.getBinaryValue())) {
-                PersonalityTrait trait = cb.getSubQuestion().getPersonalityTrait();
-                scores.merge(trait, 1, Integer::sum);
+
+            if (answer.getSubQuestion() == null) continue;
+
+            String metricCode = answer.getSubQuestion()
+                    .getMetric()
+                    .getCode();
+
+            if (metricCode == null) continue;
+
+            // CHECKBOX → +1
+            if (answer instanceof CheckBoxAnswer cb &&
+                    Boolean.TRUE.equals(cb.getBinaryValue())) {
+
+                scores.merge(metricCode, 1, Integer::sum);
             }
-            else if (answer instanceof ScaleAnswer sa && sa.getSubQuestion() != null && sa.getScaleValue() != null) {
-                PersonalityTrait trait = sa.getSubQuestion().getPersonalityTrait();
-                scores.merge(trait, sa.getScaleValue(), Integer::sum);
+
+            // SCALE → +scaleValue
+            else if (answer instanceof ScaleAnswer sa &&
+                    sa.getScaleValue() != null) {
+
+                scores.merge(metricCode, sa.getScaleValue(), Integer::sum);
             }
-            // OPEN answers are ignored for scoring
+
+            // OPEN answers → ignored
         }
-        PersonalityResult result = new PersonalityResult();
-        result.setTraitScores(scores);
-        result.calculateTopTraits();
+
+        EvaluationResult result = new EvaluationResult();
+        result.setMetricScores(scores);
+        result.calculateTopMetrics(); // renamed method
+
         return result;
     }
+
 
 
     private Answer getAnswer(AnswerRequest req) {
@@ -337,6 +393,47 @@ public class TestAttemptService {
     public List<AnswerResponse> getAllAnswersByTestAttemptId(Long testAttemptId) {
         List<Answer> answers = answerRepository.findByTestAttemptId(testAttemptId);
         return answerMapper.toDtoList(answers);
+    }
+
+    /**
+     * Manually trigger AI analysis for a finalized test attempt.
+     * This method should be called AFTER the test has been finalized.
+     * 
+     * Validates:
+     * - Test attempt exists
+     * - Test attempt is finalized
+     * - AI analysis hasn't already been run
+     * 
+     * Then triggers async AI analysis via AIIntegrationService.
+     * 
+     * @param attemptId ID of the finalized test attempt
+     * @throws IllegalStateException if test is not finalized or AI already run
+     */
+    @Transactional
+    public void triggerAIAnalysis(Long attemptId) {
+        // Fetch test attempt
+        TestAttempt attempt = testAttemptRepository.findById(attemptId)
+            .orElseThrow(() -> new EntityNotFoundException("Test attempt not found: " + attemptId));
+        
+        // Validate test is finalized
+        if (!attempt.isFinalized()) {
+            throw new IllegalStateException(
+                "Cannot trigger AI analysis: Test attempt must be finalized first. " +
+                "Please call PATCH /api/test-attempts/" + attemptId + "/finalize first."
+            );
+        }
+        
+        // Check if AI analysis already exists
+//        if (aiIntegrationService.getAIResultByAttemptId(attemptId) != null) {
+//            throw new IllegalStateException(
+//                "AI analysis already exists for this test attempt. " +
+//                "Results can be retrieved at GET /api/ai-results/attempt/" + attemptId
+//            );
+//        }
+        
+        // Trigger AI analysis asynchronously
+        // Results saved to ai_results table
+        aiIntegrationService.triggerCompleteAIAnalysis(attempt.getId());
     }
 
 }

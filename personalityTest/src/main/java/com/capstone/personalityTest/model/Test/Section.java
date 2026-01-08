@@ -29,4 +29,17 @@ public class Section {
 
     @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Question> questions = new ArrayList<>();
+
+    public Section copy() {
+        Section s = new Section();
+        s.setTitle(this.title);
+
+        for (Question q : this.questions) {
+            Question newQ = q.copy();
+            newQ.setSection(s);                // 🔴 parent reference
+            s.getQuestions().add(newQ);
+        }
+
+        return s;
+    }
 }
