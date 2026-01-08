@@ -38,4 +38,9 @@ public interface CareerDocumentRepository extends JpaRepository<CareerDocument, 
      * Count documents by file type
      */
     long countByFileType(String fileType);
+
+    /**
+     * Check if a document with the original filename already exists
+     */
+    boolean existsByOriginalFilename(String originalFilename);
 }

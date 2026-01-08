@@ -172,7 +172,7 @@ async def complete_analysis(request: CompleteAIRequest):
             careerRecommendations=final_answer.get("rag_output", ""),
             learningPath=final_answer.get("api_results", ""),
             jobMatches=json.dumps(final_answer.get("job_answer", {}), ensure_ascii=False),
-            emailSent="successfully" in final_answer.get("email_status", "").lower()
+            emailSent=any(x in final_answer.get("email_status", "").lower() for x in ["success", "sent", "تم"])
         )
         
         return response

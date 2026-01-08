@@ -73,10 +73,10 @@ public class AIIntegrationService {
                     .orElseThrow(() -> new EntityNotFoundException("Test attempt not found: " + attemptId));
 
             // Check if AI result already exists (avoid duplicate analysis)
-            if (aiResultRepo.existsByTestAttemptId(attempt.getId())) {
-                log.warn("⚠️  AI result already exists for attempt: {}", attempt.getId());
-                return;
-            }
+//            if (aiResultRepo.existsByTestAttemptId(attempt.getId())) {
+//                log.warn("⚠️  AI result already exists for attempt: {}", attempt.getId());
+//                return;
+//            }
 
             // Extract personality code from evaluation result
             // Format: "R-I-A" (top 3 metrics)

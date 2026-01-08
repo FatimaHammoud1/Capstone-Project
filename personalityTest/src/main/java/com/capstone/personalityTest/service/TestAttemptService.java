@@ -132,20 +132,43 @@ public class TestAttemptService {
 
 
 
-            Question question = questionRepository.findById(answers.getQuestionId())
-                    .orElseThrow(() -> new EntityNotFoundException("Question not found"));
+        Question question = questionRepository.findById(answers.getQuestionId())
+                .orElseThrow(() -> new EntityNotFoundException("Question not found"));
 
-            SubQuestion subQuestion = null;
-            if (answers.getSubQuestionId() != null) {
-                subQuestion = subQuestionRepository.findById(answers.getSubQuestionId())
-                        .orElseThrow(() -> new EntityNotFoundException("SubQuestion not found"));
-            }
 
-            Optional<Answer> existing = answerRepository.findByAttemptAndQuestionAndSubQuestion(
-                    attemptId, answers.getQuestionId(), answers.getSubQuestionId());
+        SubQuestion subQuestion = null;
+        if (answers.getSubQuestionId() != null) {
+            // Validate relationship in single query
+            subQuestion = subQuestionRepository.findByIdAndQuestionId(
+                            answers.getSubQuestionId(),
+                            answers.getQuestionId()
+                    )
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            String.format(
+                                    "SubQuestion %d does not belong to Question %d or does not exist",
+                                    answers.getSubQuestionId(),
+                                    answers.getQuestionId()
+                            )
+                    ));
+        }
 
-            Answer answer;
-            if (existing.isPresent()) {
+        // Validate answer type
+        if (!question.getAnswerType().equals(answers.getAnswerType())) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "Answer type mismatch: Question %d expects %s but got %s",
+                            question.getId(),
+                            question.getAnswerType(),
+                            answers.getAnswerType()
+                    )
+            );
+        }
+
+        Optional<Answer> existing = answerRepository.findByAttemptAndQuestionAndSubQuestion(
+                attemptId, answers.getQuestionId(), answers.getSubQuestionId());
+
+        Answer answer;
+        if (existing.isPresent()) {
                 answer = existing.get(); // update existing
                 if (answer instanceof OpenAnswer && answers.getOpenValues() != null) {
                     ((OpenAnswer) answer).setValues(new ArrayList<>(answers.getOpenValues()));
@@ -154,9 +177,9 @@ public class TestAttemptService {
                 } else if (answer instanceof ScaleAnswer && answers.getScaleValue() != null) {
                     ((ScaleAnswer) answer).setScaleValue(answers.getScaleValue());
                 }
-            } else {
+        } else {
                 answer = getAnswer(answers); // create new
-            }
+        }
 
             // Set common fields
             answer.setQuestion(question);
@@ -401,12 +424,12 @@ public class TestAttemptService {
         }
         
         // Check if AI analysis already exists
-        if (aiIntegrationService.getAIResultByAttemptId(attemptId) != null) {
-            throw new IllegalStateException(
-                "AI analysis already exists for this test attempt. " +
-                "Results can be retrieved at GET /api/ai-results/attempt/" + attemptId
-            );
-        }
+//        if (aiIntegrationService.getAIResultByAttemptId(attemptId) != null) {
+//            throw new IllegalStateException(
+//                "AI analysis already exists for this test attempt. " +
+//                "Results can be retrieved at GET /api/ai-results/attempt/" + attemptId
+//            );
+//        }
         
         // Trigger AI analysis asynchronously
         // Results saved to ai_results table

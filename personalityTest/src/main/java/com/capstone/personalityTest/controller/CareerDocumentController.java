@@ -2,8 +2,10 @@ package com.capstone.personalityTest.controller;
 
 import com.capstone.personalityTest.dto.ResponseDTO.CareerDocumentResponse.CareerDocumentResponse;
 import com.capstone.personalityTest.service.CareerDocumentService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -36,8 +38,10 @@ public class CareerDocumentController {
      * @param authentication Current authenticated user
      * @return Uploaded document metadata as DTO
      */
-    
-    @PostMapping("/upload")
+
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload career guidance document",
+            description = "Upload PDF documents for RAG system")
     public ResponseEntity<?> uploadDocument(
         @RequestParam("file") MultipartFile file,
         @RequestParam(required = false) Long baseTestId,

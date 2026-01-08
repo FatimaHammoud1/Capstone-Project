@@ -27,6 +27,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import json
 import requests
+import time
 
 load_dotenv()
 
@@ -44,7 +45,8 @@ def get_deepseek():
     llm_model = ChatDeepSeek(
         model="deepseek-chat",
         max_tokens=2000,
-        timeout=60,
+        timeout=120,  # Increased timeout
+        max_retries=3,  # Add retries
         api_key=deepseek_key,
         base_url=url
     )
@@ -218,6 +220,9 @@ def rag_node(state: AppState):
         
         save_index_metadata(current_files)
         print(f"✅ Indexed {my_rag_collection.count()} chunks")
+    else:
+        print(f"✅ Documents unchanged - using existing index")
+        print(f"   Indexed chunks: {my_rag_collection.count()}")
     
     # Query RAG
     personality_code = state.get("code", "")
@@ -225,10 +230,9 @@ def rag_node(state: AppState):
         return {"rag_output": "رمز الشخصية غير متوفر."}
     
     try:
-        query = f"""بناءً على رمز الشخصية {personality_code} حسب نظرية هولند:
-1. اشرح سمات الشخصية بالتفصيل
-2. قدم توصيات مهنية مفصلة
-3. نظم الإجابة تحت عنوانين: "سمات الشخصية" و "التوصيات المهنية"
+        query = f"""رمز الشخصية {personality_code} حسب نظرية هولند:
+1. اشرح سمات الشخصية
+2. التوصيات المهنية المناسبة
 """
         
         question_vector = embed_texts([query])
@@ -244,36 +248,136 @@ def rag_node(state: AppState):
         return {"rag_output": f"حدث خطأ: {str(e)}"}
 
 
-def learn_agent(state: AppState):
+def learn_agent_direct(state: AppState):
     """
-    Learning path agent using DeepSeek.
+    Learning path agent - DIRECT TOOL EXECUTION (No LLM agent).
+    This is more reliable and faster than using an agent.
     """
-    print("\n📚 Learning Path Agent")
+    print("\n📚 Learning Path Agent (Direct Mode)")
     
     code = state.get("code", "")
     
-    # Create agent with tools
-    agent = create_agent(
-        model=llm,
-        tools=[universities_tool, courses_tool],
-        system_prompt=f"""
-أنت خبير إرشاد أكاديمي متخصص في الأنظمة التعليمية.
+    try:
+        # Call tools directly without LLM agent
+        universities = universities_tool.invoke(code)
+        courses = courses_tool.invoke(code)
+        
+        # Format response
+        api_results = f"""
+## 📚 الخطة التعليمية لرمز الشخصية {code}
 
-مهمتك: تقديم خطة تعليمية شاملة لرمز الشخصية {code}.
+### 🎓 الجامعات الموصى بها:
+{universities}
 
-التعليمات:
-1. استخدم أدوات (Universities Tool) وَ (Courses Tool) للحصول على معلومات دقيقة.
-2. قدم قائمة بـ 3 جامعات على الأقل، مع تحديد الكلية/التخصص المناسب لكل جامعة ورابط الموقع الرسمي.
-3. قدم قائمة بـ 3 دورات تدريبية عبر الإنترنت على الأقل، مع ذكر المنصة والرابط المباشر.
-4. يجب أن تكون الإجابة كاملة باللغة العربية، منظمة بوضوح، وتحتوي على روابط فعلية.
-5. اربط بين السمات الشخصية (S, C, I, etc.) وبين سبب اختيارك لهذه التخصصات.
+### 💻 الدورات التدريبية المقترحة:
+{courses}
+
+### 🔗 ملاحظة:
+تم اختيار هذه التوصيات بناءً على تحليل سمات شخصيتك. يمكنك زيارة المواقع للتعرف على التفاصيل والتسجيل.
 """
-    )
+        
+        print("✅ Learning path generated successfully")
+        return {"api_results": api_results}
+        
+    except Exception as e:
+        print(f"❌ Error in learn_agent_direct: {e}")
+        # Fallback response
+        return {
+            "api_results": f"""
+## 📚 الخطة التعليمية لرمز الشخصية {code}
+
+### 🎓 الجامعات الموصى بها في لبنان:
+1. الجامعة اللبنانية (LU) - https://www.ul.edu.lb
+2. الجامعة الأميركية في بيروت (AUB) - https://www.aub.edu.lb
+3. جامعة القديس يوسف (USJ) - https://www.usj.edu.lb
+
+### 💻 الدورات التدريبية المقترحة:
+1. Google Career Certificates - https://www.coursera.org/google-career-certificates
+2. edX Professional Programs - https://www.edx.org
+3. LinkedIn Learning - https://www.linkedin.com/learning
+"""
+        }
+
+
+def learn_agent_with_retry(state: AppState):
+    """
+    Learning path agent with LLM and retry logic (BACKUP - if direct mode fails).
+    """
+    print("\n📚 Learning Path Agent (LLM Mode with Retry)")
     
-    result = agent.invoke({"messages": f"توصيات تعليمية لرمز {code}"})
-    api_results = result["messages"][-1].content
+    code = state.get("code", "")
+    max_retries = 2
+    retry_delay = 2
     
-    return {"api_results": api_results}
+    for attempt in range(max_retries):
+        try:
+            # Create agent with minimal prompt
+            agent = create_agent(
+                model=llm,
+                tools=[universities_tool, courses_tool],
+                system_prompt=f"""
+أنت خبير إرشاد أكاديمي.
+
+قدم لرمز {code}:
+1. 3 جامعات مع روابط
+2. 3 دورات مع روابط
+
+استخدم الأدوات المتاحة. كن مختصراً.
+"""
+            )
+            
+            result = agent.invoke({"messages": f"توصيات لرمز {code}"})
+            api_results = result["messages"][-1].content
+            
+            print(f"✅ Learning path generated (attempt {attempt + 1})")
+            return {"api_results": api_results}
+            
+        except Exception as e:
+            print(f"⚠️  Attempt {attempt + 1}/{max_retries} failed: {str(e)}")
+            
+            if attempt < max_retries - 1:
+                wait_time = retry_delay * (2 ** attempt)
+                print(f"   Retrying in {wait_time} seconds...")
+                time.sleep(wait_time)
+            else:
+                print("❌ All attempts failed, falling back to direct mode")
+                return learn_agent_direct(state)
+
+
+def learn_agent_safe(state: AppState):
+    """
+    SAFE WRAPPER for learn agent.
+    Try direct mode first (fastest), fallback to LLM mode if needed.
+    """
+    try:
+        # Try direct mode first (most reliable)
+        return learn_agent_direct(state)
+    except Exception as e:
+        print(f"❌ Direct mode failed: {e}")
+        print("🔄 Falling back to LLM mode...")
+        try:
+            return learn_agent_with_retry(state)
+        except Exception as e2:
+            print(f"❌ LLM mode also failed: {e2}")
+            # Ultimate fallback - static response
+            code = state.get("code", "")
+            return {
+                "api_results": f"""
+## 📚 الخطة التعليمية لرمز الشخصية {code}
+
+### 🎓 الجامعات الموصى بها:
+1. الجامعة اللبنانية (LU) - https://www.ul.edu.lb
+2. الجامعة الأميركية في بيروت (AUB) - https://www.aub.edu.lb
+3. جامعة القديس يوسف (USJ) - https://www.usj.edu.lb
+
+### 💻 الدورات التدريبية:
+1. Coursera - https://www.coursera.org
+2. edX - https://www.edx.org
+3. LinkedIn Learning - https://www.linkedin.com/learning
+
+*ملاحظة: حدث خطأ في التوصيات المخصصة. هذه قائمة عامة.*
+"""
+            }
 
 
 def node_fetch_jobs(state: AppState):
@@ -284,11 +388,15 @@ def node_fetch_jobs(state: AppState):
     
     try:
         url = "https://jobicy.com/api/v2/remote-jobs?count=10&geo=canada&industry=dev"
-        r = requests.get(url, timeout=20)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+        r = requests.get(url, headers=headers, timeout=20)
         r.raise_for_status()
         data = r.json()
         return {"job_answer": {"jobs": data.get("jobs", [])[:5]}}
     except Exception as e:
+        print(f"❌ Job fetch failed: {e}")
         return {"job_answer": {"error": str(e), "jobs": []}}
 
 
@@ -314,47 +422,64 @@ def email_agent(state: AppState):
     jobs_text = ""
     job_list = jobs.get("jobs", [])
     if job_list:
-        jobs_text = "\n\n## 💼 فرص العمل:\n\n"
-        for i, job in enumerate(job_list[:5], 1):
-            jobs_text += f"{i}. {job.get('title', 'N/A')} - {job.get('company', 'N/A')}\n"
+        jobs_text = "<h3>💼 فرص العمل المتاحة:</h3><ul>"
+        for job in job_list[:5]:
+            jobs_text += f"<li><strong>{job.get('title', 'N/A')}</strong> - {job.get('company', 'N/A')}</li>"
+        jobs_text += "</ul>"
     
-    # System prompt
+    # Minimal system prompt - NO MARKDOWN, HTML ONLY
     system_prompt = f"""
-أنت مساعد ذكي رائد في الإرشاد المهني والأكاديمي.
+أنت مساعد إرشاد مهني.
 
-مهمتك: صياغة بريد إلكتروني ملهم وشامل للطالب: "{student_name}".
+أرسل بريد لـ "{student_name}" عن رمز {code}.
 
-المحتوى المطلوب تضمينه:
-1. مقدمة ترحيبية مهنية.
-2. تحليل معمق لرمز الشخصية: {code}.
-3. التوصيات المهنية (من RAG): {rag}
-4. الخطة التعليمية (الجامعات والدورات مع الروابط): {learning}
-5. فرص العمل المتاحة: {jobs_text if jobs_text else "سيتم تحديث فرص العمل قريباً."}
+التعليمات المهمة جداً:
+- لا تستخدم Markdown أبداً (ممنوع ##، **، *، _)
+- استخدم HTML فقط: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <br>
+- لا تكتب أي رموز مثل ### أو ** أو ***
 
-التعليمات الهامة:
-- يجب أن يكون البريد بالكامل باللغة العربية.
-- تأكد من ظهور روابط المواقع (URLs) بشكل واضح وقابل للضغط.
-- استخدم تنسيق Markdown لتحسين المظهر (عناوين، قوائم، نقاط).
-- جهّز JSON بالصيغة التالية:
-  {{
-    "recipient_email": "{recipient_email}",
-    "subject": "نتائج تحليلك المهني والأكاديمي الشامل - مشروع Capstone",
-    "body": "..."
-  }}
-- بعد تجهيز الـ JSON، استدعِ أداة (send_email_tool) فوراً لإرسال البريد.
+المحتوى:
+1. مقدمة بسيطة
+2. تحليل الشخصية: {rag[:400]}
+3. الجامعات والدورات: {learning[:400]}
+4. الوظائف: {jobs_text if jobs_text else "<p>سيتم تحديث فرص العمل قريباً.</p>"}
+
+أمثلة التنسيق الصحيح:
+- عنوان كبير: <h2>العنوان هنا</h2>
+- عنوان صغير: <h3>عنوان فرعي</h3>
+- فقرة: <p>النص هنا</p>
+- قائمة: <ul><li>البند الأول</li><li>البند الثاني</li></ul>
+- نص غامق: <strong>نص مهم</strong>
+- سطر جديد: <br>
+
+JSON فقط:
+{{
+  "recipient_email": "{recipient_email}",
+  "subject": "نتائج تحليلك المهني والأكاديمي الشامل",
+  "body": "...HTML هنا بدون أي Markdown..."
+}}
+
+استدع send_email_tool فوراً.
+
+هام جداً: إذا تم الإرسال بنجاح، يجب أن تحتوي إجابتك النهائية على كلمة "SUCCESS" (بالإنجليزية) بالإضافة لتأكيدك بالعربية.
 """
     
-    # Create agent
-    agent = create_agent(
-        model=llm,
-        tools=[send_email_tool],
-        system_prompt=system_prompt
-    )
-    
-    result = agent.invoke({"messages": "أنشئ وأرسل البريد الآن"})
-    final_message = result["messages"][-1].content
-    
-    return {"email_status": final_message}
+    try:
+        # Create agent
+        agent = create_agent(
+            model=llm,
+            tools=[send_email_tool],
+            system_prompt=system_prompt
+        )
+        
+        result = agent.invoke({"messages": "أرسل البريد"})
+        final_message = result["messages"][-1].content
+        
+        return {"email_status": final_message}
+        
+    except Exception as e:
+        print(f"❌ Email agent failed: {e}")
+        return {"email_status": f"Error: {str(e)}"}
 
 
 def final_format(state: AppState):
@@ -378,7 +503,7 @@ graph = StateGraph(AppState)
 
 # Add only needed nodes
 graph.add_node("rag", rag_node)
-graph.add_node("learn", learn_agent)
+graph.add_node("learn", learn_agent_safe)  # Using safe wrapper
 graph.add_node("fetch_jobs", node_fetch_jobs)
 graph.add_node("email", email_agent)
 graph.add_node("final", final_format)
@@ -401,3 +526,5 @@ print("✅ LangGraph workflow loaded")
 print("   Flow: RAG → Learning → Jobs → Email → Final")
 print("   LLM: DeepSeek")
 print("   Tools: universities_tool, courses_tool, send_email_tool")
+print("   Mode: Direct tool execution (safe & fast)")
+

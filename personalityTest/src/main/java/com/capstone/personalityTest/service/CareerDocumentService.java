@@ -61,6 +61,12 @@ public class CareerDocumentService {
         
         log.info("📤 Uploading document: {}", file.getOriginalFilename());
 
+        // Check if file with same name already exists
+        if (documentRepository.existsByOriginalFilename(file.getOriginalFilename())) {
+            log.warn("⚠️ Duplicate file upload attempted: {}", file.getOriginalFilename());
+            throw new IllegalArgumentException("File with name '" + file.getOriginalFilename() + "' already exists");
+        }
+
         // Validate file
         validateFile(file);
 

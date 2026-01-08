@@ -62,6 +62,8 @@ public class UserController {
         JwtResponse response = service.authenticate(authRequest);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/refresh")
     public ResponseEntity<JwtResponse> refreshAccessToken(@RequestBody Map<String, String> request) {
         String refreshTokenStr = request.get("refreshToken");
 
