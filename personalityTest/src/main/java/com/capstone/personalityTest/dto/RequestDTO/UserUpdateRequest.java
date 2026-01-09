@@ -10,8 +10,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserUpdateRequest {
 
-    @NotBlank(message = "Name is required")
     private String name;
-    @NotBlank(message = "Password is required")
+    
     private String password;
+
+    private com.capstone.personalityTest.model.Enum.TargetGender gender;
 }

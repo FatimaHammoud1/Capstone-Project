@@ -17,6 +17,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -41,12 +42,13 @@ public class SecurityConfig {
     //loads user information (username, password, roles) from DB for authentication.
     private final @Lazy UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
-
+    AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     // Constructor injection for required dependencies
-    public SecurityConfig(@Lazy JwtAuthFilter jwtAuthFilter ,@Lazy UserDetailsService userDetailsService , PasswordEncoder passwordEncoder) {
+    public SecurityConfig(@Lazy JwtAuthFilter jwtAuthFilter ,@Lazy UserDetailsService userDetailsService , PasswordEncoder passwordEncoder, OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
+        this.oAuth2AuthenticationSuccessHandler = oAuth2AuthenticationSuccessHandler;
     }
 
 
@@ -56,6 +58,7 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
                 .cors(Customizer.withDefaults())
                 // Disable CSRF (not needed for stateless JWT)
@@ -65,10 +68,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/auth/welcome", "/auth/signUp", "/auth/signIn" ,"/swagger-ui/**",
-                                "/v3/api-docs/**").permitAll()
+                                "/v3/api-docs/**", "/oauth2/**" ,"/login/oauth2/**" ).permitAll()
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
+                ) .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2AuthenticationSuccessHandler) // You'll create this
                 )
 
                 // Stateless session (required for JWT) , Stateless → Spring Security does not store any session in memory.Every request must provide all the information needed

@@ -137,7 +137,11 @@ public class UserInfoService implements UserDetailsService {
         if(optionalUser.isPresent()){
             UserInfo user = optionalUser.get();
             userMapper.updateUserFromDTO(userUpdateRequest, user);
-            user.setPassword(encoder.encode(userUpdateRequest.getPassword()));
+            
+            // Only update password if a new one is provided
+            if (userUpdateRequest.getPassword() != null && !userUpdateRequest.getPassword().isBlank()) {
+                user.setPassword(encoder.encode(userUpdateRequest.getPassword()));
+            }
             userRepo.save(user);
             return true;
         }
