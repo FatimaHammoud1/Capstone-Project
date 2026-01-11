@@ -3,14 +3,17 @@ package com.capstone.personalityTest.service;
 import com.capstone.personalityTest.model.RefreshToken;
 import com.capstone.personalityTest.model.UserInfo;
 import com.capstone.personalityTest.repository.RefreshTokenRepository;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Service
+@Transactional
 public class RefreshTokenService {
 
     @Value("${app.refreshTokenDurationDays:1}")

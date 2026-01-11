@@ -23,6 +23,6 @@ public interface SubQuestionMapper {
     SubQuestionResponse toDto(SubQuestion subQuestion);
     List<SubQuestionResponse> toDtoList(List<SubQuestion> subQuestions);
 
-    @Mapping(source = "metricId", target = "metric.id")
+    @Mapping(target = "metric", ignore = true)
     void updateSubQuestionFromDto(SubQuestionRequest request, @MappingTarget SubQuestion subQuestion);
 }

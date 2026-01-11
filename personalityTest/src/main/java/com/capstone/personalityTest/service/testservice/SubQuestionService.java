@@ -5,9 +5,11 @@ import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.TestResponse;
 import com.capstone.personalityTest.mapper.TestMapper.SubQuestionMapper;
 import com.capstone.personalityTest.mapper.TestMapper.TestMapper;
 import com.capstone.personalityTest.model.Enum.TestStatus;
+import com.capstone.personalityTest.model.Test.Metric;
 import com.capstone.personalityTest.model.Test.Question;
 import com.capstone.personalityTest.model.Test.SubQuestion;
 import com.capstone.personalityTest.model.Test.Test;
+import com.capstone.personalityTest.repository.TestRepo.MetricRepository;
 import com.capstone.personalityTest.repository.TestRepo.QuestionRepository;
 import com.capstone.personalityTest.repository.TestRepo.SubQuestionRepository;
 import com.capstone.personalityTest.repository.TestRepo.TestRepository;
@@ -27,6 +29,7 @@ public class SubQuestionService {
     private final SubQuestionRepository subQuestionRepository;
     private final TestMapper testMapper;
     private final SubQuestionMapper subQuestionMapper;
+    private final MetricRepository metricRepository;
 
     // Add subQuestions to a question
     public TestResponse addSubQuestions(Long testId, Long questionId, SubQuestionRequest subQuestionRequest) {
@@ -85,25 +88,34 @@ public class SubQuestionService {
     }
 
     @Transactional
-    // Update SubQuestion
-    public TestResponse updateSubQuestion(Long testId, Long subQuestionId, SubQuestionRequest subQuestionRequest) {
-        Optional<Test> optionalTest = testRepository.findById(testId);
-        if (optionalTest.isEmpty())
-            throw new EntityNotFoundException("Test not found: " + testId);
+    public TestResponse updateSubQuestion(
+            Long testId,
+            Long subQuestionId,
+            SubQuestionRequest subQuestionRequest
+    ) {
 
-        Test test = optionalTest.get();
+        Test test = testRepository.findById(testId)
+                .orElseThrow(() -> new EntityNotFoundException("Test not found"));
+
         if (test.getStatus() == TestStatus.PUBLISHED) {
             throw new IllegalStateException("Cannot modify a subquestion in a published test");
         }
 
-        Optional<SubQuestion> optionalSubQuestion = subQuestionRepository.findById(subQuestionId);
-        if (optionalSubQuestion.isEmpty())
-            throw new EntityNotFoundException("SubQuestion not found: " + subQuestionId);
+        SubQuestion subQuestion = subQuestionRepository.findById(subQuestionId)
+                .orElseThrow(() -> new EntityNotFoundException("SubQuestion not found"));
 
-        SubQuestion subQuestion = optionalSubQuestion.get();
-
+        //  Update simple fields
         subQuestionMapper.updateSubQuestionFromDto(subQuestionRequest, subQuestion);
-        testRepository.save(test);
+
+        //  Update Metric SAFELY
+        if (subQuestionRequest.getMetricId() != null) {
+            Metric metric = metricRepository.findById(subQuestionRequest.getMetricId())
+                    .orElseThrow(() -> new EntityNotFoundException("Metric not found"));
+
+            subQuestion.setMetric(metric);
+        }
+
         return testMapper.toDto(test);
     }
+
 }
