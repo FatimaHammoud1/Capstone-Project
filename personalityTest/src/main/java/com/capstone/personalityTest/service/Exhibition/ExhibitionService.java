@@ -36,8 +36,9 @@ public class ExhibitionService {
         Organization org = organizationRepository.findById(orgId)
                 .orElseThrow(() -> new RuntimeException("Organization not found"));
 
-        // Only owner of the organization can create
-        if (!org.getOwner().getId().equals(creator.getId())) {
+        // Only owner of the organization can create, OR developer
+        boolean isDev = creator.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        if (!org.getOwner().getId().equals(creator.getId()) && !isDev) {
             throw new RuntimeException("You are not the owner of this organization");
         }
 
@@ -113,7 +114,9 @@ public class ExhibitionService {
         // Skipping deep validation for Municipality for brevity unless critical, usually PreAuthorize handles role, but we need data ownership check.
         // We'll proceed with Organization Owner check primarily.
         
-        if (!isOrgOwner) {
+        boolean isDev = canceller.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+
+        if (!isOrgOwner && !isDev) {
             // Check if municipality admin
              // This would require fetching venue request -> venue -> municipality -> admin
              // if not org owner and not relevant municipality admin -> throw exception

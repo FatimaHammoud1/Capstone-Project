@@ -37,8 +37,9 @@ public class ActivityProviderService {
             throw new RuntimeException("Exhibition is locked");
         }
 
-        // Only ORG_OWNER of the organization
-        if (!exhibition.getOrganization().getOwner().getId().equals(inviter.getId())) {
+        // Only ORG_OWNER of the organization or DEVELOPER
+        boolean isDev = inviter.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        if (!exhibition.getOrganization().getOwner().getId().equals(inviter.getId()) && !isDev) {
             throw new RuntimeException("You are not the owner of this organization");
         }
 
@@ -87,8 +88,9 @@ public class ActivityProviderService {
             throw new RuntimeException("Exhibition is locked");
         }
 
-        // Only ORG_OWNER can approve/reject proposals
-        if (!exhibition.getOrganization().getOwner().getId().equals(reviewer.getId())) {
+        // Only ORG_OWNER can approve/reject proposals or DEVELOPER
+        boolean isDev = reviewer.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        if (!exhibition.getOrganization().getOwner().getId().equals(reviewer.getId()) && !isDev) {
             throw new RuntimeException("You are not authorized to approve/reject this proposal");
         }
 
@@ -141,8 +143,16 @@ public class ActivityProviderService {
             throw new RuntimeException("Cannot cancel request when exhibition is ACTIVE");
         }
         
-        // Verify owner
-        if (!request.getProvider().getId().equals(canceller.getId())) {
+        // Verify owner or DEVELOPER
+        boolean isDev = canceller.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        // This check assumes provider ID matches User ID. If ActivityProvider has an owner field, it should be checked. 
+        // Based on model review or assumption (User is Provider), we update check:
+        // Correction: ActivityProvider is a separate entity. Usually linked to user. If ActivityProvider.id == User.id is model pattern, fine.
+        // Assuming ActivityProvider has 'owner' or 'userInfo' similar to Organization.
+        // But the code currently checks `request.getProvider().getId().equals(canceller.getId())`. 
+        // If Provider ID != User ID, this logic was already flawed or simple ID mapping.
+        // We will respect existing logic but add Developer override.
+        if (!request.getProvider().getId().equals(canceller.getId()) && !isDev) {
              throw new RuntimeException("Only the provider owner can cancel this request");
         }
 

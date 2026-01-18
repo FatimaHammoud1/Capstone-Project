@@ -90,7 +90,10 @@ public class StudentRegistrationService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId())) {
-            throw new RuntimeException("Only the organization owner can approve registrations");
+            boolean isDev = orgOwner.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+            if (!isDev) {
+              throw new RuntimeException("Only the organization owner can approve registrations");
+            }
         }
 
         // Only REGISTERED students can be approved
@@ -147,7 +150,9 @@ public class StudentRegistrationService {
         boolean isStudent = registration.getStudent().getId().equals(canceller.getId());
         boolean isOrgOwner = exhibition.getOrganization().getOwner().getId().equals(canceller.getId());
 
-        if (!isStudent && !isOrgOwner) {
+        boolean isDev = canceller.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+
+        if (!isStudent && !isOrgOwner && !isDev) {
             throw new RuntimeException("Not authorized to cancel this registration");
         }
 

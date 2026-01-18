@@ -33,7 +33,9 @@ public class SchoolParticipationService {
         Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
-        if (!exhibition.getOrganization().getOwner().getId().equals(inviter.getId())) {
+        // Only ORG_OWNER or DEVELOPER
+        boolean isDev = inviter.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        if (!exhibition.getOrganization().getOwner().getId().equals(inviter.getId()) && !isDev) {
             throw new RuntimeException("Only ORG_OWNER can invite schools");
         }
         
@@ -77,7 +79,11 @@ public class SchoolParticipationService {
              throw new RuntimeException("Exhibition is locked");
         }
 
-        if (!participation.getSchool().getContactEmail().equals(schoolEmail)) {
+        UserInfo user = userInfoRepository.findByEmail(schoolEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        boolean isDev = user.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+
+        if (!participation.getSchool().getContactEmail().equals(schoolEmail) && !isDev) {
             throw new RuntimeException("You are not authorized to accept this invitation");
         }
 
@@ -105,7 +111,8 @@ public class SchoolParticipationService {
              throw new RuntimeException("Exhibition is locked");
         }
 
-        if (!exhibition.getOrganization().getOwner().getId().equals(inviter.getId())) {
+        boolean isDev = inviter.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        if (!exhibition.getOrganization().getOwner().getId().equals(inviter.getId()) && !isDev) {
             throw new RuntimeException("Only ORG_OWNER can confirm school participation");
         }
 
@@ -137,7 +144,9 @@ public class SchoolParticipationService {
         boolean isSchoolContact = participation.getSchool().getContactEmail().equals(cancellerEmail);
         boolean isOrgOwner = exhibition.getOrganization().getOwner().getId().equals(canceller.getId());
 
-        if (!isSchoolContact && !isOrgOwner) {
+        boolean isDev = canceller.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+
+        if (!isSchoolContact && !isOrgOwner && !isDev) {
             throw new RuntimeException("Not authorized to cancel this participation");
         }
 

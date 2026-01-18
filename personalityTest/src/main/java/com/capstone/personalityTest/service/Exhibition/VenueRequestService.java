@@ -33,8 +33,9 @@ public class VenueRequestService {
         Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
-        // Check org owner
-        if (!exhibition.getOrganization().getOwner().getId().equals(creator.getId())) {
+        // Check org owner OR developer
+        boolean isDev = creator.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        if (!exhibition.getOrganization().getOwner().getId().equals(creator.getId()) && !isDev) {
             throw new RuntimeException("Only organization owner can request a venue");
         }
 
