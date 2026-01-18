@@ -18,9 +18,13 @@ public class VenueRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // primary key
 
-    private Long exhibitionId; // related exhibition
+    @ManyToOne
+    @JoinColumn(name = "exhibition_id")
+    private Exhibition exhibition; // related exhibition
 
-    private Long venueId; // requested venue
+    @ManyToOne
+    @JoinColumn(name = "venue_id")
+    private Venue venue; // requested venue
 
     @Enumerated(EnumType.STRING)
     private VenueRequestStatus status; // approval status

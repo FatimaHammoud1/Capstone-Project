@@ -20,7 +20,9 @@ public class Exhibition {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // primary key
 
-    private Long organizationId; // organization that owns the exhibition
+    @ManyToOne
+    @JoinColumn(name = "organization_id")
+    private Organization organization; // organization that owns the exhibition
 
     private String title; // exhibition public name
 
