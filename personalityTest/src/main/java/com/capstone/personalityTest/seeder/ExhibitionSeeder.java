@@ -112,6 +112,9 @@ public class ExhibitionSeeder implements CommandLineRunner {
                 new UserInfo(null, "Activity Provider", "activity@provider.com", passwordEncoder.encode("password"), TargetGender.MALE,
                         Set.of(roleRepository.findByCode("ACTIVITY_PROVIDER").orElseThrow())),
 
+                new UserInfo(null, "Tech Provider", "tech@provider.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
+                        Set.of(roleRepository.findByCode("ACTIVITY_PROVIDER").orElseThrow())),
+
                 new UserInfo(null, "Student User", "student@user.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
                         Set.of(roleRepository.findByCode("STUDENT").orElseThrow()))
         ));
@@ -187,11 +190,36 @@ public class ExhibitionSeeder implements CommandLineRunner {
         // provider.setCreatedAt(LocalDateTime.now()); // Field removed in new model
 
         activityProviderRepository.save(provider);
+
+        UserInfo techOwner = userInfoRepository.findByEmail("tech@provider.com").orElseThrow();
+        ActivityProvider techProvider = new ActivityProvider();
+        techProvider.setName("Tech Innovators");
+        techProvider.setContactEmail("contact@techinnovators.com");
+        techProvider.setContactPhone("99887766");
+        techProvider.setOwner(techOwner);
+        techProvider.setActive(true);
+        
+        activityProviderRepository.save(techProvider);
     }
 
     // ---------------- ACTIVITIES ----------------
     private void seedActivities() {
         if (activityRepository.count() > 0) return;
+
+        // Fetch the activity provider we seeded earlier
+        ActivityProvider provider = activityProviderRepository.findAll().stream()
+                .filter(p -> "Fun Science Lab".equals(p.getName()))
+                .findFirst()
+                .orElse(null);
+
+        if (provider == null && activityProviderRepository.count() > 0) {
+            provider = activityProviderRepository.findAll().get(0);
+        }
+
+        ActivityProvider techProvider = activityProviderRepository.findAll().stream()
+                .filter(p -> "Tech Innovators".equals(p.getName()))
+                .findFirst()
+                .orElse(null);
 
         activityRepository.saveAll(List.of(
 
@@ -202,7 +230,30 @@ public class ExhibitionSeeder implements CommandLineRunner {
                         ActivityType.WORKSHOP,
                         60, // suggestedDurationMinutes
                         30, // suggestedMaxParticipants
-                        true
+                        true,
+                        provider
+                ),
+                
+                 new Activity(
+                        null,
+                        "VR Experience",
+                        "Immersive Virtual Reality session",
+                        ActivityType.DEMO,
+                        30, 
+                        10,
+                        true,
+                        techProvider
+                ),
+
+                new Activity(
+                        null,
+                        "Coding Bootcamp Intro",
+                        "Learn basics of Python",
+                        ActivityType.WORKSHOP,
+                        120, 
+                        25,
+                        true,
+                        techProvider
                 ),
 
                 new Activity(
@@ -212,7 +263,8 @@ public class ExhibitionSeeder implements CommandLineRunner {
                         ActivityType.DEMO,
                         45,
                         50,
-                        true
+                        true,
+                        provider
                 ),
 
                 new Activity(
@@ -222,7 +274,8 @@ public class ExhibitionSeeder implements CommandLineRunner {
                         ActivityType.DEMO, // Changed to DEMO as SIMULATION type was not defined in Enum
                         90,
                         20,
-                        true
+                        true,
+                        provider
                 ),
 
                 new Activity(
@@ -232,7 +285,8 @@ public class ExhibitionSeeder implements CommandLineRunner {
                         ActivityType.WORKSHOP, // Changed to WORKSHOP as COMPETITION type was not defined in Enum
                         120,
                         40,
-                        true
+                        true,
+                        provider
                 )
 
         ));

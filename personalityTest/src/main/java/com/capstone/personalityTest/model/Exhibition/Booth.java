@@ -29,13 +29,18 @@ public class Booth {
 
     private Long universityParticipationId; // source participation (if university)
 
-    private Long activityId; // linked activity
+    private Integer durationMinutes; // session duration
+    
+    private String zone; // exhibition zone (e.g., "Zone A")
 
-    private String boothNumber; // physical booth code
-
+    private Integer boothNumber; // booth number
+    
     private Integer maxParticipants; // allowed participants per session
 
-    private Integer durationMinutes; // session duration
+    @ManyToOne
+    @JoinColumn(name = "linked_activity_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private Activity activity;
 
     private LocalDateTime createdAt; // creation time
 }

@@ -28,7 +28,7 @@ public class UniversityParticipationService {
     private final BoothRepository boothRepository;
 
     // ----------------- Invite University -----------------
-    public UniversityParticipation inviteUniversity(Long exhibitionId, Long universityId, BigDecimal participationFee, LocalDateTime responseDeadline, String inviterEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse inviteUniversity(Long exhibitionId, Long universityId, BigDecimal participationFee, LocalDateTime responseDeadline, String inviterEmail) {
         UserInfo inviter = userInfoRepository.findByEmail(inviterEmail)
                 .orElseThrow(() -> new RuntimeException("Inviter not found"));
 
@@ -68,7 +68,8 @@ public class UniversityParticipationService {
         participation.setInvitedAt(LocalDateTime.now());
         participation.setResponseDeadline(responseDeadline);
 
-        return participationRepository.save(participation);
+        UniversityParticipation saved = participationRepository.save(participation);
+        return mapToResponse(saved);
     }
 
     // ----------------- University Registers -----------------
@@ -219,5 +220,35 @@ public class UniversityParticipationService {
         // Assuming booth cleanup is implicit or manual for now without BoothService delete method exposed.
         
         return participationRepository.save(participation);
+    }
+
+    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse mapToResponse(UniversityParticipation participation) {
+        // Safe null handling for booth details
+        String boothDetailsJson = null;
+        try {
+             if (participation.getBoothDetails() != null) {
+                 boothDetailsJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(participation.getBoothDetails());
+             }
+        } catch (Exception e) {
+             // ignore failure, return null
+        }
+
+        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse(
+            participation.getId(),
+            participation.getExhibition().getId(),
+            participation.getUniversity().getId(),
+            participation.getUniversity().getName(),
+            participation.getUniversity().getContactEmail(),
+            participation.getStatus(),
+            participation.getApprovedBoothsCount(),
+            boothDetailsJson,
+            participation.getParticipationFee(),
+            participation.getPaymentStatus() != null ? participation.getPaymentStatus().name() : null,
+            participation.getPaymentDate(),
+            participation.getResponseDeadline(),
+            participation.getInvitedAt(),
+            participation.getRegisteredAt(),
+            participation.getConfirmedAt()
+        );
     }
 }

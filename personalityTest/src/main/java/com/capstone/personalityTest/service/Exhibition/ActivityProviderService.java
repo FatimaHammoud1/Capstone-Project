@@ -23,6 +23,7 @@ public class ActivityProviderService {
     private final ActivityProviderRequestRepository providerRequestRepository;
     private final UserInfoRepository userInfoRepository;
     private final BoothRepository boothRepository;
+    private final ActivityRepository activityRepository;
 
     // ----------------- Invite Activity Provider -----------------
     public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse inviteProvider(Long exhibitionId, Long providerId, String orgRequirements, String inviterEmail, LocalDateTime responseDeadline) {
@@ -75,26 +76,23 @@ public class ActivityProviderService {
     }
 
     // ----------------- Submit Proposal (by Provider) -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse submitProposal(Long requestId, String proposalText, Integer boothsCount, java.math.BigDecimal totalCost, String providerEmail) {
+    // Updated to accept activityIds
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse submitProposal(Long requestId, String proposalText, Integer boothsCount, java.math.BigDecimal totalCost, java.util.List<Long> activityIds, String providerEmail) {
         UserInfo providerUser = userInfoRepository.findByEmail(providerEmail)
                 .orElseThrow(() -> new RuntimeException("Provider user not found"));
 
         ActivityProviderRequest request = providerRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
 
-        // Guard: Check if user owns the provider profile OR is Developer
         boolean isDev = providerUser.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         if (!request.getProvider().getOwner().getId().equals(providerUser.getId()) && !isDev) {
             throw new RuntimeException("Only the provider owner can submit a proposal");
         }
 
-        // Guard: Can only submit if INVITED or REJECTED (negotiation) - assuming strictly INVITED based on flow
         if (request.getStatus() != ActivityProviderRequestStatus.INVITED) {
-             // Optional: Allow re-submission if REJECTED? For now strict.
              throw new RuntimeException("Proposal can only be submitted for INVITED requests");
         }
 
-        // Check deadline
         if (request.getResponseDeadline() != null && LocalDateTime.now().isAfter(request.getResponseDeadline())) {
             throw new RuntimeException("Submission deadline has passed");
         }
@@ -104,6 +102,20 @@ public class ActivityProviderService {
         request.setTotalCost(totalCost);
         request.setStatus(ActivityProviderRequestStatus.PROPOSED);
         request.setProposedAt(LocalDateTime.now());
+        
+        // Link activities
+        if (activityIds != null && !activityIds.isEmpty()) {
+            java.util.List<com.capstone.personalityTest.model.Exhibition.Activity> activities = activityRepository.findAllById(activityIds);
+            // Validation: Ensure activities belong to this provider
+            for (com.capstone.personalityTest.model.Exhibition.Activity activity : activities) {
+                // Assuming activities must belong to provider. Activity entity must have provider set.
+                // If Activity model update to include provider is done, we check:
+                if (activity.getProvider() != null && !activity.getProvider().getId().equals(request.getProvider().getId())) {
+                     throw new RuntimeException("Activity " + activity.getName() + " does not belong to this provider");
+                }
+            }
+            request.setProposedActivities(new java.util.HashSet<>(activities));
+        }
 
         ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
         return mapToResponse(savedRequest);
@@ -119,12 +131,10 @@ public class ActivityProviderService {
                 
         Exhibition exhibition = request.getExhibition();
 
-        // Guard: Locked if CONFIRMED or later
         if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
             throw new RuntimeException("Exhibition is locked");
         }
 
-        // Only ORG_OWNER can approve/reject proposals or DEVELOPER
         boolean isDev = reviewer.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         if (!exhibition.getOrganization().getOwner().getId().equals(reviewer.getId()) && !isDev) {
             throw new RuntimeException("You are not authorized to approve/reject this proposal");
@@ -134,7 +144,6 @@ public class ActivityProviderService {
             throw new RuntimeException("Only PROPOSED requests can be reviewed");
         }
 
-        // Optional: validate total booths do not exceed exhibition max capacity
         int totalBooths = boothRepository.countByExhibition(exhibition);
         if (approve && (totalBooths + request.getProposedBoothsCount()) > exhibition.getMaxCapacity()) {
             throw new RuntimeException("Approving this request exceeds exhibition max capacity");
@@ -143,17 +152,34 @@ public class ActivityProviderService {
         if (approve) {
             request.setStatus(ActivityProviderRequestStatus.APPROVED);
             request.setApprovedAt(LocalDateTime.now());
-            request.setReviewedAt(LocalDateTime.now()); // Set reviewed timestamp
-            request.setOrgResponse(comments); // Save comments even if approved
+            request.setReviewedAt(LocalDateTime.now()); 
+            request.setOrgResponse(comments);
+            
+            // Create Booths for approved activities
+            if (request.getProposedActivities() != null) {
+                for (com.capstone.personalityTest.model.Exhibition.Activity activity : request.getProposedActivities()) {
+                     com.capstone.personalityTest.model.Exhibition.Booth booth = new com.capstone.personalityTest.model.Exhibition.Booth();
+                     booth.setExhibition(exhibition);
+                     booth.setBoothType(com.capstone.personalityTest.model.Enum.Exhibition.BoothType.ACTIVITY_PROVIDER);
+                     booth.setActivityProviderRequestId(request.getId());
+                     booth.setActivity(activity);
+                     booth.setMaxParticipants(activity.getSuggestedMaxParticipants());
+                     booth.setDurationMinutes(activity.getSuggestedDurationMinutes());
+                     booth.setCreatedAt(LocalDateTime.now());
+                     booth.setZone("Unassigned"); // Default zone
+                     booth.setBoothNumber(0); // Default number
+                     boothRepository.save(booth);
+                }
+            }
+            
         } else {
             request.setStatus(ActivityProviderRequestStatus.REJECTED);
             request.setOrgResponse(comments);
-            request.setReviewedAt(LocalDateTime.now()); // Set reviewed timestamp
+            request.setReviewedAt(LocalDateTime.now()); 
         }
 
         ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
         
-        // 1️⃣ Missing Exhibition status transition: check if all are approved
         if (approve) {
             long totalRequests = providerRequestRepository.countByExhibition(exhibition);
             long totalApproved = providerRequestRepository.countByExhibitionAndStatus(exhibition, ActivityProviderRequestStatus.APPROVED);

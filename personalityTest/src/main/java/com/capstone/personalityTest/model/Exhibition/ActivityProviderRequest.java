@@ -53,4 +53,11 @@ public class ActivityProviderRequest {
     private LocalDateTime reviewedAt; // organizer review time
 
     private LocalDateTime approvedAt; // approval time
+
+    @ManyToMany
+    @JoinTable(
+        name = "request_activities", 
+        joinColumns = @JoinColumn(name = "request_id"), 
+        inverseJoinColumns = @JoinColumn(name = "activity_id"))
+    private java.util.Set<Activity> proposedActivities = new java.util.HashSet<>();
 }

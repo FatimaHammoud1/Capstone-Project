@@ -23,14 +23,14 @@ public class UniversityParticipationController {
     // ----------------- INVITE UNIVERSITY -----------------
     @PostMapping("/invite/{exhibitionId}/{universityId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<UniversityParticipation> inviteUniversity(
+    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse> inviteUniversity(
             @PathVariable Long exhibitionId,
             @PathVariable Long universityId,
             @RequestParam BigDecimal participationFee,
             @RequestParam(required = false) LocalDateTime responseDeadline,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        UniversityParticipation participation = participationService.inviteUniversity(
+        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse participation = participationService.inviteUniversity(
                 exhibitionId, universityId, participationFee, responseDeadline, userDetails.getUsername()
         );
         return ResponseEntity.ok(participation);

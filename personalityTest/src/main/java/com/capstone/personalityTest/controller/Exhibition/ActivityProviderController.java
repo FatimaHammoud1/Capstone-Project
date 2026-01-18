@@ -44,9 +44,26 @@ public class ActivityProviderController {
         Integer boothsCount = (Integer) body.get("boothsCount");
         // Handle BigDecimal conversion safely
         java.math.BigDecimal totalCost = new java.math.BigDecimal(body.get("totalCost").toString());
+        
+        // Parse activity IDs
+        java.util.List<Long> activityIds = null;
+        if (body.containsKey("activityIds")) {
+            // Need gentle casting
+            java.util.List<?> rawList = (java.util.List<?>) body.get("activityIds");
+            activityIds = new java.util.ArrayList<>();
+            for (Object obj : rawList) {
+                if (obj instanceof Integer) {
+                    activityIds.add(((Integer) obj).longValue());
+                } else if (obj instanceof Long) {
+                    activityIds.add((Long) obj);
+                } else if (obj instanceof String) {
+                    activityIds.add(Long.parseLong((String) obj));
+                }
+            }
+        }
 
         com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse response = providerService.submitProposal(
-                requestId, proposalText, boothsCount, totalCost, userDetails.getUsername());
+                requestId, proposalText, boothsCount, totalCost, activityIds, userDetails.getUsername());
         
         return ResponseEntity.ok(response);
     }

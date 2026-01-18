@@ -29,4 +29,9 @@ public class Activity {
     private Integer suggestedMaxParticipants;
 
     private Boolean active;
+
+    @ManyToOne
+    @JoinColumn(name = "provider_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private ActivityProvider provider;
 }
