@@ -17,7 +17,9 @@ public class Booth {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // primary key
 
-    private Long exhibitionId; // related exhibition
+    @ManyToOne
+    @JoinColumn(name = "exhibition_id")
+    private Exhibition exhibition; // related exhibition
 
     @Enumerated(EnumType.STRING)
     private BoothType boothType; // university or activity provider

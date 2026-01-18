@@ -18,9 +18,13 @@ public class ActivityProviderRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // primary key
 
-    private Long exhibitionId; // related exhibition
+    @ManyToOne
+    @JoinColumn(name = "exhibition_id")
+    private Exhibition exhibition; // related exhibition
 
-    private Long providerId; // invited activity provider
+    @ManyToOne
+    @JoinColumn(name = "provider_id")
+    private ActivityProvider provider; // invited activity provider
 
     @Enumerated(EnumType.STRING)
     private ActivityProviderRequestStatus status; // invitation lifecycle
