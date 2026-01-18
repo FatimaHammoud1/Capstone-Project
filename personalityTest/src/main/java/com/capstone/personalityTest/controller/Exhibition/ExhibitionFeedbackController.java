@@ -19,7 +19,7 @@ public class ExhibitionFeedbackController {
 
     // ----------------- Submit Feedback -----------------
     @PostMapping("/submit")
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'DEVELOPER')")
     public ResponseEntity<ExhibitionFeedback> submitFeedback(
             @RequestParam Long exhibitionId,
             @RequestParam Integer rating,
@@ -33,7 +33,7 @@ public class ExhibitionFeedbackController {
 
     // ----------------- Get Feedback for Exhibition (ORG_OWNER) -----------------
     @GetMapping("/exhibition/{exhibitionId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<List<ExhibitionFeedback>> getFeedbackForExhibition(@PathVariable Long exhibitionId) {
         List<ExhibitionFeedback> feedbackList = feedbackService.getFeedbackForExhibition(exhibitionId);
         return ResponseEntity.ok(feedbackList);

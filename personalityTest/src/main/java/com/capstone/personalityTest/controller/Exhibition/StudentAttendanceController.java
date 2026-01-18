@@ -19,7 +19,7 @@ public class StudentAttendanceController {
 
     // ----------------- Mark Single Student Attendance -----------------
     @PostMapping("/attendance/{registrationId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<StudentRegistration> markAttendance(
             @PathVariable Long registrationId,
             @RequestParam boolean attended,
@@ -31,7 +31,7 @@ public class StudentAttendanceController {
 
     // ----------------- Mark Multiple Students Attendance -----------------
     @PostMapping("/attendance-multiple")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<List<StudentRegistration>> markMultipleAttendance(
             @RequestBody List<Long> registrationIds,
             @RequestParam boolean attended,

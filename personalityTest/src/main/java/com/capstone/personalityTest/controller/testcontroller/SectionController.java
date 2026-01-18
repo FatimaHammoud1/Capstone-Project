@@ -19,7 +19,7 @@ public class SectionController {
     private final SectionService sectionService;
 
     // 2. Add sections to a test
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     @PatchMapping("/{testId}/sections")
     public ResponseEntity<TestResponse> addSections(
             @PathVariable Long testId,
@@ -28,7 +28,7 @@ public class SectionController {
         return new ResponseEntity<>(updatedTest, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     @DeleteMapping("/{testId}/sections/{sectionId}")
     public ResponseEntity<String> deleteSection(@PathVariable Long testId, @PathVariable Long sectionId) {
         sectionService.deleteSection(testId, sectionId);
@@ -36,7 +36,7 @@ public class SectionController {
     }
 
     // Update Section
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     @PatchMapping("/{testId}/sections/{sectionId}")
     public ResponseEntity<TestResponse> updateSection(
             @PathVariable Long testId,

@@ -24,7 +24,7 @@ public class TestController {
     private final JwtService jwtService;
 
     // 1. Create a test (title + description only)
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     @PostMapping
     public ResponseEntity<TestResponse> createTest(@Valid @RequestBody TestRequest testRequest) {
         TestResponse createdTest = testService.createTest(testRequest);
@@ -32,14 +32,14 @@ public class TestController {
     }
 
     // 5. Confirm test (finalize)
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     @PutMapping("/{testId}/publish")
     public ResponseEntity<TestResponse> publishTest(@PathVariable Long testId) {
         TestResponse confirmedTest = testService.publishTest(testId);
         return new ResponseEntity<>(confirmedTest, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     @PutMapping("/{testId}/active")
     public ResponseEntity<TestResponse> setTestActive(
             @PathVariable Long testId,
@@ -48,7 +48,7 @@ public class TestController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     @PatchMapping("/{id}")
     public ResponseEntity<TestResponse> updateTest(
             @PathVariable Long id,
@@ -65,21 +65,21 @@ public class TestController {
         return testService.getAllTests(role);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     @GetMapping("/{id}")
     public ResponseEntity<TestResponse> getTestById(@PathVariable Long id) {
         TestResponse test = testService.getTestById(id);
         return ResponseEntity.ok(test);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     @DeleteMapping("/{testId}")
     public ResponseEntity<String> deleteTest(@PathVariable Long testId) {
         testService.deleteTest(testId);
         return new ResponseEntity<>("Test deleted successfully", HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     @PostMapping("/versions")
     public TestResponse createVersion(@RequestBody CreateVersionRequest request) {
         return testService.createVersion(request);

@@ -18,7 +18,7 @@ public class ExhibitionLifecycleController {
 
     // ----------------- START EXHIBITION -----------------
     @PostMapping("/start/{exhibitionId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<Exhibition> startExhibition(
             @PathVariable Long exhibitionId,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -29,7 +29,7 @@ public class ExhibitionLifecycleController {
     
     // ----------------- COMPLETE EXHIBITION -----------------
     @PostMapping("/complete/{exhibitionId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<Exhibition> completeExhibition(
             @PathVariable Long exhibitionId,
             @AuthenticationPrincipal UserDetails userDetails) {

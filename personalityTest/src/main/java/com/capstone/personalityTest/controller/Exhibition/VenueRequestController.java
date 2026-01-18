@@ -23,7 +23,7 @@ public class VenueRequestController {
 
     // ----------------- CREATE VENUE REQUEST -----------------
     @PostMapping("/create/{exhibitionId}/{venueId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<VenueRequest> createVenueRequest(
             @PathVariable Long exhibitionId,
             @PathVariable Long venueId,
@@ -42,7 +42,7 @@ public class VenueRequestController {
 
     // ----------------- GET ALL REQUESTS FOR EXHIBITION -----------------
     @GetMapping("/exhibition/{exhibitionId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<List<VenueRequest>> getRequests(@PathVariable Long exhibitionId) {
         return ResponseEntity.ok(venueRequestService.getRequestsForExhibition(exhibitionId));
     }

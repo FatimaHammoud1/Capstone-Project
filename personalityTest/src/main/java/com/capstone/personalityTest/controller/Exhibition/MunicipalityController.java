@@ -18,7 +18,7 @@ public class MunicipalityController {
 
     // ----------------- REVIEW VENUE REQUEST -----------------
     @PostMapping("/review/{venueRequestId}")
-    @PreAuthorize("hasRole('MUNICIPALITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('MUNICIPALITY_ADMIN', 'DEVELOPER')")
     public ResponseEntity<VenueRequest> reviewVenueRequest(
             @PathVariable Long venueRequestId,
             @RequestParam boolean approve,

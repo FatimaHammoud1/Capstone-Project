@@ -18,7 +18,7 @@ public class ExhibitionFinanceController {
 
     // ----------------- CONFIRM EXHIBITION & CALCULATE PAYMENTS -----------------
     @PostMapping("/confirm/{exhibitionId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<Exhibition> confirmExhibition(
             @PathVariable Long exhibitionId,
             @AuthenticationPrincipal UserDetails userDetails) {

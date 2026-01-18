@@ -19,25 +19,25 @@ public class ExhibitionController {
 
     // ----------------- Create Exhibition -----------------
     @PostMapping
-    @PreAuthorize("hasRole('ORG_OWNER')")
-    public ResponseEntity<Exhibition> createExhibition(
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse> createExhibition(
             @RequestParam Long orgId,
-            @RequestBody Exhibition exhibition,
+            @RequestBody com.capstone.personalityTest.dto.RequestDTO.Exhibition.ExhibitionRequest exhibitionRequest,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        return ResponseEntity.ok(exhibitionService.createExhibition(orgId, exhibition, userDetails.getUsername()));
+        return ResponseEntity.ok(exhibitionService.createExhibition(orgId, exhibitionRequest, userDetails.getUsername()));
     }
 
     // ----------------- Get Exhibitions by Organization -----------------
     @GetMapping("/organization/{orgId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<List<Exhibition>> getExhibitionsByOrg(@PathVariable Long orgId) {
         return ResponseEntity.ok(exhibitionService.getExhibitionsByOrg(orgId));
     }
     
     // ----------------- Cancel Exhibition -----------------
     @PostMapping("/{exhibitionId}/cancel")
-    @PreAuthorize("hasAnyRole('ORG_OWNER', 'MUNICIPALITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'MUNICIPALITY_ADMIN', 'DEVELOPER')")
     public ResponseEntity<Exhibition> cancelExhibition(
             @PathVariable Long exhibitionId,
             @RequestParam String reason,

@@ -19,7 +19,7 @@ public class SchoolParticipationController {
 
     // ----------------- INVITE SCHOOL -----------------
     @PostMapping("/invite/{exhibitionId}/{schoolId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<SchoolParticipation> inviteSchool(
             @PathVariable Long exhibitionId,
             @PathVariable Long schoolId,
@@ -34,7 +34,7 @@ public class SchoolParticipationController {
 
     // ----------------- SCHOOL ACCEPT -----------------
     @PostMapping("/accept/{participationId}")
-    @PreAuthorize("hasRole('SCHOOL_ADMIN')")
+    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'DEVELOPER')")
     public ResponseEntity<SchoolParticipation> acceptInvitation(
             @PathVariable Long participationId,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -45,7 +45,7 @@ public class SchoolParticipationController {
 
     // ----------------- CONFIRM SCHOOL -----------------
     @PostMapping("/confirm/{participationId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<SchoolParticipation> confirmParticipation(
             @PathVariable Long participationId,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -56,7 +56,7 @@ public class SchoolParticipationController {
     
     // ----------------- CANCEL SCHOOL PARTICIPATION -----------------
     @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<SchoolParticipation> cancelParticipation(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {

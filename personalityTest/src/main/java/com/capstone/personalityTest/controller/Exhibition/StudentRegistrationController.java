@@ -19,7 +19,7 @@ public class StudentRegistrationController {
 
     // ----------------- REGISTER STUDENT -----------------
     @PostMapping("/register/{exhibitionId}")
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'DEVELOPER')")
     public ResponseEntity<StudentRegistration> registerStudent(
             @PathVariable Long exhibitionId,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -31,7 +31,7 @@ public class StudentRegistrationController {
 
     // ----------------- LIST STUDENT REGISTRATIONS -----------------
     @GetMapping("/registrations")
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'DEVELOPER')")
     public ResponseEntity<List<StudentRegistration>> getRegistrations(
             @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -40,7 +40,7 @@ public class StudentRegistrationController {
 
     // ----------------- Approve Single Student -----------------
     @PostMapping("/approve/{registrationId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<StudentRegistration> approveStudent(
             @PathVariable Long registrationId,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -51,7 +51,7 @@ public class StudentRegistrationController {
 
     // ----------------- Approve Multiple Students -----------------
     @PostMapping("/approve-multiple")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<List<StudentRegistration>> approveStudents(
             @RequestBody List<Long> registrationIds,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -62,7 +62,7 @@ public class StudentRegistrationController {
     
     // ----------------- CANCEL REGISTRATION -----------------
     @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('STUDENT', 'ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<StudentRegistration> cancelRegistration(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {

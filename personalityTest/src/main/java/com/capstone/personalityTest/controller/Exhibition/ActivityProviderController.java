@@ -19,7 +19,7 @@ public class ActivityProviderController {
 
     // ----------------- Invite Provider -----------------
     @PostMapping("/invite/{exhibitionId}/{providerId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<ActivityProviderRequest> inviteProvider(
             @PathVariable Long exhibitionId,
             @PathVariable Long providerId,
@@ -34,7 +34,7 @@ public class ActivityProviderController {
 
     // ----------------- Review Proposal -----------------
     @PostMapping("/review/{requestId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<ActivityProviderRequest> reviewProposal(
             @PathVariable Long requestId,
             @RequestParam boolean approve,
@@ -48,7 +48,7 @@ public class ActivityProviderController {
     
     // ----------------- Cancel Request -----------------
     @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasRole('ACTIVITY_PROVIDER')")
+    @PreAuthorize("hasAnyRole('ACTIVITY_PROVIDER', 'DEVELOPER')")
     public ResponseEntity<ActivityProviderRequest> cancelRequest(
             @PathVariable Long id,
             @RequestParam String reason,

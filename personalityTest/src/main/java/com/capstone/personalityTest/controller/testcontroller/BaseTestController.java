@@ -15,7 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/base-tests")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
 public class BaseTestController {
 
     private final BaseTestService service;

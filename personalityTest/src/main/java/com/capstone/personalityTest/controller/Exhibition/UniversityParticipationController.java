@@ -22,7 +22,7 @@ public class UniversityParticipationController {
 
     // ----------------- INVITE UNIVERSITY -----------------
     @PostMapping("/invite/{exhibitionId}/{universityId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<UniversityParticipation> inviteUniversity(
             @PathVariable Long exhibitionId,
             @PathVariable Long universityId,
@@ -38,7 +38,7 @@ public class UniversityParticipationController {
 
     // ----------------- UNIVERSITY REGISTER -----------------
     @PostMapping("/register/{participationId}")
-    @PreAuthorize("hasRole('UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('UNIVERSITY_ADMIN', 'DEVELOPER')")
     public ResponseEntity<UniversityParticipation> registerUniversity(
             @PathVariable Long participationId,
             @RequestBody Map<Long, Map<String, Object>> boothDetails, // boothId -> {content, contributors}
@@ -53,7 +53,7 @@ public class UniversityParticipationController {
 
     // ----------------- APPROVE/REJECT UNIVERSITY -----------------
     @PostMapping("/review/{participationId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<UniversityParticipation> reviewUniversity(
             @PathVariable Long participationId,
             @RequestParam boolean approve,
@@ -67,7 +67,7 @@ public class UniversityParticipationController {
     
     // ----------------- CONFIRM PAYMENT -----------------
     @PostMapping("/confirm-payment/{participationId}")
-    @PreAuthorize("hasRole('ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<UniversityParticipation> confirmPayment(
             @PathVariable Long participationId,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -78,7 +78,7 @@ public class UniversityParticipationController {
     
     // ----------------- CANCEL PARTICIPATION -----------------
     @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('UNIVERSITY_ADMIN', 'ORG_OWNER')")
+    @PreAuthorize("hasAnyRole('UNIVERSITY_ADMIN', 'ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<UniversityParticipation> cancelParticipation(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {

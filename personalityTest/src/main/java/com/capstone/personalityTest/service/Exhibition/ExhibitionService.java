@@ -29,7 +29,7 @@ public class ExhibitionService {
     private final BoothRepository boothRepository;
     
     // ----------------- Create Exhibition -----------------
-    public Exhibition createExhibition(Long orgId, Exhibition exhibition, String creatorEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse createExhibition(Long orgId, com.capstone.personalityTest.dto.RequestDTO.Exhibition.ExhibitionRequest request, String creatorEmail) {
         UserInfo creator = userInfoRepository.findByEmail(creatorEmail)
                 .orElseThrow(() -> new RuntimeException("Creator not found"));
 
@@ -41,13 +41,46 @@ public class ExhibitionService {
             throw new RuntimeException("You are not the owner of this organization");
         }
 
-        // Set initial status
+        // Map DTO to Entity
+        Exhibition exhibition = new Exhibition();
         exhibition.setOrganization(org);
+        exhibition.setTitle(request.getTitle());
+        exhibition.setDescription(request.getDescription());
+        exhibition.setTheme(request.getTheme());
+        exhibition.setStartDate(request.getStartDate());
+        exhibition.setEndDate(request.getEndDate());
+        exhibition.setStartTime(request.getStartTime());
+        exhibition.setEndTime(request.getEndTime());
+        exhibition.setMaxCapacity(request.getMaxCapacity());
+        exhibition.setExpectedVisitors(request.getExpectedVisitors());
+        // Schedule JSON is optional/generated later
+        exhibition.setScheduleJson(request.getScheduleJson());
+
+        // Set initial status
         exhibition.setStatus(ExhibitionStatus.DRAFT);
         exhibition.setCreatedAt(LocalDateTime.now());
         exhibition.setUpdatedAt(LocalDateTime.now());
 
-        return exhibitionRepository.save(exhibition);
+        Exhibition savedExhibition = exhibitionRepository.save(exhibition);
+
+        // Map Entity to Response DTO
+        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse(
+                savedExhibition.getId(),
+                savedExhibition.getOrganization().getId(),
+                savedExhibition.getTitle(),
+                savedExhibition.getDescription(),
+                savedExhibition.getTheme(),
+                savedExhibition.getStatus(),
+                savedExhibition.getStartDate(),
+                savedExhibition.getEndDate(),
+                savedExhibition.getStartTime(),
+                savedExhibition.getEndTime(),
+                savedExhibition.getMaxCapacity(),
+                savedExhibition.getExpectedVisitors(),
+                savedExhibition.getScheduleJson(),
+                savedExhibition.getCreatedAt(),
+                savedExhibition.getUpdatedAt()
+        );
     }
 
     // Optional: get all exhibitions of this org
