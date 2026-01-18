@@ -83,6 +83,7 @@ public class ExhibitionSeeder implements CommandLineRunner {
                 new Role(null, "ORG_OWNER", "Organization Owner", "Creates and manages exhibitions", new HashSet<>()),
                 new Role(null, "MUNICIPALITY_ADMIN", "Municipality Admin", "Approves venue requests", new HashSet<>()),
                 new Role(null, "UNIVERSITY_ADMIN", "University Admin", "Manages university participation", new HashSet<>()),
+                new Role(null, "SCHOOL_ADMIN", "School Admin", "Manages school participation", new HashSet<>()),
                 new Role(null, "ACTIVITY_PROVIDER", "Activity Provider", "Provides activities and demos", new HashSet<>()),
                 new Role(null, "STUDENT", "Student", "Registers and attends exhibitions", new HashSet<>())
         ));
@@ -104,6 +105,9 @@ public class ExhibitionSeeder implements CommandLineRunner {
 
                 new UserInfo(null, "University Admin", "uni@university.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
                         Set.of(roleRepository.findByCode("UNIVERSITY_ADMIN").orElseThrow())),
+
+                new UserInfo(null, "School Admin", "school@school.com", passwordEncoder.encode("password"), TargetGender.MALE,
+                        Set.of(roleRepository.findByCode("SCHOOL_ADMIN").orElseThrow())),
 
                 new UserInfo(null, "Activity Provider", "activity@provider.com", passwordEncoder.encode("password"), TargetGender.MALE,
                         Set.of(roleRepository.findByCode("ACTIVITY_PROVIDER").orElseThrow())),
@@ -142,6 +146,8 @@ public class ExhibitionSeeder implements CommandLineRunner {
         uni.setContactPhone("123456789");
         // uni.setAddress("123 Main Street"); // Field removed in new model
         // uni.setWebsite("www.tu.edu"); // Field removed in new model
+        UserInfo owner = userInfoRepository.findByEmail("uni@university.com").orElseThrow();
+        uni.setOwner(owner);
         uni.setActive(true);
 
         universityRepository.save(uni);
@@ -176,7 +182,7 @@ public class ExhibitionSeeder implements CommandLineRunner {
         // provider.setDescription("Interactive science activities for students"); // Field removed in new model
         provider.setContactEmail("info@funlab.com");
         provider.setContactPhone("11223344");
-        // provider.setOwner(owner); // Field removed in new model
+        provider.setOwner(owner); // Re-enabled owner field
         provider.setActive(true);
         // provider.setCreatedAt(LocalDateTime.now()); // Field removed in new model
 
@@ -236,6 +242,8 @@ public class ExhibitionSeeder implements CommandLineRunner {
     private void seedSchools() {
         if (schoolRepository.count() > 0) return;
 
+        UserInfo owner = userInfoRepository.findByEmail("school@school.com").orElseThrow();
+
         schoolRepository.saveAll(List.of(
 
                 new School(
@@ -243,7 +251,8 @@ public class ExhibitionSeeder implements CommandLineRunner {
                         "Al-Najah High School",
                         "contact@najahschool.edu",
                         "70123456",
-                        true
+                        true,
+                        owner
                 ),
 
                 new School(
@@ -251,7 +260,8 @@ public class ExhibitionSeeder implements CommandLineRunner {
                         "Future Leaders School",
                         "info@futureleaders.edu",
                         "70987654",
-                        true
+                        true,
+                        owner
                 ),
 
                 new School(
@@ -259,7 +269,8 @@ public class ExhibitionSeeder implements CommandLineRunner {
                         "Modern Science School",
                         "admin@modscience.edu",
                         "71112233",
-                        true
+                        true,
+                        owner
                 )
 
         ));

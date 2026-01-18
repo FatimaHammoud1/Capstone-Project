@@ -27,12 +27,13 @@ public class MunicipalityService {
     private final VenueRepository venueRepository;
 
     // ----------------- Approve or Reject Venue Request -----------------
-    public VenueRequest reviewVenueRequest(Long venueRequestId, boolean approve, String responseText, String reviewerEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse reviewVenueRequest(Long venueRequestId, boolean approve, String responseText, String reviewerEmail) {
         UserInfo reviewer = userInfoRepository.findByEmail(reviewerEmail)
                 .orElseThrow(() -> new RuntimeException("Reviewer not found"));
 
-        // Only municipality admin can review
-        if (reviewer.getRoles().stream().noneMatch(r -> r.getCode().equals("MUNICIPALITY_ADMIN"))) {
+        // Only municipality admin can review OR developer
+        boolean isDev = reviewer.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        if (reviewer.getRoles().stream().noneMatch(r -> r.getCode().equals("MUNICIPALITY_ADMIN")) && !isDev) {
             throw new RuntimeException("Only municipality admins can approve/reject venue requests");
         }
 
@@ -91,6 +92,20 @@ public class MunicipalityService {
             exhibitionRepository.save(exhibition);
         }
 
-        return venueRequestRepository.save(request);
+        VenueRequest savedRequest = venueRequestRepository.save(request);
+
+        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse(
+                savedRequest.getId(),
+                savedRequest.getExhibition().getId(),
+                savedRequest.getVenue().getId(),
+                savedRequest.getVenue().getName(),
+                savedRequest.getVenue().getAddress(),
+                savedRequest.getStatus(),
+                savedRequest.getOrgNotes(),
+                savedRequest.getMunicipalityResponse(),
+                savedRequest.getResponseDeadline(),
+                savedRequest.getRequestedAt(),
+                savedRequest.getReviewedAt()
+        );
     }
 }

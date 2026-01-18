@@ -34,7 +34,7 @@ public class SchoolParticipationService {
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
         // Only ORG_OWNER or DEVELOPER
-        boolean isDev = inviter.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        boolean isDev = inviter.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         if (!exhibition.getOrganization().getOwner().getId().equals(inviter.getId()) && !isDev) {
             throw new RuntimeException("Only ORG_OWNER can invite schools");
         }
@@ -81,9 +81,10 @@ public class SchoolParticipationService {
 
         UserInfo user = userInfoRepository.findByEmail(schoolEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        boolean isDev = user.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        boolean isDev = user.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
 
-        if (!participation.getSchool().getContactEmail().equals(schoolEmail) && !isDev) {
+        // Corrected check: Validate against School Owner
+        if (!participation.getSchool().getOwner().getId().equals(user.getId()) && !isDev) {
             throw new RuntimeException("You are not authorized to accept this invitation");
         }
 
@@ -111,7 +112,7 @@ public class SchoolParticipationService {
              throw new RuntimeException("Exhibition is locked");
         }
 
-        boolean isDev = inviter.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        boolean isDev = inviter.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         if (!exhibition.getOrganization().getOwner().getId().equals(inviter.getId()) && !isDev) {
             throw new RuntimeException("Only ORG_OWNER can confirm school participation");
         }
@@ -141,12 +142,13 @@ public class SchoolParticipationService {
             throw new RuntimeException("Cannot cancel participation when exhibition is ACTIVE");
         }
 
-        boolean isSchoolContact = participation.getSchool().getContactEmail().equals(cancellerEmail);
+        // Check if canceller is the School Owner
+        boolean isSchoolOwner = participation.getSchool().getOwner().getId().equals(canceller.getId());
         boolean isOrgOwner = exhibition.getOrganization().getOwner().getId().equals(canceller.getId());
 
-        boolean isDev = canceller.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        boolean isDev = canceller.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
 
-        if (!isSchoolContact && !isOrgOwner && !isDev) {
+        if (!isSchoolOwner && !isOrgOwner && !isDev) {
             throw new RuntimeException("Not authorized to cancel this participation");
         }
 

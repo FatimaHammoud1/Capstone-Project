@@ -23,5 +23,8 @@ public class ActivityProvider {
 
     private Boolean active;
 
-
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private com.capstone.personalityTest.model.UserInfo owner;
 }

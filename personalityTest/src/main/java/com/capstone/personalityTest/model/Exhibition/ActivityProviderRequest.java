@@ -44,7 +44,7 @@ public class ActivityProviderRequest {
     private LocalDateTime responseDeadline; // deadline to respond
 
     @Column(columnDefinition = "TEXT")
-    private String rejectionReason; // rejection explanation
+    private String orgResponse; // organizer response (approval note or rejection reason)
 
     private LocalDateTime invitedAt; // invitation time
 

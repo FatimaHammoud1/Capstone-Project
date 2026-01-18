@@ -26,7 +26,7 @@ public class VenueRequestService {
     private final UserInfoRepository userInfoRepository;
 
     // ----------------- Create Venue Request -----------------
-    public VenueRequest createVenueRequest(Long exhibitionId, Long venueId, String orgNotes, LocalDateTime responseDeadline, String creatorEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse createVenueRequest(Long exhibitionId, Long venueId, String orgNotes, LocalDateTime responseDeadline, String creatorEmail) {
         UserInfo creator = userInfoRepository.findByEmail(creatorEmail)
                 .orElseThrow(() -> new RuntimeException("Creator not found"));
 
@@ -34,7 +34,7 @@ public class VenueRequestService {
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
         // Check org owner OR developer
-        boolean isDev = creator.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        boolean isDev = creator.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         if (!exhibition.getOrganization().getOwner().getId().equals(creator.getId()) && !isDev) {
             throw new RuntimeException("Only organization owner can request a venue");
         }
@@ -55,18 +55,36 @@ public class VenueRequestService {
         request.setStatus(VenueRequestStatus.PENDING);
         request.setRequestedAt(LocalDateTime.now());
         request.setResponseDeadline(responseDeadline); // enforce deadline
-        venueRequestRepository.save(request);
+        VenueRequest savedRequest = venueRequestRepository.save(request);
 
         // Update Exhibition status
         exhibition.setStatus(ExhibitionStatus.VENUE_PENDING);
         exhibition.setUpdatedAt(LocalDateTime.now());
         exhibitionRepository.save(exhibition);
 
-        return request;
+        return mapToResponse(savedRequest);
     }
 
     // Optional: Get all requests for this exhibition
-    public List<VenueRequest> getRequestsForExhibition(Long exhibitionId) {
-        return venueRequestRepository.findByExhibitionId(exhibitionId);
+    public List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse> getRequestsForExhibition(Long exhibitionId) {
+        return venueRequestRepository.findByExhibitionId(exhibitionId).stream()
+                .map(this::mapToResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse mapToResponse(VenueRequest request) {
+        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse(
+                request.getId(),
+                request.getExhibition().getId(),
+                request.getVenue().getId(),
+                request.getVenue().getName(),
+                request.getVenue().getAddress(),
+                request.getStatus(),
+                request.getOrgNotes(),
+                request.getMunicipalityResponse(),
+                request.getResponseDeadline(),
+                request.getRequestedAt(),
+                request.getReviewedAt()
+        );
     }
 }

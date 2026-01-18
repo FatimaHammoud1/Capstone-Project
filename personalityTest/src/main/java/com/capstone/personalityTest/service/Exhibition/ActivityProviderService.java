@@ -25,7 +25,7 @@ public class ActivityProviderService {
     private final BoothRepository boothRepository;
 
     // ----------------- Invite Activity Provider -----------------
-    public ActivityProviderRequest inviteProvider(Long exhibitionId, Long providerId, String orgRequirements, String inviterEmail, LocalDateTime responseDeadline) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse inviteProvider(Long exhibitionId, Long providerId, String orgRequirements, String inviterEmail, LocalDateTime responseDeadline) {
         UserInfo inviter = userInfoRepository.findByEmail(inviterEmail)
                 .orElseThrow(() -> new RuntimeException("Inviter not found"));
 
@@ -38,7 +38,7 @@ public class ActivityProviderService {
         }
 
         // Only ORG_OWNER of the organization or DEVELOPER
-        boolean isDev = inviter.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        boolean isDev = inviter.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         if (!exhibition.getOrganization().getOwner().getId().equals(inviter.getId()) && !isDev) {
             throw new RuntimeException("You are not the owner of this organization");
         }
@@ -70,11 +70,47 @@ public class ActivityProviderService {
         request.setInvitedAt(LocalDateTime.now());
         request.setResponseDeadline(responseDeadline);
 
-        return providerRequestRepository.save(request);
+        ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
+        return mapToResponse(savedRequest);
+    }
+
+    // ----------------- Submit Proposal (by Provider) -----------------
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse submitProposal(Long requestId, String proposalText, Integer boothsCount, java.math.BigDecimal totalCost, String providerEmail) {
+        UserInfo providerUser = userInfoRepository.findByEmail(providerEmail)
+                .orElseThrow(() -> new RuntimeException("Provider user not found"));
+
+        ActivityProviderRequest request = providerRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        // Guard: Check if user owns the provider profile OR is Developer
+        boolean isDev = providerUser.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        if (!request.getProvider().getOwner().getId().equals(providerUser.getId()) && !isDev) {
+            throw new RuntimeException("Only the provider owner can submit a proposal");
+        }
+
+        // Guard: Can only submit if INVITED or REJECTED (negotiation) - assuming strictly INVITED based on flow
+        if (request.getStatus() != ActivityProviderRequestStatus.INVITED) {
+             // Optional: Allow re-submission if REJECTED? For now strict.
+             throw new RuntimeException("Proposal can only be submitted for INVITED requests");
+        }
+
+        // Check deadline
+        if (request.getResponseDeadline() != null && LocalDateTime.now().isAfter(request.getResponseDeadline())) {
+            throw new RuntimeException("Submission deadline has passed");
+        }
+
+        request.setProviderProposal(proposalText);
+        request.setProposedBoothsCount(boothsCount);
+        request.setTotalCost(totalCost);
+        request.setStatus(ActivityProviderRequestStatus.PROPOSED);
+        request.setProposedAt(LocalDateTime.now());
+
+        ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
+        return mapToResponse(savedRequest);
     }
 
     // ----------------- Approve or Reject Provider Proposal -----------------
-    public ActivityProviderRequest reviewProviderProposal(Long requestId, boolean approve, String comments, String reviewerEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse reviewProviderProposal(Long requestId, boolean approve, String comments, String reviewerEmail) {
         UserInfo reviewer = userInfoRepository.findByEmail(reviewerEmail)
                 .orElseThrow(() -> new RuntimeException("Reviewer not found"));
 
@@ -89,7 +125,7 @@ public class ActivityProviderService {
         }
 
         // Only ORG_OWNER can approve/reject proposals or DEVELOPER
-        boolean isDev = reviewer.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        boolean isDev = reviewer.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         if (!exhibition.getOrganization().getOwner().getId().equals(reviewer.getId()) && !isDev) {
             throw new RuntimeException("You are not authorized to approve/reject this proposal");
         }
@@ -107,9 +143,12 @@ public class ActivityProviderService {
         if (approve) {
             request.setStatus(ActivityProviderRequestStatus.APPROVED);
             request.setApprovedAt(LocalDateTime.now());
+            request.setReviewedAt(LocalDateTime.now()); // Set reviewed timestamp
+            request.setOrgResponse(comments); // Save comments even if approved
         } else {
             request.setStatus(ActivityProviderRequestStatus.REJECTED);
-            request.setRejectionReason(comments);
+            request.setOrgResponse(comments);
+            request.setReviewedAt(LocalDateTime.now()); // Set reviewed timestamp
         }
 
         ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
@@ -125,12 +164,12 @@ public class ActivityProviderService {
             }
         }
 
-        return savedRequest;
+        return mapToResponse(savedRequest);
     }
     
     // ----------------- Cancel Provider Request -----------------
     @Transactional
-    public ActivityProviderRequest cancelRequest(Long requestId, String reason, String cancellerEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse cancelRequest(Long requestId, String reason, String cancellerEmail) {
         UserInfo canceller = userInfoRepository.findByEmail(cancellerEmail)
                 .orElseThrow(() -> new RuntimeException("Canceller not found"));
 
@@ -144,15 +183,10 @@ public class ActivityProviderService {
         }
         
         // Verify owner or DEVELOPER
-        boolean isDev = canceller.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
-        // This check assumes provider ID matches User ID. If ActivityProvider has an owner field, it should be checked. 
-        // Based on model review or assumption (User is Provider), we update check:
-        // Correction: ActivityProvider is a separate entity. Usually linked to user. If ActivityProvider.id == User.id is model pattern, fine.
-        // Assuming ActivityProvider has 'owner' or 'userInfo' similar to Organization.
-        // But the code currently checks `request.getProvider().getId().equals(canceller.getId())`. 
-        // If Provider ID != User ID, this logic was already flawed or simple ID mapping.
-        // We will respect existing logic but add Developer override.
-        if (!request.getProvider().getId().equals(canceller.getId()) && !isDev) {
+        boolean isDev = canceller.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        
+        // Corrected check: Validate against the Provider's Owner
+        if (!request.getProvider().getOwner().getId().equals(canceller.getId()) && !isDev) {
              throw new RuntimeException("Only the provider owner can cancel this request");
         }
 
@@ -162,7 +196,7 @@ public class ActivityProviderService {
         
         // State Change -> REJECTED (as per requirement, though CANCELLED might be semantic preference, sticking to requirement "ActivityProviderRequest.status → REJECTED")
         request.setStatus(ActivityProviderRequestStatus.REJECTED);
-        request.setRejectionReason("Cancelled by provider: " + reason);
+        request.setOrgResponse("Cancelled by provider: " + reason);
         // Side effects: Remove related booths? 
         // Logic generally implies if approved, booths might have been created. 
         // Assuming booths are created after approval or confirmation. If so, logic to remove them is needed.
@@ -173,6 +207,28 @@ public class ActivityProviderService {
         // boothRepository.deleteByExhibitionAndProvider... (If such method/link exists).
         // For now, simpler "Recalculate exhibition capacity" is automatic since capacity is summed from requests/booths.
 
-        return providerRequestRepository.save(request);
+        ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
+        return mapToResponse(savedRequest);
+    }
+
+    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse mapToResponse(ActivityProviderRequest request) {
+        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse(
+                request.getId(),
+                request.getExhibition().getId(),
+                request.getProvider().getId(),
+                request.getProvider().getName(),
+                request.getProvider().getContactEmail(),
+                request.getStatus(),
+                request.getOrgRequirements(),
+                request.getProviderProposal(),
+                request.getProposedBoothsCount(),
+                request.getTotalCost(),
+                request.getResponseDeadline(),
+                request.getOrgResponse(),
+                request.getInvitedAt(),
+                request.getProposedAt(),
+                request.getReviewedAt(),
+                request.getApprovedAt()
+        );
     }
 }

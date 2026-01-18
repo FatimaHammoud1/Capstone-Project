@@ -19,13 +19,13 @@ public class MunicipalityController {
     // ----------------- REVIEW VENUE REQUEST -----------------
     @PostMapping("/review/{venueRequestId}")
     @PreAuthorize("hasAnyRole('MUNICIPALITY_ADMIN', 'DEVELOPER')")
-    public ResponseEntity<VenueRequest> reviewVenueRequest(
+    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse> reviewVenueRequest(
             @PathVariable Long venueRequestId,
             @RequestParam boolean approve,
             @RequestParam String responseText,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        VenueRequest updatedRequest = municipalityService.reviewVenueRequest(
+        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse updatedRequest = municipalityService.reviewVenueRequest(
                 venueRequestId, approve, responseText, userDetails.getUsername()
         );
 

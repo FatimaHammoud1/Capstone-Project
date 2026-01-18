@@ -36,7 +36,7 @@ public class UniversityParticipationService {
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
         // Only ORG_OWNER or DEVELOPER
-        boolean isDev = inviter.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        boolean isDev = inviter.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         if (!exhibition.getOrganization().getOwner().getId().equals(inviter.getId()) && !isDev) {
             throw new RuntimeException("Only ORG_OWNER can invite universities");
         }
@@ -85,9 +85,10 @@ public class UniversityParticipationService {
         University university = participation.getUniversity();
         UserInfo user = userInfoRepository.findByEmail(universityEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        boolean isDev = user.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
-
-        if (!university.getContactEmail().equals(universityEmail) && !isDev) {
+        boolean isDev = user.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        
+        // Corrected check: Validate against University Owner
+        if (!university.getOwner().getId().equals(user.getId()) && !isDev) {
             throw new RuntimeException("You are not authorized to register this university");
         }
 
@@ -124,7 +125,7 @@ public class UniversityParticipationService {
             throw new RuntimeException("Exhibition is locked");
         }
 
-        boolean isDev = reviewer.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        boolean isDev = reviewer.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         if (!exhibition.getOrganization().getOwner().getId().equals(reviewer.getId()) && !isDev) {
             throw new RuntimeException("Only ORG_OWNER can approve/reject university participation");
         }
@@ -158,7 +159,7 @@ public class UniversityParticipationService {
             throw new RuntimeException("Exhibition is locked");
         }
 
-        boolean isDev = orgOwner.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        boolean isDev = orgOwner.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId()) && !isDev) {
              throw new RuntimeException("Only ORG_OWNER can confirm payment");
         }
@@ -187,12 +188,13 @@ public class UniversityParticipationService {
             throw new RuntimeException("Cannot cancel participation when exhibition is ACTIVE");
         }
 
-        boolean isUniContact = participation.getUniversity().getContactEmail().equals(cancellerEmail);
+        // Check if canceller is the University Owner
+        boolean isUniOwner = participation.getUniversity().getOwner().getId().equals(canceller.getId());
         boolean isOrgOwner = exhibition.getOrganization().getOwner().getId().equals(canceller.getId());
 
-        boolean isDev = canceller.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        boolean isDev = canceller.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
 
-        if (!isUniContact && !isOrgOwner && !isDev) {
+        if (!isUniOwner && !isOrgOwner && !isDev) {
             throw new RuntimeException("Not authorized to cancel this participation");
         }
 

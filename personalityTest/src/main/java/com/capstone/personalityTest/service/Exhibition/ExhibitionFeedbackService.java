@@ -45,7 +45,7 @@ public class ExhibitionFeedbackService {
         StudentRegistration registration = registrationRepository.findByExhibitionIdAndStudentId(exhibitionId, studentUser.getId())
                 .orElseThrow(() -> new RuntimeException("Student registration not found"));
 
-        boolean isDev = studentUser.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_DEVELOPER"));
+        boolean isDev = studentUser.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         if (registration.getStatus() != StudentRegistrationStatus.ATTENDED && !isDev) {
             throw new RuntimeException("Only students who attended can submit feedback");
         }
