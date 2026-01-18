@@ -2,12 +2,14 @@ package com.capstone.personalityTest.model.Exhibition;
 
 import com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.PaymentStatus;
+import com.capstone.personalityTest.converter.BoothDetailsConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Entity
 @Data
@@ -19,17 +21,22 @@ public class UniversityParticipation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // primary key
 
-    private Long exhibitionId; // related exhibition
+    @ManyToOne
+    @JoinColumn(name = "exhibition_id")
+    private Exhibition exhibition; // related exhibition
 
-    private Long universityId; // participating university
+    @ManyToOne
+    @JoinColumn(name = "university_id")
+    private University university; // participating university
 
     @Enumerated(EnumType.STRING)
     private ParticipationStatus status; // participation lifecycle
 
     private Integer approvedBoothsCount; // allowed booths
 
+    @Convert(converter = BoothDetailsConverter.class)
     @Column(columnDefinition = "TEXT")
-    private String boothDetails; // booth info as JSON
+    private Map<Long, Map<String, Object>> boothDetails; // booth info as JSON
 
     private BigDecimal participationFee; // total fee
 
