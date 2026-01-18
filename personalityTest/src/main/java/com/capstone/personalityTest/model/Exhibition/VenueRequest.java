@@ -1,6 +1,7 @@
 package com.capstone.personalityTest.model.Exhibition;
 
 import com.capstone.personalityTest.model.Enum.Exhibition.VenueRequestStatus;
+import com.capstone.personalityTest.model.UserInfo;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -41,5 +42,7 @@ public class VenueRequest {
 
     private LocalDateTime reviewedAt; // decision time
 
-    private Long reviewedByUserId; // municipality admin user
+    @ManyToOne
+    @JoinColumn(name = "reviewed_by_user_id")
+    private UserInfo reviewedByUser; // municipality admin user
 }
