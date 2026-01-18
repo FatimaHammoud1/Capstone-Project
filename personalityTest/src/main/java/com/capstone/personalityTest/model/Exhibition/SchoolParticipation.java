@@ -17,9 +17,13 @@ public class SchoolParticipation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // primary key
 
-    private Long exhibitionId; // related exhibition
+    @ManyToOne
+    @JoinColumn(name = "exhibition_id")
+    private Exhibition exhibition; // related exhibition
 
-    private Long schoolId; // invited school
+    @ManyToOne
+    @JoinColumn(name = "school_id")
+    private School school; // invited school
 
     @Enumerated(EnumType.STRING)
     private ParticipationStatus status; // participation status

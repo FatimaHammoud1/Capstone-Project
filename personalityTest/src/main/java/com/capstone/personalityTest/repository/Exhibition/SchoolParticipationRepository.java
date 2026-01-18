@@ -1,0 +1,12 @@
+package com.capstone.personalityTest.repository.Exhibition;
+
+import com.capstone.personalityTest.model.Exhibition.Exhibition;
+import com.capstone.personalityTest.model.Exhibition.School;
+import com.capstone.personalityTest.model.Exhibition.SchoolParticipation;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface SchoolParticipationRepository extends JpaRepository<SchoolParticipation, Long> {
+    boolean existsByExhibitionAndSchool(Exhibition exhibition, School school);
+}
