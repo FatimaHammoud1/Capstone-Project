@@ -8,7 +8,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDateTime;
 
 @RestController
@@ -24,7 +23,7 @@ public class SchoolParticipationController {
     public ResponseEntity<SchoolParticipation> inviteSchool(
             @PathVariable Long exhibitionId,
             @PathVariable Long schoolId,
-            @RequestParam(required = false) LocalDateTime responseDeadline,
+            @RequestParam LocalDateTime responseDeadline,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         SchoolParticipation participation = participationService.inviteSchool(
@@ -40,10 +39,8 @@ public class SchoolParticipationController {
             @PathVariable Long participationId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        SchoolParticipation accepted = participationService.acceptInvitation(
-                participationId, userDetails.getUsername()
-        );
-        return ResponseEntity.ok(accepted);
+        SchoolParticipation participation = participationService.acceptInvitation(participationId, userDetails.getUsername());
+        return ResponseEntity.ok(participation);
     }
 
     // ----------------- CONFIRM SCHOOL -----------------
@@ -53,9 +50,18 @@ public class SchoolParticipationController {
             @PathVariable Long participationId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        SchoolParticipation confirmed = participationService.confirmParticipation(
-                participationId, userDetails.getUsername()
-        );
+        SchoolParticipation confirmed = participationService.confirmParticipation(participationId, userDetails.getUsername());
         return ResponseEntity.ok(confirmed);
+    }
+    
+    // ----------------- CANCEL SCHOOL PARTICIPATION -----------------
+    @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'ORG_OWNER')")
+    public ResponseEntity<SchoolParticipation> cancelParticipation(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+            
+        SchoolParticipation cancelled = participationService.cancelParticipation(id, userDetails.getUsername());
+        return ResponseEntity.ok(cancelled);
     }
 }

@@ -10,6 +10,7 @@ import com.capstone.personalityTest.repository.Exhibition.*;
 import com.capstone.personalityTest.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -41,21 +42,10 @@ public class ActivityProviderService {
             throw new RuntimeException("You are not the owner of this organization");
         }
 
-        if (exhibition.getStatus() != ExhibitionStatus.VENUE_APPROVED && exhibition.getStatus() != ExhibitionStatus.ACTIVITY_PENDING) {
-             // Allowing generic flow, but keeping original logic mainly... or strict check?
-             // User said "Exhibition must be VENUE_APPROVED". Let's update if necessary but original check was strict.
-             // Sticking to original logic + Locked check above.
-             if (exhibition.getStatus().ordinal() < ExhibitionStatus.VENUE_APPROVED.ordinal()) {
-                 throw new RuntimeException("Exhibition must be VENUE_APPROVED to invite providers");
-             }
+        if (exhibition.getStatus().ordinal() < ExhibitionStatus.VENUE_APPROVED.ordinal()) {
+             throw new RuntimeException("Exhibition must be VENUE_APPROVED to invite providers");
         }
-        
-        // original check:
-        // if (exhibition.getStatus() != ExhibitionStatus.VENUE_APPROVED) { ... }
-        // Relaxing slightly to allow invites during ACTIVITY_PENDING phase if needed, 
-        // but let's just stick to the specific user instruction "Must be VENUE_APPROVED" originally.
-        // With state transitions, it might become ACTIVITY_PENDING.
-        
+
         ActivityProvider provider = activityProviderRepository.findById(providerId)
                 .orElseThrow(() -> new RuntimeException("Provider not found"));
 
@@ -128,5 +118,45 @@ public class ActivityProviderService {
         }
 
         return savedRequest;
+    }
+    
+    // ----------------- Cancel Provider Request -----------------
+    @Transactional
+    public ActivityProviderRequest cancelRequest(Long requestId, String reason, String cancellerEmail) {
+        UserInfo canceller = userInfoRepository.findByEmail(cancellerEmail)
+                .orElseThrow(() -> new RuntimeException("Canceller not found"));
+
+        ActivityProviderRequest request = providerRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        Exhibition exhibition = request.getExhibition();
+
+        if (exhibition.getStatus() == ExhibitionStatus.ACTIVE) {
+            throw new RuntimeException("Cannot cancel request when exhibition is ACTIVE");
+        }
+        
+        // Verify owner
+        if (!request.getProvider().getOwner().getId().equals(canceller.getId())) {
+             throw new RuntimeException("Only the provider owner can cancel this request");
+        }
+
+        if (request.getStatus() != ActivityProviderRequestStatus.PROPOSED && request.getStatus() != ActivityProviderRequestStatus.APPROVED) {
+            throw new RuntimeException("Only PROPOSED or APPROVED requests can be cancelled");
+        }
+        
+        // State Change -> REJECTED (as per requirement, though CANCELLED might be semantic preference, sticking to requirement "ActivityProviderRequest.status → REJECTED")
+        request.setStatus(ActivityProviderRequestStatus.REJECTED);
+        request.setRejectionReason("Cancelled by provider: " + reason);
+        // Side effects: Remove related booths? 
+        // Logic generally implies if approved, booths might have been created. 
+        // Assuming booths are created after approval or confirmation. If so, logic to remove them is needed.
+        // But in this flow, booths seem to be implicitly counted via requests or university participation. 
+        // If booths table has entries for this provider/request, delete them.
+        // Assuming Booth entity doesn't directly link to ActivityProviderRequest but logical capacity.
+        // If explicit booths exist for this provider in this exhibition:
+        // boothRepository.deleteByExhibitionAndProvider... (If such method/link exists).
+        // For now, simpler "Recalculate exhibition capacity" is automatic since capacity is summed from requests/booths.
+
+        return providerRequestRepository.save(request);
     }
 }

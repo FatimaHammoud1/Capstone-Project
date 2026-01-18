@@ -59,4 +59,15 @@ public class StudentRegistrationController {
         List<StudentRegistration> approvedList = registrationService.approveStudents(registrationIds, userDetails.getUsername());
         return ResponseEntity.ok(approvedList);
     }
+    
+    // ----------------- CANCEL REGISTRATION -----------------
+    @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('STUDENT', 'ORG_OWNER')")
+    public ResponseEntity<StudentRegistration> cancelRegistration(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+            
+        StudentRegistration cancelled = registrationService.cancelRegistration(id, userDetails.getUsername());
+        return ResponseEntity.ok(cancelled);
+    }
 }

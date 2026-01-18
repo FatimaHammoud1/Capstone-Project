@@ -12,6 +12,7 @@ import com.capstone.personalityTest.repository.Exhibition.SchoolRepository;
 import com.capstone.personalityTest.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -115,6 +116,37 @@ public class SchoolParticipationService {
         participation.setStatus(ParticipationStatus.CONFIRMED);
         participation.setConfirmedAt(LocalDateTime.now());
 
+        return participationRepository.save(participation);
+    }
+    
+    // ----------------- Cancel School Participation -----------------
+    @Transactional
+    public SchoolParticipation cancelParticipation(Long participationId, String cancellerEmail) {
+        UserInfo canceller = userInfoRepository.findByEmail(cancellerEmail)
+                .orElseThrow(() -> new RuntimeException("Canceller not found"));
+
+        SchoolParticipation participation = participationRepository.findById(participationId)
+                .orElseThrow(() -> new RuntimeException("Participation not found"));
+
+        Exhibition exhibition = participation.getExhibition();
+
+        if (exhibition.getStatus() == ExhibitionStatus.ACTIVE) {
+            throw new RuntimeException("Cannot cancel participation when exhibition is ACTIVE");
+        }
+
+        boolean isSchoolContact = participation.getSchool().getContactEmail().equals(cancellerEmail);
+        boolean isOrgOwner = exhibition.getOrganization().getOwner().getId().equals(canceller.getId());
+
+        if (!isSchoolContact && !isOrgOwner) {
+            throw new RuntimeException("Not authorized to cancel this participation");
+        }
+
+        if (participation.getStatus() != ParticipationStatus.ACCEPTED && participation.getStatus() != ParticipationStatus.CONFIRMED) {
+             throw new RuntimeException("Only ACCEPTED or CONFIRMED participations can be cancelled");
+        }
+
+        participation.setStatus(ParticipationStatus.CANCELLED);
+        
         return participationRepository.save(participation);
     }
 }

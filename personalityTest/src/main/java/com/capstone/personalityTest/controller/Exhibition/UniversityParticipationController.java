@@ -75,4 +75,15 @@ public class UniversityParticipationController {
         UniversityParticipation confirmed = participationService.confirmPayment(participationId, userDetails.getUsername());
         return ResponseEntity.ok(confirmed);
     }
+    
+    // ----------------- CANCEL PARTICIPATION -----------------
+    @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('UNIVERSITY_ADMIN', 'ORG_OWNER')")
+    public ResponseEntity<UniversityParticipation> cancelParticipation(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+            
+        UniversityParticipation cancelled = participationService.cancelParticipation(id, userDetails.getUsername());
+        return ResponseEntity.ok(cancelled);
+    }
 }

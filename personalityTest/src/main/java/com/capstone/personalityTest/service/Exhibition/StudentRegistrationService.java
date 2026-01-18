@@ -12,6 +12,7 @@ import com.capstone.personalityTest.repository.Exhibition.StudentRegistrationRep
 import com.capstone.personalityTest.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -126,5 +127,37 @@ public class StudentRegistrationService {
             approvedList.add(approveStudent(id, orgOwnerEmail));
         }
         return approvedList;
+    }
+    
+    // ----------------- Cancel Registration -----------------
+    @Transactional
+    public StudentRegistration cancelRegistration(Long registrationId, String cancellerEmail) {
+        UserInfo canceller = userInfoRepository.findByEmail(cancellerEmail)
+                .orElseThrow(() -> new RuntimeException("Canceller not found"));
+
+        StudentRegistration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new RuntimeException("Registration not found"));
+
+        Exhibition exhibition = registration.getExhibition();
+
+        if (exhibition.getStatus() == ExhibitionStatus.ACTIVE) {
+             throw new RuntimeException("Cannot cancel registration when exhibition is ACTIVE");
+        }
+        
+        boolean isStudent = registration.getStudent().getId().equals(canceller.getId());
+        boolean isOrgOwner = exhibition.getOrganization().getOwner().getId().equals(canceller.getId());
+
+        if (!isStudent && !isOrgOwner) {
+            throw new RuntimeException("Not authorized to cancel this registration");
+        }
+
+        if (registration.getStatus() != StudentRegistrationStatus.REGISTERED) {
+            throw new RuntimeException("Only REGISTERED registrations can be cancelled");
+        }
+
+        registration.setStatus(StudentRegistrationStatus.CANCELLED);
+        // Side effects: Release seat - Implicit via count queries excluding CANCELLED
+        
+        return registrationRepository.save(registration);
     }
 }
