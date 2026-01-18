@@ -1,5 +1,9 @@
 package com.capstone.personalityTest.model.Enum.Exhibition;
 
 public enum StudentRegistrationStatus {
-    REGISTERED, ATTENDED, NO_SHOW
+    PENDING,
+    REGISTERED,
+    ATTENDED,
+    NO_SHOW,
+    CANCELLED
 }
