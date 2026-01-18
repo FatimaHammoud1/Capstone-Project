@@ -2,6 +2,7 @@ package com.capstone.personalityTest.service.Exhibition;
 
 import com.capstone.personalityTest.model.Enum.Exhibition.ExhibitionStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus;
+import com.capstone.personalityTest.model.Enum.Exhibition.PaymentStatus;
 import com.capstone.personalityTest.model.Exhibition.Exhibition;
 import com.capstone.personalityTest.model.Exhibition.University;
 import com.capstone.personalityTest.model.Exhibition.UniversityParticipation;
@@ -37,9 +38,10 @@ public class UniversityParticipationService {
             throw new RuntimeException("Only ORG_OWNER can invite universities");
         }
 
-        // if (exhibition.getStatus() != ExhibitionStatus.ACTIVITY_APPROVED) {
-        //     throw new RuntimeException("Exhibition must have all activities approved to invite universities");
-        // }
+        // Guard: Locked if CONFIRMED or later
+        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
+            throw new RuntimeException("Exhibition is locked");
+        }
 
         University university = universityRepository.findById(universityId)
                 .orElseThrow(() -> new RuntimeException("University not found"));
@@ -47,6 +49,12 @@ public class UniversityParticipationService {
         boolean alreadyInvited = participationRepository.existsByExhibitionAndUniversity(exhibition, university);
         if (alreadyInvited) {
             throw new RuntimeException("This university has already been invited for this exhibition");
+        }
+        
+        // 1️⃣ Missing Exhibition status transition: UNIVERSITY_INVITED (only once)
+        if (exhibition.getStatus() == ExhibitionStatus.ACTIVITY_APPROVED) {
+            exhibition.setStatus(ExhibitionStatus.UNIVERSITY_INVITED);
+            exhibitionRepository.save(exhibition);
         }
 
         UniversityParticipation participation = new UniversityParticipation();
@@ -65,6 +73,12 @@ public class UniversityParticipationService {
         UniversityParticipation participation = participationRepository.findById(participationId)
                 .orElseThrow(() -> new RuntimeException("Participation request not found"));
 
+        Exhibition exhibition = participation.getExhibition();
+        // Guard: Locked if CONFIRMED or later
+        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
+            throw new RuntimeException("Exhibition is locked");
+        }
+
         University university = participation.getUniversity();
         if (!university.getContactEmail().equals(universityEmail)) {
             throw new RuntimeException("You are not authorized to register this university");
@@ -73,8 +87,6 @@ public class UniversityParticipationService {
         if (participation.getStatus() != ParticipationStatus.INVITED) {
             throw new RuntimeException("University must be INVITED to register");
         }
-
-        Exhibition exhibition = participation.getExhibition();
 
         // Capacity check: sum of all booths already assigned
         int totalExistingBooths = boothRepository.countByExhibition(exhibition);
@@ -100,6 +112,10 @@ public class UniversityParticipationService {
                 .orElseThrow(() -> new RuntimeException("Participation not found"));
 
         Exhibition exhibition = participation.getExhibition();
+        // Guard: Locked if CONFIRMED or later
+        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
+            throw new RuntimeException("Exhibition is locked");
+        }
 
         if (!exhibition.getOrganization().getOwner().getId().equals(reviewer.getId())) {
             throw new RuntimeException("Only ORG_OWNER can approve/reject university participation");
@@ -114,6 +130,35 @@ public class UniversityParticipationService {
         } else {
             participation.setStatus(ParticipationStatus.CANCELLED); // rejected universities set as CANCELLED
         }
+
+        return participationRepository.save(participation);
+    }
+    
+    // 3️⃣ Explicit payment confirmation (Step 2 & 3 in Goal)
+    public UniversityParticipation confirmPayment(Long participationId, String orgOwnerEmail) {
+        UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UniversityParticipation participation = participationRepository.findById(participationId)
+                .orElseThrow(() -> new RuntimeException("Participation not found"));
+
+        Exhibition exhibition = participation.getExhibition();
+
+        // Locked if CONFIRMED? Payment usually implies pre-confirmation. 
+        // Logic says "confirmExhibition" depends on everyone being paid. So confirming payment is allowed before exhibition CONFIRMED.
+        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
+            throw new RuntimeException("Exhibition is locked");
+        }
+
+        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId())) {
+             throw new RuntimeException("Only ORG_OWNER can confirm payment");
+        }
+
+        participation.setPaymentStatus(PaymentStatus.PAID);
+        participation.setPaymentDate(LocalDateTime.now());
+        // 2️⃣ Add University CONFIRMED step
+        participation.setStatus(ParticipationStatus.CONFIRMED);
+        participation.setConfirmedAt(LocalDateTime.now());
 
         return participationRepository.save(participation);
     }

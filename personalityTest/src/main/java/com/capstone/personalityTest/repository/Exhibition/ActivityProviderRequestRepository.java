@@ -12,4 +12,7 @@ import java.util.List;
 public interface ActivityProviderRequestRepository extends JpaRepository<ActivityProviderRequest, Long> {
     boolean existsByExhibitionAndProvider(Exhibition exhibition, ActivityProvider provider);
     List<ActivityProviderRequest> findByExhibitionIdAndStatus(Long exhibitionId, ActivityProviderRequestStatus status);
+    
+    long countByExhibition(Exhibition exhibition);
+    long countByExhibitionAndStatus(Exhibition exhibition, ActivityProviderRequestStatus status);
 }

@@ -1,9 +1,11 @@
 package com.capstone.personalityTest.service.Exhibition;
 
+import com.capstone.personalityTest.model.Enum.Exhibition.ExhibitionStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.StudentRegistrationStatus;
 import com.capstone.personalityTest.model.Exhibition.Exhibition;
 import com.capstone.personalityTest.model.Exhibition.ExhibitionFeedback;
 import com.capstone.personalityTest.model.Exhibition.StudentRegistration;
+import com.capstone.personalityTest.model.UserInfo;
 import com.capstone.personalityTest.repository.Exhibition.ExhibitionFeedbackRepository;
 import com.capstone.personalityTest.repository.Exhibition.ExhibitionRepository;
 import com.capstone.personalityTest.repository.Exhibition.StudentRegistrationRepository;
@@ -24,13 +26,23 @@ public class ExhibitionFeedbackService {
     private final UserInfoRepository userInfoRepository;
 
     // ----------------- Submit Feedback -----------------
-    public ExhibitionFeedback submitFeedback(Long exhibitionId, Long studentId, Integer rating, String comments) {
+    // 7️⃣ Security fix: Use studentEmail instead of studentId
+    public ExhibitionFeedback submitFeedback(Long exhibitionId, String studentEmail, Integer rating, String comments) {
+        
+        UserInfo studentUser = userInfoRepository.findByEmail(studentEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    
         // Check that exhibition exists
         Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
+        // 6️⃣ Restrict feedback submission: Allow only if COMPLETED
+        if (exhibition.getStatus() != ExhibitionStatus.COMPLETED) {
+            throw new RuntimeException("Feedback can only be submitted for COMPLETED exhibitions");
+        }
+
         // Check that student exists and attended
-        StudentRegistration registration = registrationRepository.findByExhibitionIdAndStudentId(exhibitionId, studentId)
+        StudentRegistration registration = registrationRepository.findByExhibitionIdAndStudentId(exhibitionId, studentUser.getId())
                 .orElseThrow(() -> new RuntimeException("Student registration not found"));
 
         if (registration.getStatus() != StudentRegistrationStatus.ATTENDED) {

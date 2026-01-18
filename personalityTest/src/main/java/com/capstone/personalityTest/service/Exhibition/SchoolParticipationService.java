@@ -35,10 +35,11 @@ public class SchoolParticipationService {
         if (!exhibition.getOrganization().getOwner().getId().equals(inviter.getId())) {
             throw new RuntimeException("Only ORG_OWNER can invite schools");
         }
-
-        // if (exhibition.getStatus() != ExhibitionStatus.UNIVERSITY_INVITED) {
-        //    throw new RuntimeException("Exhibition must have universities invited before inviting schools");
-        // }
+        
+        // Guard: Locked if CONFIRMED or later
+        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
+            throw new RuntimeException("Exhibition is locked");
+        }
 
         School school = schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new RuntimeException("School not found"));
@@ -46,6 +47,12 @@ public class SchoolParticipationService {
         boolean alreadyInvited = participationRepository.existsByExhibitionAndSchool(exhibition, school);
         if (alreadyInvited) {
             throw new RuntimeException("This school has already been invited for this exhibition");
+        }
+
+        // 1️⃣ Missing Exhibition status transition: SCHOOL_INVITED (only once)
+        if (exhibition.getStatus() == ExhibitionStatus.UNIVERSITY_INVITED) {
+            exhibition.setStatus(ExhibitionStatus.SCHOOL_INVITED);
+            exhibitionRepository.save(exhibition);
         }
 
         SchoolParticipation participation = new SchoolParticipation();
@@ -62,6 +69,12 @@ public class SchoolParticipationService {
     public SchoolParticipation acceptInvitation(Long participationId, String schoolEmail) {
         SchoolParticipation participation = participationRepository.findById(participationId)
                 .orElseThrow(() -> new RuntimeException("Participation not found"));
+        
+        Exhibition exhibition = participation.getExhibition();
+        // Guard: Locked if CONFIRMED or later
+        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
+             throw new RuntimeException("Exhibition is locked");
+        }
 
         if (!participation.getSchool().getContactEmail().equals(schoolEmail)) {
             throw new RuntimeException("You are not authorized to accept this invitation");
@@ -86,6 +99,10 @@ public class SchoolParticipationService {
                 .orElseThrow(() -> new RuntimeException("Participation not found"));
 
         Exhibition exhibition = participation.getExhibition();
+        // Guard: Locked if CONFIRMED or later
+        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
+             throw new RuntimeException("Exhibition is locked");
+        }
 
         if (!exhibition.getOrganization().getOwner().getId().equals(inviter.getId())) {
             throw new RuntimeException("Only ORG_OWNER can confirm school participation");

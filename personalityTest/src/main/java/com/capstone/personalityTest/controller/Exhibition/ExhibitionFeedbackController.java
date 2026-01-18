@@ -5,6 +5,8 @@ import com.capstone.personalityTest.service.Exhibition.ExhibitionFeedbackService
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -20,11 +22,12 @@ public class ExhibitionFeedbackController {
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ExhibitionFeedback> submitFeedback(
             @RequestParam Long exhibitionId,
-            @RequestParam Long studentId,
             @RequestParam Integer rating,
-            @RequestParam(required = false) String comments) {
+            @RequestParam(required = false) String comments,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        ExhibitionFeedback feedback = feedbackService.submitFeedback(exhibitionId, studentId, rating, comments);
+        // 7️⃣ Security fix: Do not accept studentId from request parameters.
+        ExhibitionFeedback feedback = feedbackService.submitFeedback(exhibitionId, userDetails.getUsername(), rating, comments);
         return ResponseEntity.ok(feedback);
     }
 

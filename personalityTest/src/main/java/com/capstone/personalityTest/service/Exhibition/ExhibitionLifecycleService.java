@@ -61,4 +61,27 @@ public class ExhibitionLifecycleService {
 
         return exhibitionRepository.save(exhibition);
     }
+    
+    // 5️⃣ Add Exhibition COMPLETED status
+    public Exhibition completeExhibition(Long exhibitionId, String orgOwnerEmail) {
+        UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
+                .orElseThrow(() -> new RuntimeException("Exhibition not found"));
+
+        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId())) {
+            throw new RuntimeException("Only the organization owner can complete the exhibition");
+        }
+
+        if (exhibition.getStatus() != ExhibitionStatus.ACTIVE) {
+            throw new RuntimeException("Exhibition must be ACTIVE to be completed");
+        }
+
+        exhibition.setStatus(ExhibitionStatus.COMPLETED);
+        exhibition.setUpdatedAt(LocalDateTime.now());
+        // Could set endDate here if not set, but likely set during creation.
+
+        return exhibitionRepository.save(exhibition);
+    }
 }

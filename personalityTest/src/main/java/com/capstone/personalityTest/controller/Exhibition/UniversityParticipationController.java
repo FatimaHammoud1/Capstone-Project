@@ -64,4 +64,15 @@ public class UniversityParticipationController {
         );
         return ResponseEntity.ok(updated);
     }
+    
+    // ----------------- CONFIRM PAYMENT -----------------
+    @PostMapping("/confirm-payment/{participationId}")
+    @PreAuthorize("hasRole('ORG_OWNER')")
+    public ResponseEntity<UniversityParticipation> confirmPayment(
+            @PathVariable Long participationId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        UniversityParticipation confirmed = participationService.confirmPayment(participationId, userDetails.getUsername());
+        return ResponseEntity.ok(confirmed);
+    }
 }

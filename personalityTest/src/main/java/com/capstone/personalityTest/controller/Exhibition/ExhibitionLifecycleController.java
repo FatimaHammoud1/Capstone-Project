@@ -26,4 +26,15 @@ public class ExhibitionLifecycleController {
         Exhibition started = lifecycleService.startExhibition(exhibitionId, userDetails.getUsername());
         return ResponseEntity.ok(started);
     }
+    
+    // ----------------- COMPLETE EXHIBITION -----------------
+    @PostMapping("/complete/{exhibitionId}")
+    @PreAuthorize("hasRole('ORG_OWNER')")
+    public ResponseEntity<Exhibition> completeExhibition(
+            @PathVariable Long exhibitionId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Exhibition completed = lifecycleService.completeExhibition(exhibitionId, userDetails.getUsername());
+        return ResponseEntity.ok(completed);
+    }
 }
