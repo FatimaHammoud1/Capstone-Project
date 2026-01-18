@@ -1,0 +1,6 @@
+package com.capstone.personalityTest.model.Enum.Exhibition;
+
+public enum ExhibitionStatus {
+    DRAFT, VENUE_PENDING, VENUE_APPROVED, ACTIVITY_PENDING, ACTIVITY_APPROVED,
+    UNIVERSITY_INVITED, SCHOOL_INVITED, CONFIRMED, ACTIVE, COMPLETED, CANCELLED
+}
