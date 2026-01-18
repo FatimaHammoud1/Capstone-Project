@@ -7,6 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,11 +29,13 @@ public class UserInfoDetails implements UserDetails {
         this.id = userInfo.getId();
         this.username = userInfo.getEmail(); // Use email as username for login
         this.password = userInfo.getPassword(); // Store hashed password
-        this.authorities =userInfo.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority(role.name()))// Convert each role into a GrantedAuthority object
-                .collect(Collectors.toList());// Collect into a list
 
+        this.authorities = userInfo.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getCode()))
+                .collect(Collectors.toList());
     }
+
+
 
     // Return the authorities (roles) of the user
     @Override

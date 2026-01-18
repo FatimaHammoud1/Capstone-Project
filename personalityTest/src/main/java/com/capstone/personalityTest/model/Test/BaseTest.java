@@ -1,4 +1,4 @@
-package com.capstone.personalityTest.model;
+package com.capstone.personalityTest.model.Test;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

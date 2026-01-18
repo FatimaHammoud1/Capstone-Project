@@ -1,7 +1,7 @@
 package com.capstone.personalityTest.config;
 
-import com.capstone.personalityTest.model.Enum.Role;
 import com.capstone.personalityTest.model.Enum.TargetGender;
+import com.capstone.personalityTest.model.Role;
 import com.capstone.personalityTest.model.UserInfo;
 import com.capstone.personalityTest.repository.UserInfoRepository;
 import com.capstone.personalityTest.service.JwtService;
@@ -11,10 +11,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import com.capstone.personalityTest.repository.RoleRepository;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.Set;
 
 @Component
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -22,9 +22,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtService jwtService;
     private final UserInfoRepository userInfoRepository;
 
-    public OAuth2AuthenticationSuccessHandler(JwtService jwtService, UserInfoRepository userInfoRepository) {
+    private final RoleRepository roleRepository;
+
+    public OAuth2AuthenticationSuccessHandler(JwtService jwtService, UserInfoRepository userInfoRepository,RoleRepository roleRepository) {
         this.jwtService = jwtService;
         this.userInfoRepository = userInfoRepository;
+        this.roleRepository = roleRepository;
     }
 
     @Override
@@ -51,10 +54,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             user.setName(name);
             user.setEmail(email);
             user.setPassword("[GOOGLE_AUTH]");
-            user.setGender(TargetGender.ALL); // Placeholder: "Unspecified"
-            user.setRoles(Set.of(Role.ROLE_USER));
-            
-            user = userInfoRepository.save(user);
+            user.setGender(TargetGender.ALL);
+
+            Role studentRole = roleRepository.findByName("ROLE_STUDENT")
+                    .orElseThrow(() -> new RuntimeException("ROLE_STUDENT not found"));
+
+            user.getRoles().add(studentRole);
         }
 
         String token = jwtService.generateToken(user);

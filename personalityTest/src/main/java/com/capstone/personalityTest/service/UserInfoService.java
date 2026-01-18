@@ -7,10 +7,10 @@ import com.capstone.personalityTest.dto.ResponseDTO.UserInfoResponse;
 import com.capstone.personalityTest.dto.RequestDTO.UserInfoRequest;
 import com.capstone.personalityTest.exception.EntityExistsException;
 import com.capstone.personalityTest.mapper.UserMapper;
-import com.capstone.personalityTest.model.Enum.Role;
 import com.capstone.personalityTest.model.RefreshToken;
+import com.capstone.personalityTest.model.Role;
 import com.capstone.personalityTest.model.UserInfo;
-import com.capstone.personalityTest.repository.RefreshTokenRepository;
+import com.capstone.personalityTest.repository.RoleRepository;
 import com.capstone.personalityTest.repository.UserInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -24,8 +24,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.Set;
 
@@ -42,16 +40,18 @@ public class UserInfoService implements UserDetailsService {
 
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final RoleRepository roleRepository;
     @Autowired
-    public UserInfoService(UserInfoRepository userRepo, PasswordEncoder encoder, UserMapper userMapper , JwtService jwtService , AuthenticationManager authenticationManager , RefreshTokenService refreshTokenService) {
-        this.userRepo = userRepo;
-        this.encoder = encoder;
-        this.userMapper = userMapper;
-        this.jwtService = jwtService;
-        this.authenticationManager = authenticationManager;
-        this.refreshTokenService = refreshTokenService;
+    public UserInfoService(UserInfoRepository userRepo, PasswordEncoder encoder, UserMapper userMapper , JwtService jwtService , AuthenticationManager authenticationManager , RefreshTokenService refreshTokenService , RoleRepository roleRepository) {
+            this.userRepo = userRepo;
+            this.encoder = encoder;
+            this.userMapper = userMapper;
+            this.jwtService = jwtService;
+            this.authenticationManager = authenticationManager;
+            this.refreshTokenService = refreshTokenService;
+            this.roleRepository = roleRepository;
 
-    }
+        }
 
     // Method to load user details by username (email)
     @Override
@@ -71,8 +71,24 @@ public class UserInfoService implements UserDetailsService {
     }
 
     // Add any additional methods for registering or managing users
+//    public void addUser(UserInfoRequest userInfoRequest) {
+//        //No repetition for user
+//        if (userRepo.findByEmail(userInfoRequest.getEmail()).isPresent()) {
+//            throw new EntityExistsException("User with email " + userInfoRequest.getEmail() + " already exists");
+//        }
+//
+//        // Encrypt password before saving
+//        userInfoRequest.setPassword(encoder.encode(userInfoRequest.getPassword()));
+//        UserInfo userInfo = userMapper.toEntity(userInfoRequest);
+//        if (userInfo.getRoles() == null || userInfo.getRoles().isEmpty()) {
+//            userInfo.setRoles(Set.of(Role.ROLE_USER));
+//        }
+//
+//        userRepo.save(userInfo);
+//    }
     public void addUser(UserInfoRequest userInfoRequest) {
         //No repetition for user
+
         if (userRepo.findByEmail(userInfoRequest.getEmail()).isPresent()) {
             throw new EntityExistsException("User with email " + userInfoRequest.getEmail() + " already exists");
         }
@@ -80,9 +96,12 @@ public class UserInfoService implements UserDetailsService {
         // Encrypt password before saving
         userInfoRequest.setPassword(encoder.encode(userInfoRequest.getPassword()));
         UserInfo userInfo = userMapper.toEntity(userInfoRequest);
-        if (userInfo.getRoles() == null || userInfo.getRoles().isEmpty()) {
-            userInfo.setRoles(Set.of(Role.ROLE_USER));
-        }
+
+
+        Role studentRole = roleRepository.findByName("ROLE_STUDENT")
+                .orElseThrow(() -> new RuntimeException("ROLE_STUDENT not found"));
+
+        userInfo.getRoles().add(studentRole);
 
         userRepo.save(userInfo);
     }

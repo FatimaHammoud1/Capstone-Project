@@ -22,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.authorization.AuthorizationDecision;
 
 import java.util.List;
 
@@ -67,12 +68,23 @@ public class SecurityConfig {
                 // Configure endpoint authorization
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
-                        .requestMatchers("/auth/welcome", "/auth/signUp", "/auth/signIn" ,"/swagger-ui/**",
-                                "/v3/api-docs/**", "/oauth2/**" ,"/login/oauth2/**" ).permitAll()
+                        .requestMatchers(
+                                "/auth/welcome", "/auth/signUp", "/auth/signIn",
+                                "/swagger-ui/**", "/v3/api-docs/**",
+                                "/oauth2/**", "/login/oauth2/**"
+                        ).permitAll()
 
-                        // All other endpoints require authentication
-                        .anyRequest().authenticated()
-                ) .oauth2Login(oauth2 -> oauth2
+                        // All other endpoints: one single anyRequest
+                        .anyRequest().access((authentication, context) -> {
+                            boolean isDeveloper = authentication.get().getAuthorities().stream()
+                                    .anyMatch(a -> a.getAuthority().equals("ROLE_DEVELOPER"));
+                            // Allow if developer OR authenticated (others controlled with @PreAuthorize)
+                            return new org.springframework.security.authorization.AuthorizationDecision(
+                                    isDeveloper || authentication.get().isAuthenticated()
+                            );
+                        })
+                )
+                .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2AuthenticationSuccessHandler) // You'll create this
                 )
 
