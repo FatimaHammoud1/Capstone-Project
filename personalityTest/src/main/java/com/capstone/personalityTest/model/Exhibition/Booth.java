@@ -19,6 +19,7 @@ public class Booth {
 
     @ManyToOne
     @JoinColumn(name = "exhibition_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Exhibition exhibition; // related exhibition
 
     @Enumerated(EnumType.STRING)

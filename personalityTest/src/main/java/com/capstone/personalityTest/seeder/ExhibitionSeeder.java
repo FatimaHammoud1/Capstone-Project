@@ -29,18 +29,19 @@ public class ExhibitionSeeder implements CommandLineRunner {
     private final ActivityProviderRepository activityProviderRepository;
     private final ActivityRepository activityRepository;
     private final SchoolRepository schoolRepository;
-
-
+    private final VenueRepository venueRepository;
 
     @Autowired
-    public ExhibitionSeeder(RoleRepository roleRepository,
-                            UserInfoRepository userInfoRepository,
-                            OrganizationRepository organizationRepository,
-                            UniversityRepository universityRepository,
-                            MunicipalityRepository municipalityRepository,
-                            ActivityProviderRepository activityProviderRepository,
-                            ActivityRepository activityRepository,
-                            SchoolRepository schoolRepository) {
+    public ExhibitionSeeder(
+            RoleRepository roleRepository,
+            UserInfoRepository userInfoRepository,
+            OrganizationRepository organizationRepository,
+            UniversityRepository universityRepository,
+            MunicipalityRepository municipalityRepository,
+            ActivityProviderRepository activityProviderRepository,
+            ActivityRepository activityRepository,
+            SchoolRepository schoolRepository,
+            VenueRepository venueRepository) { // <-- add here
 
         this.roleRepository = roleRepository;
         this.userInfoRepository = userInfoRepository;
@@ -50,7 +51,9 @@ public class ExhibitionSeeder implements CommandLineRunner {
         this.activityProviderRepository = activityProviderRepository;
         this.activityRepository = activityRepository;
         this.schoolRepository = schoolRepository;
+        this.venueRepository = venueRepository; // <-- assign here
     }
+
 
 
 
@@ -64,6 +67,7 @@ public class ExhibitionSeeder implements CommandLineRunner {
         seedActivityProviders();
         seedActivities();
         seedSchools();
+        seedVenues();
     }
 
     // ---------------- ROLES ----------------
@@ -256,5 +260,47 @@ public class ExhibitionSeeder implements CommandLineRunner {
 
         ));
     }
+    // ---------------- VENUES ----------------
+    private void seedVenues() {
+        if (venueRepository.count() > 0) return;
+
+        // Make sure the municipality exists
+        Municipality municipality = municipalityRepository.findByName("City Municipality")
+                .orElseThrow(() -> new RuntimeException("Municipality not found"));
+
+        venueRepository.saveAll(List.of(
+                new Venue(
+                        null,
+                        municipality.getId(),
+                        "Grand Hall",
+                        "123 Main Street",
+                        500,
+                        1000.0,
+                        new java.math.BigDecimal("2000.00"),
+                        true
+                ),
+                new Venue(
+                        null,
+                        municipality.getId(),
+                        "Exhibition Center A",
+                        "45 Expo Road",
+                        300,
+                        750.0,
+                        new java.math.BigDecimal("1500.00"),
+                        true
+                ),
+                new Venue(
+                        null,
+                        municipality.getId(),
+                        "Convention Hall B",
+                        "78 City Plaza",
+                        200,
+                        500.0,
+                        new java.math.BigDecimal("1200.00"),
+                        true
+                )
+        ));
+    }
+
 
 }

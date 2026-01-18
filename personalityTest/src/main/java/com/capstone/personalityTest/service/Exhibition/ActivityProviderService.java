@@ -142,7 +142,7 @@ public class ActivityProviderService {
         }
         
         // Verify owner
-        if (!request.getProvider().getOwner().getId().equals(canceller.getId())) {
+        if (!request.getProvider().getId().equals(canceller.getId())) {
              throw new RuntimeException("Only the provider owner can cancel this request");
         }
 

@@ -21,10 +21,12 @@ public class VenueRequest {
 
     @ManyToOne
     @JoinColumn(name = "exhibition_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Exhibition exhibition; // related exhibition
 
     @ManyToOne
     @JoinColumn(name = "venue_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Venue venue; // requested venue
 
     @Enumerated(EnumType.STRING)
@@ -44,5 +46,6 @@ public class VenueRequest {
 
     @ManyToOne
     @JoinColumn(name = "reviewed_by_user_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private UserInfo reviewedByUser; // municipality admin user
 }

@@ -20,10 +20,12 @@ public class ActivityProviderRequest {
 
     @ManyToOne
     @JoinColumn(name = "exhibition_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Exhibition exhibition; // related exhibition
 
     @ManyToOne
     @JoinColumn(name = "provider_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ActivityProvider provider; // invited activity provider
 
     @Enumerated(EnumType.STRING)

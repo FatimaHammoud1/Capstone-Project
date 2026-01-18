@@ -23,10 +23,12 @@ public class UniversityParticipation {
 
     @ManyToOne
     @JoinColumn(name = "exhibition_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Exhibition exhibition; // related exhibition
 
     @ManyToOne
     @JoinColumn(name = "university_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private University university; // participating university
 
     @Enumerated(EnumType.STRING)

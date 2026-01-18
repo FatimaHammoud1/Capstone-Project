@@ -24,6 +24,7 @@ public class Organization {
 
     @ManyToOne
     @JoinColumn(name = "owner_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private UserInfo owner;
 
     @Enumerated(EnumType.STRING)

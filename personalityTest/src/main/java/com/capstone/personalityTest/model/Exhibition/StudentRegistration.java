@@ -20,10 +20,12 @@ public class StudentRegistration {
 
     @ManyToOne
     @JoinColumn(name = "exhibition_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Exhibition exhibition;
 
     @ManyToOne
     @JoinColumn(name = "student_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private UserInfo student;
 
     @Enumerated(EnumType.STRING)

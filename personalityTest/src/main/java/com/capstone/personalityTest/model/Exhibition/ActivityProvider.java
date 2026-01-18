@@ -22,4 +22,6 @@ public class ActivityProvider {
     private String contactPhone;
 
     private Boolean active;
+
+
 }

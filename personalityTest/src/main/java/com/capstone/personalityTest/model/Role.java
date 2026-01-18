@@ -31,6 +31,7 @@ public class Role {
     private String description;
 
     @ManyToMany(mappedBy = "roles")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Set<UserInfo> users = new HashSet<>();
 
 

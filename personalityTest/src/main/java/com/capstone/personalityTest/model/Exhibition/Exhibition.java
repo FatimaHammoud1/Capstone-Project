@@ -22,6 +22,7 @@ public class Exhibition {
 
     @ManyToOne
     @JoinColumn(name = "organization_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Organization organization; // organization that owns the exhibition
 
     private String title; // exhibition public name
