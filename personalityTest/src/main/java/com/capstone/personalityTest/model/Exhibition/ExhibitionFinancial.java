@@ -17,7 +17,9 @@ public class ExhibitionFinancial {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long exhibitionId;
+    @OneToOne
+    @JoinColumn(name = "exhibition_id")
+    private Exhibition exhibition;
 
     private BigDecimal totalRevenue;
 
