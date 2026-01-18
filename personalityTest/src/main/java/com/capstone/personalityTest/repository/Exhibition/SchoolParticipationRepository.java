@@ -1,5 +1,6 @@
 package com.capstone.personalityTest.repository.Exhibition;
 
+import com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus;
 import com.capstone.personalityTest.model.Exhibition.Exhibition;
 import com.capstone.personalityTest.model.Exhibition.School;
 import com.capstone.personalityTest.model.Exhibition.SchoolParticipation;
@@ -11,4 +12,5 @@ import java.util.List;
 public interface SchoolParticipationRepository extends JpaRepository<SchoolParticipation, Long> {
     boolean existsByExhibitionAndSchool(Exhibition exhibition, School school);
     List<SchoolParticipation> findByExhibitionId(Long exhibitionId);
+    boolean existsByExhibitionIdAndStatus(Long exhibitionId, ParticipationStatus status);
 }
