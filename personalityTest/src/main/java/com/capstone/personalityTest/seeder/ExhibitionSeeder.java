@@ -11,6 +11,7 @@ import com.capstone.personalityTest.repository.RoleRepository;
 import com.capstone.personalityTest.repository.UserInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ public class ExhibitionSeeder implements CommandLineRunner {
     private final ActivityRepository activityRepository;
     private final SchoolRepository schoolRepository;
     private final VenueRepository venueRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
     public ExhibitionSeeder(
@@ -41,7 +43,8 @@ public class ExhibitionSeeder implements CommandLineRunner {
             ActivityProviderRepository activityProviderRepository,
             ActivityRepository activityRepository,
             SchoolRepository schoolRepository,
-            VenueRepository venueRepository) { // <-- add here
+            VenueRepository venueRepository,PasswordEncoder passwordEncoder
+    ) {
 
         this.roleRepository = roleRepository;
         this.userInfoRepository = userInfoRepository;
@@ -51,7 +54,8 @@ public class ExhibitionSeeder implements CommandLineRunner {
         this.activityProviderRepository = activityProviderRepository;
         this.activityRepository = activityRepository;
         this.schoolRepository = schoolRepository;
-        this.venueRepository = venueRepository; // <-- assign here
+        this.venueRepository = venueRepository;
+        this.passwordEncoder =passwordEncoder;
     }
 
 
@@ -89,22 +93,22 @@ public class ExhibitionSeeder implements CommandLineRunner {
         if (userInfoRepository.count() > 0) return;
 
         userInfoRepository.saveAll(List.of(
-                new UserInfo(null, "System Dev", "dev@system.com", "password", TargetGender.MALE,
+                new UserInfo(null, "System Dev", "dev@system.com", passwordEncoder.encode("password"), TargetGender.MALE,
                         Set.of(roleRepository.findByCode("DEVELOPER").orElseThrow())),
 
-                new UserInfo(null, "Org Owner", "org@org.com", "password", TargetGender.FEMALE,
+                new UserInfo(null, "Org Owner", "org@org.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
                         Set.of(roleRepository.findByCode("ORG_OWNER").orElseThrow())),
 
-                new UserInfo(null, "Municipality Admin", "muni@city.com", "password", TargetGender.MALE,
+                new UserInfo(null, "Municipality Admin", "muni@city.com", passwordEncoder.encode("password"), TargetGender.MALE,
                         Set.of(roleRepository.findByCode("MUNICIPALITY_ADMIN").orElseThrow())),
 
-                new UserInfo(null, "University Admin", "uni@university.com", "password", TargetGender.FEMALE,
+                new UserInfo(null, "University Admin", "uni@university.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
                         Set.of(roleRepository.findByCode("UNIVERSITY_ADMIN").orElseThrow())),
 
-                new UserInfo(null, "Activity Provider", "activity@provider.com", "password", TargetGender.MALE,
+                new UserInfo(null, "Activity Provider", "activity@provider.com", passwordEncoder.encode("password"), TargetGender.MALE,
                         Set.of(roleRepository.findByCode("ACTIVITY_PROVIDER").orElseThrow())),
 
-                new UserInfo(null, "Student User", "student@user.com", "password", TargetGender.FEMALE,
+                new UserInfo(null, "Student User", "student@user.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
                         Set.of(roleRepository.findByCode("STUDENT").orElseThrow()))
         ));
 
