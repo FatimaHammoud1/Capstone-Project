@@ -54,6 +54,12 @@ public class ActivityProviderService {
         if (alreadyInvited) {
             throw new RuntimeException("This provider has already been invited for this exhibition");
         }
+        
+        // Update exhibition status to ACTIVITY_PENDING if it was VENUE_APPROVED
+        if (exhibition.getStatus() == ExhibitionStatus.VENUE_APPROVED) {
+            exhibition.setStatus(ExhibitionStatus.ACTIVITY_PENDING);
+            exhibitionRepository.save(exhibition);
+        }
 
         ActivityProviderRequest request = new ActivityProviderRequest();
         request.setExhibition(exhibition);
