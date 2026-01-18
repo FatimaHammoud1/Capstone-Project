@@ -1,6 +1,7 @@
 package com.capstone.personalityTest.model.Exhibition;
 
 import com.capstone.personalityTest.model.Enum.Exhibition.StudentRegistrationStatus;
+import com.capstone.personalityTest.model.UserInfo;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,12 +18,20 @@ public class StudentRegistration {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long exhibitionId;
+    @ManyToOne
+    @JoinColumn(name = "exhibition_id")
+    private Exhibition exhibition;
 
-    private Long studentId;
+    @ManyToOne
+    @JoinColumn(name = "student_id")
+    private UserInfo student;
 
     @Enumerated(EnumType.STRING)
     private StudentRegistrationStatus status;
+
+    private Boolean approved; // new field
+
+    private LocalDateTime approvedAt; // new field
 
     private LocalDateTime registeredAt;
 
