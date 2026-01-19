@@ -25,6 +25,7 @@ public class BoothService {
     private final UserInfoRepository userInfoRepository;
 
     // ----------------- Get Booths for Exhibition -----------------
+    // ----------------- Get Booths for Exhibition -----------------
     public List<BoothResponse> getBoothsByExhibition(Long exhibitionId) {
         Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
@@ -40,6 +41,12 @@ public class BoothService {
                 .filter(b -> b.getExhibition().getId().equals(exhibitionId)) // fallback filtering
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    public BoothResponse getBoothById(Long boothId) {
+        Booth booth = boothRepository.findById(boothId)
+                .orElseThrow(() -> new RuntimeException("Booth not found"));
+        return mapToResponse(booth);
     }
 
     // ----------------- Update Booth Assignments (Zone/Number) -----------------

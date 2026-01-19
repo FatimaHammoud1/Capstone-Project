@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFeedbackResponse;
+
 @Service
 @RequiredArgsConstructor
 public class ExhibitionFeedbackService {
@@ -27,9 +29,7 @@ public class ExhibitionFeedbackService {
 
     // ----------------- Submit Feedback -----------------
     // 7️⃣ Security fix: Use studentEmail instead of studentId
-    // ----------------- Submit Feedback -----------------
-    // 7️⃣ Security fix: Use studentEmail instead of studentId
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFeedbackResponse submitFeedback(Long exhibitionId, String studentEmail, Integer rating, String comments) {
+    public ExhibitionFeedbackResponse submitFeedback(Long exhibitionId, String studentEmail, Integer rating, String comments) {
         
         UserInfo studentUser = userInfoRepository.findByEmail(studentEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -73,14 +73,14 @@ public class ExhibitionFeedbackService {
     }
 
     // ----------------- Fetch Feedback for Exhibition -----------------
-    public List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFeedbackResponse> getFeedbackForExhibition(Long exhibitionId) {
+    public List<ExhibitionFeedbackResponse> getFeedbackForExhibition(Long exhibitionId) {
         return feedbackRepository.findByExhibitionId(exhibitionId).stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
-    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFeedbackResponse mapToResponse(ExhibitionFeedback feedback) {
-        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFeedbackResponse(
+    private ExhibitionFeedbackResponse mapToResponse(ExhibitionFeedback feedback) {
+        return new ExhibitionFeedbackResponse(
             feedback.getId(),
             feedback.getExhibition().getId(),
             feedback.getStudent().getId(),

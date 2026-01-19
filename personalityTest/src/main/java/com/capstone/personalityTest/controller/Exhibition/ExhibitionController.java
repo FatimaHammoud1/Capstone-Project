@@ -9,6 +9,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse;
+import com.capstone.personalityTest.dto.RequestDTO.Exhibition.ExhibitionRequest;
 
 @RestController
 @RequestMapping("/api/exhibitions")
@@ -20,9 +22,9 @@ public class ExhibitionController {
     // ----------------- Create Exhibition -----------------
     @PostMapping
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse> createExhibition(
+    public ResponseEntity<ExhibitionResponse> createExhibition(
             @RequestParam Long orgId,
-            @RequestBody com.capstone.personalityTest.dto.RequestDTO.Exhibition.ExhibitionRequest exhibitionRequest,
+            @RequestBody ExhibitionRequest exhibitionRequest,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         return ResponseEntity.ok(exhibitionService.createExhibition(orgId, exhibitionRequest, userDetails.getUsername()));
@@ -31,13 +33,13 @@ public class ExhibitionController {
     // ----------------- Get Exhibitions by Organization -----------------
     @GetMapping("/organization/{orgId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse>> getExhibitionsByOrg(@PathVariable Long orgId) {
+    public ResponseEntity<List<ExhibitionResponse>> getExhibitionsByOrg(@PathVariable Long orgId) {
         return ResponseEntity.ok(exhibitionService.getExhibitionsByOrg(orgId));
     }
     
     // ----------------- Get Exhibition By ID -----------------
     @GetMapping("/{exhibitionId}")
-    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse> getExhibition(@PathVariable Long exhibitionId) {
+    public ResponseEntity<ExhibitionResponse> getExhibition(@PathVariable Long exhibitionId) {
         // Publicly accessible for students/participants to view details before acting?
         // Or restricted? Assuming public or authenticated. 
         // If security needed, add PreAuthorize("isAuthenticated()")
@@ -46,7 +48,7 @@ public class ExhibitionController {
 
     // ----------------- Get All Active Exhibitions -----------------
     @GetMapping("/active")
-    public ResponseEntity<List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse>> getActiveExhibitions() {
+    public ResponseEntity<List<ExhibitionResponse>> getActiveExhibitions() {
         // Publicly accessible list for students to browse
         return ResponseEntity.ok(exhibitionService.getAllActiveExhibitions());
     }

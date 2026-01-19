@@ -10,6 +10,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse;
+
 @RestController
 @RequestMapping("/api/registrations")
 @RequiredArgsConstructor
@@ -20,24 +22,24 @@ public class StudentAttendanceController {
     // ----------------- Mark Single Student Attendance -----------------
     @PostMapping("/attendance/{registrationId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse> markAttendance(
+    public ResponseEntity<StudentRegistrationResponse> markAttendance(
             @PathVariable Long registrationId,
             @RequestParam boolean attended,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse updated = attendanceService.markAttendance(registrationId, attended, userDetails.getUsername());
+        StudentRegistrationResponse updated = attendanceService.markAttendance(registrationId, attended, userDetails.getUsername());
         return ResponseEntity.ok(updated);
     }
 
     // ----------------- Mark Multiple Students Attendance -----------------
     @PostMapping("/attendance-multiple")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse>> markMultipleAttendance(
+    public ResponseEntity<List<StudentRegistrationResponse>> markMultipleAttendance(
             @RequestBody List<Long> registrationIds,
             @RequestParam boolean attended,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse> updatedList = attendanceService.markAttendanceMultiple(registrationIds, attended, userDetails.getUsername());
+        List<StudentRegistrationResponse> updatedList = attendanceService.markAttendanceMultiple(registrationIds, attended, userDetails.getUsername());
         return ResponseEntity.ok(updatedList);
     }
 }

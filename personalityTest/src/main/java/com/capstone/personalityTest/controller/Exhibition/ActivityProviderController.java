@@ -10,6 +10,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse;
+
 @RestController
 @RequestMapping("/api/activity-provider-requests")
 @RequiredArgsConstructor
@@ -20,14 +22,14 @@ public class ActivityProviderController {
     // ----------------- Invite Provider -----------------
     @PostMapping("/invite/{exhibitionId}/{providerId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse> inviteProvider(
+    public ResponseEntity<ActivityProviderRequestResponse> inviteProvider(
             @PathVariable Long exhibitionId,
             @PathVariable Long providerId,
             @RequestBody String orgRequirements,
             @RequestParam LocalDateTime responseDeadline,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse request = providerService.inviteProvider(
+        ActivityProviderRequestResponse request = providerService.inviteProvider(
                 exhibitionId, providerId, orgRequirements, userDetails.getUsername(), responseDeadline);
         return ResponseEntity.ok(request);
     }
@@ -35,7 +37,7 @@ public class ActivityProviderController {
     // ----------------- Submit Proposal -----------------
     @PostMapping("/submit-proposal/{requestId}")
     @PreAuthorize("hasAnyRole('ACTIVITY_PROVIDER', 'DEVELOPER')")
-    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse> submitProposal(
+    public ResponseEntity<ActivityProviderRequestResponse> submitProposal(
             @PathVariable Long requestId,
             @RequestBody java.util.Map<String, Object> body,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -62,7 +64,7 @@ public class ActivityProviderController {
             }
         }
 
-        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse response = providerService.submitProposal(
+        ActivityProviderRequestResponse response = providerService.submitProposal(
                 requestId, proposalText, boothsCount, totalCost, activityIds, userDetails.getUsername());
         
         return ResponseEntity.ok(response);
@@ -71,13 +73,13 @@ public class ActivityProviderController {
     // ----------------- Review Proposal -----------------
     @PostMapping("/review/{requestId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse> reviewProposal(
+    public ResponseEntity<ActivityProviderRequestResponse> reviewProposal(
             @PathVariable Long requestId,
             @RequestParam boolean approve,
             @RequestParam(required = false) String comments,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse request = providerService.reviewProviderProposal(
+        ActivityProviderRequestResponse request = providerService.reviewProviderProposal(
                 requestId, approve, comments, userDetails.getUsername());
         return ResponseEntity.ok(request);
     }
@@ -85,23 +87,40 @@ public class ActivityProviderController {
     // ----------------- Finalize Participation -----------------
     @PostMapping("/finalize/{requestId}")
     @PreAuthorize("hasAnyRole('ACTIVITY_PROVIDER', 'DEVELOPER')")
-    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse> finalizeParticipation(
+    public ResponseEntity<ActivityProviderRequestResponse> finalizeParticipation(
             @PathVariable Long requestId,
             @AuthenticationPrincipal UserDetails userDetails) {
             
-        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse finalized = providerService.finalizeParticipation(requestId, userDetails.getUsername());
+        ActivityProviderRequestResponse finalized = providerService.finalizeParticipation(requestId, userDetails.getUsername());
         return ResponseEntity.ok(finalized);
     }
     
     // ----------------- Cancel Request -----------------
     @PostMapping("/{id}/cancel")
     @PreAuthorize("hasAnyRole('ACTIVITY_PROVIDER', 'DEVELOPER')")
-    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse> cancelRequest(
+    public ResponseEntity<ActivityProviderRequestResponse> cancelRequest(
             @PathVariable Long id,
             @RequestParam String reason,
             @AuthenticationPrincipal UserDetails userDetails) {
             
-        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse cancelled = providerService.cancelRequest(id, reason, userDetails.getUsername());
+        ActivityProviderRequestResponse cancelled = providerService.cancelRequest(id, reason, userDetails.getUsername());
         return ResponseEntity.ok(cancelled);
+    }
+
+    // ----------------- Get Requests -----------------
+    @GetMapping("/{requestId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'ACTIVITY_PROVIDER', 'DEVELOPER')")
+    public ResponseEntity<ActivityProviderRequestResponse> getRequestById(
+            @PathVariable Long requestId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        // Can add finer logic to ensure provider can only see their own request if not org owner
+        return ResponseEntity.ok(providerService.getRequestById(requestId));
+    }
+
+    @GetMapping("/exhibition/{exhibitionId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<java.util.List<ActivityProviderRequestResponse>> getRequestsByExhibition(
+            @PathVariable Long exhibitionId) {
+        return ResponseEntity.ok(providerService.getRequestsByExhibition(exhibitionId));
     }
 }

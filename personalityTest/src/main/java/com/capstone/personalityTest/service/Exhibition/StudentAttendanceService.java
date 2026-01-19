@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse;
+
 @Service
 @RequiredArgsConstructor
 public class StudentAttendanceService {
@@ -23,7 +25,7 @@ public class StudentAttendanceService {
     private final UserInfoRepository userInfoRepository;
 
     // ----------------- Mark Attendance -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse markAttendance(Long registrationId, boolean attended, String orgOwnerEmail) {
+    public StudentRegistrationResponse markAttendance(Long registrationId, boolean attended, String orgOwnerEmail) {
         StudentRegistration registration = registrationRepository.findById(registrationId)
                 .orElseThrow(() -> new RuntimeException("Registration not found"));
 
@@ -51,16 +53,16 @@ public class StudentAttendanceService {
     }
 
     // ----------------- Mark Attendance for Multiple Students -----------------
-    public List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse> markAttendanceMultiple(List<Long> registrationIds, boolean attended, String orgOwnerEmail) {
-        List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse> updatedList = new ArrayList<>();
+    public List<StudentRegistrationResponse> markAttendanceMultiple(List<Long> registrationIds, boolean attended, String orgOwnerEmail) {
+        List<StudentRegistrationResponse> updatedList = new ArrayList<>();
         for (Long id : registrationIds) {
             updatedList.add(markAttendance(id, attended, orgOwnerEmail));
         }
         return updatedList;
     }
 
-    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse mapToResponse(StudentRegistration registration) {
-        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse(
+    private StudentRegistrationResponse mapToResponse(StudentRegistration registration) {
+        return new StudentRegistrationResponse(
             registration.getId(),
             registration.getExhibition().getId(),
             registration.getExhibition().getTitle(),

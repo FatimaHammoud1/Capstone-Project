@@ -16,6 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse;
+import com.capstone.personalityTest.dto.RequestDTO.Exhibition.ExhibitionRequest;
+
 @Service
 @RequiredArgsConstructor
 public class ExhibitionService {
@@ -29,7 +32,7 @@ public class ExhibitionService {
     private final BoothRepository boothRepository;
     
     // ----------------- Create Exhibition -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse createExhibition(Long orgId, com.capstone.personalityTest.dto.RequestDTO.Exhibition.ExhibitionRequest request, String creatorEmail) {
+    public ExhibitionResponse createExhibition(Long orgId, ExhibitionRequest request, String creatorEmail) {
         UserInfo creator = userInfoRepository.findByEmail(creatorEmail)
                 .orElseThrow(() -> new RuntimeException("Creator not found"));
 
@@ -65,7 +68,7 @@ public class ExhibitionService {
         Exhibition savedExhibition = exhibitionRepository.save(exhibition);
 
         // Map Entity to Response DTO
-        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse(
+        return new ExhibitionResponse(
                 savedExhibition.getId(),
                 savedExhibition.getOrganization().getId(),
                 savedExhibition.getTitle(),
@@ -86,21 +89,21 @@ public class ExhibitionService {
 
     // Optional: get all exhibitions of this org
     // Optional: get all exhibitions of this org
-    public List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse> getExhibitionsByOrg(Long orgId) {
+    public List<ExhibitionResponse> getExhibitionsByOrg(Long orgId) {
         return exhibitionRepository.findByOrganizationId(orgId).stream()
                 .map(this::mapToResponse)
                 .toList();
     }
     
     // ----------------- Get Exhibition By ID -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse getExhibitionById(Long exhibitionId) {
+    public ExhibitionResponse getExhibitionById(Long exhibitionId) {
         Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
         return mapToResponse(exhibition);
     }
     
     // ----------------- Get All Active Exhibitions -----------------
-    public List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse> getAllActiveExhibitions() {
+    public List<ExhibitionResponse> getAllActiveExhibitions() {
         // Assuming ACTIVE status is what students/participants need to see for registration
         // Could also include CONFIRMED if registration opens then.
         // Usually, students register when ACTIVE (as per registerStudent logic).
@@ -114,8 +117,8 @@ public class ExhibitionService {
     }
     
     // Helper to map
-    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse mapToResponse(Exhibition exhibition) {
-        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse(
+    private ExhibitionResponse mapToResponse(Exhibition exhibition) {
+        return new ExhibitionResponse(
             exhibition.getId(),
             exhibition.getOrganization().getId(),
             exhibition.getTitle(),

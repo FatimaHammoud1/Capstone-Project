@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse;
+
 @Service
 @RequiredArgsConstructor
 public class SchoolParticipationService {
@@ -26,7 +28,7 @@ public class SchoolParticipationService {
     private final UserInfoRepository userInfoRepository;
 
     // ----------------- Invite School -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse inviteSchool(Long exhibitionId, Long schoolId, LocalDateTime responseDeadline, String inviterEmail) {
+    public SchoolParticipationResponse inviteSchool(Long exhibitionId, Long schoolId, LocalDateTime responseDeadline, String inviterEmail) {
         UserInfo inviter = userInfoRepository.findByEmail(inviterEmail)
                 .orElseThrow(() -> new RuntimeException("Inviter not found"));
 
@@ -70,7 +72,7 @@ public class SchoolParticipationService {
     }
 
     // ----------------- School Responds to Invitation (Accept/Reject) -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse respondToInvitation(Long participationId, boolean accept, String rejectionReason, Integer expectedStudents, String schoolEmail) {
+    public SchoolParticipationResponse respondToInvitation(Long participationId, boolean accept, String rejectionReason, Integer expectedStudents, String schoolEmail) {
         SchoolParticipation participation = participationRepository.findById(participationId)
                 .orElseThrow(() -> new RuntimeException("Participation not found"));
         
@@ -117,7 +119,7 @@ public class SchoolParticipationService {
     }
 
     // ----------------- Confirm Participation (By Org - Approval/Rejection) -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse confirmParticipation(Long participationId, boolean approved, String confirmerEmail) {
+    public SchoolParticipationResponse confirmParticipation(Long participationId, boolean approved, String confirmerEmail) {
         UserInfo inviter = userInfoRepository.findByEmail(confirmerEmail)
                 .orElseThrow(() -> new RuntimeException("Confirmer not found"));
 
@@ -164,7 +166,7 @@ public class SchoolParticipationService {
     }
 
     // ----------------- Finalize Participation (After Schedule) -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse finalizeParticipation(Long participationId, String schoolEmail) {
+    public SchoolParticipationResponse finalizeParticipation(Long participationId, String schoolEmail) {
         UserInfo schoolUser = userInfoRepository.findByEmail(schoolEmail)
                 .orElseThrow(() -> new RuntimeException("School user not found"));
 
@@ -195,7 +197,7 @@ public class SchoolParticipationService {
     
     // ----------------- Cancel School Participation -----------------
     @Transactional
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse cancelParticipation(Long participationId, String cancellerEmail) {
+    public SchoolParticipationResponse cancelParticipation(Long participationId, String cancellerEmail) {
         UserInfo canceller = userInfoRepository.findByEmail(cancellerEmail)
                 .orElseThrow(() -> new RuntimeException("Canceller not found"));
 
@@ -228,8 +230,25 @@ public class SchoolParticipationService {
         return mapToResponse(saved);
     }
 
-    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse mapToResponse(SchoolParticipation participation) {
-        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse(
+    // ----------------- GET Participations -----------------
+    public SchoolParticipationResponse getParticipationById(Long participationId) {
+        SchoolParticipation participation = participationRepository.findById(participationId)
+                .orElseThrow(() -> new RuntimeException("Participation not found"));
+        return mapToResponse(participation);
+    }
+
+    public java.util.List<SchoolParticipationResponse> getParticipationsByExhibition(Long exhibitionId) {
+        Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
+                .orElseThrow(() -> new RuntimeException("Exhibition not found"));
+
+        return participationRepository.findAll().stream()
+                .filter(p -> p.getExhibition().getId().equals(exhibitionId))
+                .map(this::mapToResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    private SchoolParticipationResponse mapToResponse(SchoolParticipation participation) {
+        return new SchoolParticipationResponse(
             participation.getId(),
             participation.getExhibition().getId(),
             participation.getSchool().getId(),

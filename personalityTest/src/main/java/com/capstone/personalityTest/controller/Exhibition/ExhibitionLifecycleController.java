@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse;
 
 @RestController
 @RequestMapping("/api/exhibitions")
@@ -19,22 +20,22 @@ public class ExhibitionLifecycleController {
     // ----------------- START EXHIBITION -----------------
     @PostMapping("/start/{exhibitionId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse> startExhibition(
+    public ResponseEntity<ExhibitionResponse> startExhibition(
             @PathVariable Long exhibitionId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse started = lifecycleService.startExhibition(exhibitionId, userDetails.getUsername());
+        ExhibitionResponse started = lifecycleService.startExhibition(exhibitionId, userDetails.getUsername());
         return ResponseEntity.ok(started);
     }
     
     // ----------------- COMPLETE EXHIBITION -----------------
     @PostMapping("/complete/{exhibitionId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse> completeExhibition(
+    public ResponseEntity<ExhibitionResponse> completeExhibition(
             @PathVariable Long exhibitionId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse completed = lifecycleService.completeExhibition(exhibitionId, userDetails.getUsername());
+        ExhibitionResponse completed = lifecycleService.completeExhibition(exhibitionId, userDetails.getUsername());
         return ResponseEntity.ok(completed);
     }
 }

@@ -14,6 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse;
+import com.capstone.personalityTest.model.Enum.Exhibition.BoothType;
+import com.capstone.personalityTest.model.Exhibition.Activity;
+import com.capstone.personalityTest.model.Exhibition.Booth;
+
 @Service
 @RequiredArgsConstructor
 public class ActivityProviderService {
@@ -26,7 +31,7 @@ public class ActivityProviderService {
     private final ActivityRepository activityRepository;
 
     // ----------------- Invite Activity Provider -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse inviteProvider(Long exhibitionId, Long providerId, String orgRequirements, String inviterEmail, LocalDateTime responseDeadline) {
+    public ActivityProviderRequestResponse inviteProvider(Long exhibitionId, Long providerId, String orgRequirements, String inviterEmail, LocalDateTime responseDeadline) {
         UserInfo inviter = userInfoRepository.findByEmail(inviterEmail)
                 .orElseThrow(() -> new RuntimeException("Inviter not found"));
 
@@ -77,7 +82,7 @@ public class ActivityProviderService {
 
     // ----------------- Submit Proposal (by Provider) -----------------
     // Updated to accept activityIds
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse submitProposal(Long requestId, String proposalText, Integer boothsCount, java.math.BigDecimal totalCost, java.util.List<Long> activityIds, String providerEmail) {
+    public ActivityProviderRequestResponse submitProposal(Long requestId, String proposalText, Integer boothsCount, java.math.BigDecimal totalCost, java.util.List<Long> activityIds, String providerEmail) {
         UserInfo providerUser = userInfoRepository.findByEmail(providerEmail)
                 .orElseThrow(() -> new RuntimeException("Provider user not found"));
 
@@ -105,9 +110,9 @@ public class ActivityProviderService {
         
         // Link activities
         if (activityIds != null && !activityIds.isEmpty()) {
-            java.util.List<com.capstone.personalityTest.model.Exhibition.Activity> activities = activityRepository.findAllById(activityIds);
+            java.util.List<Activity> activities = activityRepository.findAllById(activityIds);
             // Validation: Ensure activities belong to this provider
-            for (com.capstone.personalityTest.model.Exhibition.Activity activity : activities) {
+            for (Activity activity : activities) {
                 // Assuming activities must belong to provider. Activity entity must have provider set.
                 // If Activity model update to include provider is done, we check:
                 if (activity.getProvider() != null && !activity.getProvider().getId().equals(request.getProvider().getId())) {
@@ -122,7 +127,7 @@ public class ActivityProviderService {
     }
 
     // ----------------- Approve or Reject Provider Proposal -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse reviewProviderProposal(Long requestId, boolean approve, String comments, String reviewerEmail) {
+    public ActivityProviderRequestResponse reviewProviderProposal(Long requestId, boolean approve, String comments, String reviewerEmail) {
         UserInfo reviewer = userInfoRepository.findByEmail(reviewerEmail)
                 .orElseThrow(() -> new RuntimeException("Reviewer not found"));
 
@@ -157,10 +162,10 @@ public class ActivityProviderService {
             
             // Create Booths for approved activities
             if (request.getProposedActivities() != null) {
-                for (com.capstone.personalityTest.model.Exhibition.Activity activity : request.getProposedActivities()) {
-                     com.capstone.personalityTest.model.Exhibition.Booth booth = new com.capstone.personalityTest.model.Exhibition.Booth();
+                for (Activity activity : request.getProposedActivities()) {
+                     Booth booth = new Booth();
                      booth.setExhibition(exhibition);
-                     booth.setBoothType(com.capstone.personalityTest.model.Enum.Exhibition.BoothType.ACTIVITY_PROVIDER);
+                     booth.setBoothType(BoothType.ACTIVITY_PROVIDER);
                      booth.setActivityProviderRequestId(request.getId());
                      booth.setActivity(activity);
                      booth.setMaxParticipants(activity.getSuggestedMaxParticipants());
@@ -192,7 +197,7 @@ public class ActivityProviderService {
 
         return mapToResponse(savedRequest);}
     // ----------------- Finalize Participation (After Schedule) -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse finalizeParticipation(Long requestId, String providerEmail) {
+    public ActivityProviderRequestResponse finalizeParticipation(Long requestId, String providerEmail) {
         UserInfo providerUser = userInfoRepository.findByEmail(providerEmail)
                 .orElseThrow(() -> new RuntimeException("Provider user not found"));
 
@@ -223,7 +228,7 @@ public class ActivityProviderService {
     
     // ----------------- Cancel Provider Request -----------------
     @Transactional
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse cancelRequest(Long requestId, String reason, String cancellerEmail) {
+    public ActivityProviderRequestResponse cancelRequest(Long requestId, String reason, String cancellerEmail) {
         UserInfo canceller = userInfoRepository.findByEmail(cancellerEmail)
                 .orElseThrow(() -> new RuntimeException("Canceller not found"));
 
@@ -265,8 +270,25 @@ public class ActivityProviderService {
         return mapToResponse(savedRequest);
     }
 
-    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse mapToResponse(ActivityProviderRequest request) {
-        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse(
+    // ----------------- Get Requests -----------------
+    public ActivityProviderRequestResponse getRequestById(Long requestId) {
+        ActivityProviderRequest request = providerRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+        return mapToResponse(request);
+    }
+
+    public java.util.List<ActivityProviderRequestResponse> getRequestsByExhibition(Long exhibitionId) {
+        Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
+                .orElseThrow(() -> new RuntimeException("Exhibition not found"));
+
+        return providerRequestRepository.findAll().stream()
+                .filter(r -> r.getExhibition().getId().equals(exhibitionId))
+                .map(this::mapToResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    private ActivityProviderRequestResponse mapToResponse(ActivityProviderRequest request) {
+        return new ActivityProviderRequestResponse(
                 request.getId(),
                 request.getExhibition().getId(),
                 request.getProvider().getId(),

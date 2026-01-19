@@ -17,6 +17,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse;
+import com.capstone.personalityTest.model.Exhibition.Booth;
+import com.capstone.personalityTest.model.Enum.Exhibition.BoothType;
+
 @Service
 @RequiredArgsConstructor
 public class UniversityParticipationService {
@@ -28,7 +32,7 @@ public class UniversityParticipationService {
     private final BoothRepository boothRepository;
 
     // ----------------- Invite University -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse inviteUniversity(Long exhibitionId, Long universityId, BigDecimal participationFee, LocalDateTime responseDeadline, String inviterEmail) {
+    public UniversityParticipationResponse inviteUniversity(Long exhibitionId, Long universityId, BigDecimal participationFee, LocalDateTime responseDeadline, String inviterEmail) {
         UserInfo inviter = userInfoRepository.findByEmail(inviterEmail)
                 .orElseThrow(() -> new RuntimeException("Inviter not found"));
 
@@ -73,7 +77,7 @@ public class UniversityParticipationService {
     }
 
     // ----------------- University Registers -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse registerUniversity(Long participationId, int requestedBooths, Map<Long, Map<String, Object>> boothDetails, String universityEmail) {
+    public UniversityParticipationResponse registerUniversity(Long participationId, int requestedBooths, Map<Long, Map<String, Object>> boothDetails, String universityEmail) {
         UniversityParticipation participation = participationRepository.findById(participationId)
                 .orElseThrow(() -> new RuntimeException("Participation request not found"));
 
@@ -114,7 +118,7 @@ public class UniversityParticipationService {
     }
 
     // ----------------- Approve or Reject University -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse reviewUniversity(Long participationId, boolean approve, String reviewerEmail) {
+    public UniversityParticipationResponse reviewUniversity(Long participationId, boolean approve, String reviewerEmail) {
         UserInfo reviewer = userInfoRepository.findByEmail(reviewerEmail)
                 .orElseThrow(() -> new RuntimeException("Reviewer not found"));
 
@@ -141,9 +145,9 @@ public class UniversityParticipationService {
             // Create booths for the university
             if (participation.getApprovedBoothsCount() != null && participation.getApprovedBoothsCount() > 0) {
                 for (int i = 0; i < participation.getApprovedBoothsCount(); i++) {
-                     com.capstone.personalityTest.model.Exhibition.Booth booth = new com.capstone.personalityTest.model.Exhibition.Booth();
+                     Booth booth = new Booth();
                      booth.setExhibition(exhibition);
-                     booth.setBoothType(com.capstone.personalityTest.model.Enum.Exhibition.BoothType.UNIVERSITY);
+                     booth.setBoothType(BoothType.UNIVERSITY);
                      booth.setUniversityParticipationId(participation.getId());
                      booth.setCreatedAt(LocalDateTime.now());
                      booth.setZone("Unassigned");
@@ -163,7 +167,7 @@ public class UniversityParticipationService {
     }
     
     // 3️⃣ Explicit payment confirmation (Step 2 & 3 in Goal)
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse confirmPayment(Long participationId, String orgOwnerEmail) {
+    public UniversityParticipationResponse confirmPayment(Long participationId, String orgOwnerEmail) {
         UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -194,7 +198,7 @@ public class UniversityParticipationService {
     }
     
     // ----------------- Finalize Participation (After Schedule) -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse finalizeParticipation(Long participationId, String universityEmail) {
+    public UniversityParticipationResponse finalizeParticipation(Long participationId, String universityEmail) {
         UserInfo uniUser = userInfoRepository.findByEmail(universityEmail)
                 .orElseThrow(() -> new RuntimeException("University user not found"));
 
@@ -225,7 +229,7 @@ public class UniversityParticipationService {
     
     // ----------------- Cancel University Participation -----------------
     @Transactional
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse cancelParticipation(Long participationId, String cancellerEmail) {
+    public UniversityParticipationResponse cancelParticipation(Long participationId, String cancellerEmail) {
         UserInfo canceller = userInfoRepository.findByEmail(cancellerEmail)
                 .orElseThrow(() -> new RuntimeException("Canceller not found"));
 
@@ -272,7 +276,24 @@ public class UniversityParticipationService {
         return mapToResponse(saved);
     }
 
-    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse mapToResponse(UniversityParticipation participation) {
+    // ----------------- GET Participations -----------------
+    public UniversityParticipationResponse getParticipationById(Long participationId) {
+        UniversityParticipation participation = participationRepository.findById(participationId)
+                .orElseThrow(() -> new RuntimeException("Participation not found"));
+        return mapToResponse(participation);
+    }
+
+    public java.util.List<UniversityParticipationResponse> getParticipationsByExhibition(Long exhibitionId) {
+        Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
+                .orElseThrow(() -> new RuntimeException("Exhibition not found"));
+
+        return participationRepository.findAll().stream()
+                .filter(p -> p.getExhibition().getId().equals(exhibitionId))
+                .map(this::mapToResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    private UniversityParticipationResponse mapToResponse(UniversityParticipation participation) {
         // Safe null handling for booth details
         String boothDetailsJson = null;
         try {
@@ -283,7 +304,7 @@ public class UniversityParticipationService {
              // ignore failure, return null
         }
 
-        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse(
+        return new UniversityParticipationResponse(
             participation.getId(),
             participation.getExhibition().getId(),
             participation.getUniversity().getId(),

@@ -11,6 +11,7 @@ import com.capstone.personalityTest.repository.Exhibition.ActivityProviderReques
 import com.capstone.personalityTest.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,7 +29,7 @@ public class ExhibitionLifecycleService {
     private final ActivityProviderRequestRepository activityProviderRequestRepository;
 
     // ----------------- Start Exhibition -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse startExhibition(Long exhibitionId, String orgOwnerEmail) {
+    public ExhibitionResponse startExhibition(Long exhibitionId, String orgOwnerEmail) {
         UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -68,7 +69,7 @@ public class ExhibitionLifecycleService {
     }
     
     // 5️⃣ Add Exhibition COMPLETED status
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse completeExhibition(Long exhibitionId, String orgOwnerEmail) {
+    public ExhibitionResponse completeExhibition(Long exhibitionId, String orgOwnerEmail) {
         UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -91,8 +92,8 @@ public class ExhibitionLifecycleService {
         return mapToResponse(savedExhibition);
     }
 
-    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse mapToResponse(Exhibition exhibition) {
-        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse(
+    private ExhibitionResponse mapToResponse(Exhibition exhibition) {
+        return new ExhibitionResponse(
             exhibition.getId(),
             exhibition.getOrganization().getId(),
             exhibition.getTitle(),

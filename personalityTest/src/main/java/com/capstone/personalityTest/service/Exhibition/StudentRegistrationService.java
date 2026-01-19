@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse;
+
 @Service
 @RequiredArgsConstructor
 public class StudentRegistrationService {
@@ -28,7 +30,7 @@ public class StudentRegistrationService {
     private final BoothRepository boothRepository;
 
     // ----------------- Register Student -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse registerStudent(Long exhibitionId, String studentEmail) {
+    public StudentRegistrationResponse registerStudent(Long exhibitionId, String studentEmail) {
         UserInfo student = userInfoRepository.findByEmail(studentEmail)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
@@ -73,7 +75,7 @@ public class StudentRegistrationService {
     }
 
     // Optional: list all registrations for a student
-    public List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse> getStudentRegistrations(String studentEmail) {
+    public List<StudentRegistrationResponse> getStudentRegistrations(String studentEmail) {
         UserInfo student = userInfoRepository.findByEmail(studentEmail)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
         return registrationRepository.findByStudentId(student.getId()).stream()
@@ -82,7 +84,7 @@ public class StudentRegistrationService {
     }
 
     // ----------------- Approve Student -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse approveStudent(Long registrationId, String orgOwnerEmail) {
+    public StudentRegistrationResponse approveStudent(Long registrationId, String orgOwnerEmail) {
         StudentRegistration registration = registrationRepository.findById(registrationId)
                 .orElseThrow(() -> new RuntimeException("Registration not found"));
 
@@ -128,8 +130,8 @@ public class StudentRegistrationService {
     }
 
     // Optional: Approve multiple students at once
-    public List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse> approveStudents(List<Long> registrationIds, String orgOwnerEmail) {
-        List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse> approvedList = new ArrayList<>();
+    public List<StudentRegistrationResponse> approveStudents(List<Long> registrationIds, String orgOwnerEmail) {
+        List<StudentRegistrationResponse> approvedList = new ArrayList<>();
         for (Long id : registrationIds) {
             approvedList.add(approveStudent(id, orgOwnerEmail));
         }
@@ -138,7 +140,7 @@ public class StudentRegistrationService {
     
     // ----------------- Cancel Registration -----------------
     @Transactional
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse cancelRegistration(Long registrationId, String cancellerEmail) {
+    public StudentRegistrationResponse cancelRegistration(Long registrationId, String cancellerEmail) {
         UserInfo canceller = userInfoRepository.findByEmail(cancellerEmail)
                 .orElseThrow(() -> new RuntimeException("Canceller not found"));
 
@@ -171,8 +173,8 @@ public class StudentRegistrationService {
         return mapToResponse(saved);
     }
 
-    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse mapToResponse(StudentRegistration registration) {
-        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse(
+    private StudentRegistrationResponse mapToResponse(StudentRegistration registration) {
+        return new StudentRegistrationResponse(
             registration.getId(),
             registration.getExhibition().getId(),
             registration.getExhibition().getTitle(),

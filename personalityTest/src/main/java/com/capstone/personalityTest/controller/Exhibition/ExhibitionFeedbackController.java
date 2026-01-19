@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFeedbackResponse;
 
 @RestController
 @RequestMapping("/api/feedback")
@@ -20,22 +21,22 @@ public class ExhibitionFeedbackController {
     // ----------------- Submit Feedback -----------------
     @PostMapping("/submit")
     @PreAuthorize("hasAnyRole('STUDENT', 'DEVELOPER')")
-    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFeedbackResponse> submitFeedback(
+    public ResponseEntity<ExhibitionFeedbackResponse> submitFeedback(
             @RequestParam Long exhibitionId,
             @RequestParam Integer rating,
             @RequestParam(required = false) String comments,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         // 7️⃣ Security fix: Do not accept studentId from request parameters.
-        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFeedbackResponse feedback = feedbackService.submitFeedback(exhibitionId, userDetails.getUsername(), rating, comments);
+        ExhibitionFeedbackResponse feedback = feedbackService.submitFeedback(exhibitionId, userDetails.getUsername(), rating, comments);
         return ResponseEntity.ok(feedback);
     }
 
     // ----------------- Get Feedback for Exhibition (ORG_OWNER) -----------------
     @GetMapping("/exhibition/{exhibitionId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFeedbackResponse>> getFeedbackForExhibition(@PathVariable Long exhibitionId) {
-        List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFeedbackResponse> feedbackList = feedbackService.getFeedbackForExhibition(exhibitionId);
+    public ResponseEntity<List<ExhibitionFeedbackResponse>> getFeedbackForExhibition(@PathVariable Long exhibitionId) {
+        List<ExhibitionFeedbackResponse> feedbackList = feedbackService.getFeedbackForExhibition(exhibitionId);
         return ResponseEntity.ok(feedbackList);
     }
 }
