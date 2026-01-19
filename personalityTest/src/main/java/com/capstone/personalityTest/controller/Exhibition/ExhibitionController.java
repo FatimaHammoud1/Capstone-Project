@@ -31,8 +31,24 @@ public class ExhibitionController {
     // ----------------- Get Exhibitions by Organization -----------------
     @GetMapping("/organization/{orgId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<List<Exhibition>> getExhibitionsByOrg(@PathVariable Long orgId) {
+    public ResponseEntity<List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse>> getExhibitionsByOrg(@PathVariable Long orgId) {
         return ResponseEntity.ok(exhibitionService.getExhibitionsByOrg(orgId));
+    }
+    
+    // ----------------- Get Exhibition By ID -----------------
+    @GetMapping("/{exhibitionId}")
+    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse> getExhibition(@PathVariable Long exhibitionId) {
+        // Publicly accessible for students/participants to view details before acting?
+        // Or restricted? Assuming public or authenticated. 
+        // If security needed, add PreAuthorize("isAuthenticated()")
+        return ResponseEntity.ok(exhibitionService.getExhibitionById(exhibitionId));
+    }
+
+    // ----------------- Get All Active Exhibitions -----------------
+    @GetMapping("/active")
+    public ResponseEntity<List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse>> getActiveExhibitions() {
+        // Publicly accessible list for students to browse
+        return ResponseEntity.ok(exhibitionService.getAllActiveExhibitions());
     }
     
     // ----------------- Cancel Exhibition -----------------

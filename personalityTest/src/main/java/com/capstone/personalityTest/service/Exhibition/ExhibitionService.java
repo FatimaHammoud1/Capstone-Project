@@ -85,8 +85,53 @@ public class ExhibitionService {
     }
 
     // Optional: get all exhibitions of this org
-    public List<Exhibition> getExhibitionsByOrg(Long orgId) {
-        return exhibitionRepository.findByOrganizationId(orgId);
+    // Optional: get all exhibitions of this org
+    public List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse> getExhibitionsByOrg(Long orgId) {
+        return exhibitionRepository.findByOrganizationId(orgId).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+    
+    // ----------------- Get Exhibition By ID -----------------
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse getExhibitionById(Long exhibitionId) {
+        Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
+                .orElseThrow(() -> new RuntimeException("Exhibition not found"));
+        return mapToResponse(exhibition);
+    }
+    
+    // ----------------- Get All Active Exhibitions -----------------
+    public List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse> getAllActiveExhibitions() {
+        // Assuming ACTIVE status is what students/participants need to see for registration
+        // Could also include CONFIRMED if registration opens then.
+        // Usually, students register when ACTIVE (as per registerStudent logic).
+        // Use findAll().stream().filter(...) or create repository method findByStatus(ACTIVE)
+        // Assuming status based filtering is preferred.
+        // If repository doesn't have findByStatus, we can use filter. For performance, repository method is better but filter is safer without repo changes now.
+        return exhibitionRepository.findAll().stream()
+                .filter(e -> e.getStatus() == ExhibitionStatus.ACTIVE)
+                .map(this::mapToResponse)
+                .toList();
+    }
+    
+    // Helper to map
+    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse mapToResponse(Exhibition exhibition) {
+        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse(
+            exhibition.getId(),
+            exhibition.getOrganization().getId(),
+            exhibition.getTitle(),
+            exhibition.getDescription(),
+            exhibition.getTheme(),
+            exhibition.getStatus(),
+            exhibition.getStartDate(),
+            exhibition.getEndDate(),
+            exhibition.getStartTime(),
+            exhibition.getEndTime(),
+            exhibition.getMaxCapacity(),
+            exhibition.getExpectedVisitors(),
+            exhibition.getScheduleJson(),
+            exhibition.getCreatedAt(),
+            exhibition.getUpdatedAt()
+        );
     }
     
     // ----------------- Cancel Exhibition -----------------
