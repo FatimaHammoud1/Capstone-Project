@@ -98,7 +98,7 @@ public class UserInfoService implements UserDetailsService {
         UserInfo userInfo = userMapper.toEntity(userInfoRequest);
 
 
-        Role studentRole = roleRepository.findByName("ROLE_STUDENT")
+        Role studentRole = roleRepository.findByCode("STUDENT")
                 .orElseThrow(() -> new RuntimeException("ROLE_STUDENT not found"));
 
         userInfo.getRoles().add(studentRole);
