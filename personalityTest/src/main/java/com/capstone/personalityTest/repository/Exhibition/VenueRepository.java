@@ -8,5 +8,6 @@ import java.util.Optional;
 
 public interface VenueRepository extends JpaRepository<Venue, Long> {
     Optional<Venue> findByName(String name);
+    java.util.List<Venue> findByMunicipalityId(Long municipalityId);
 }
 

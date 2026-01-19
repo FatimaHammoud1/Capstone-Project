@@ -80,6 +80,10 @@ public class MunicipalityService {
             exhibition.setUpdatedAt(LocalDateTime.now());
             exhibitionRepository.save(exhibition);
 
+            // Mark venue as unavailable (reserved)
+            venue.setAvailable(false);
+            venueRepository.save(venue);
+
         } else {
             request.setStatus(VenueRequestStatus.REJECTED);
             request.setMunicipalityResponse(responseText);

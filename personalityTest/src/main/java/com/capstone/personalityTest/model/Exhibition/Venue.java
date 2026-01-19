@@ -29,4 +29,6 @@ public class Venue {
     private BigDecimal rentalFeePerDay;
 
     private Boolean active;
+
+    private Boolean available; // true if venue is not currently reserved
 }

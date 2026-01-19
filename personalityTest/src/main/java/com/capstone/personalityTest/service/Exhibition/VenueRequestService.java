@@ -47,6 +47,11 @@ public class VenueRequestService {
         Venue venue = venueRepository.findById(venueId)
                 .orElseThrow(() -> new RuntimeException("Venue not found"));
 
+        // Check if venue is available (not reserved)
+        if (venue.getAvailable() != null && !venue.getAvailable()) {
+            throw new RuntimeException("Venue is not available - already reserved by another organization");
+        }
+
         // Create VenueRequest
         VenueRequest request = new VenueRequest();
         request.setExhibition(exhibition);
