@@ -7,6 +7,7 @@ import com.capstone.personalityTest.model.UserInfo;
 import com.capstone.personalityTest.repository.Exhibition.ExhibitionRepository;
 import com.capstone.personalityTest.repository.Exhibition.SchoolParticipationRepository;
 import com.capstone.personalityTest.repository.Exhibition.UniversityParticipationRepository;
+import com.capstone.personalityTest.repository.Exhibition.ActivityProviderRequestRepository;
 import com.capstone.personalityTest.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,16 +25,19 @@ public class ExhibitionLifecycleService {
     private final SchoolParticipationRepository schoolParticipationRepository;
     private final UserInfoRepository userInfoRepository;
 
+    private final ActivityProviderRequestRepository activityProviderRequestRepository;
+
     // ----------------- Start Exhibition -----------------
-    public Exhibition startExhibition(Long exhibitionId, String orgOwnerEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse startExhibition(Long exhibitionId, String orgOwnerEmail) {
         UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
-        // Only the org owner can start
-        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId())) {
+        // Only the org owner can start, OR developer
+        boolean isDev = orgOwner.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId()) && !isDev) {
             throw new RuntimeException("Only the organization owner can start the exhibition");
         }
 
@@ -42,15 +46,15 @@ public class ExhibitionLifecycleService {
             throw new RuntimeException("Exhibition must be CONFIRMED before starting");
         }
 
-        // Validation: At least one confirmed university and school
-        boolean hasConfirmedUni = universityParticipationRepository
-                .existsByExhibitionIdAndStatus(exhibitionId, ParticipationStatus.CONFIRMED);
+        // Validation: At least one FINALIZED university OR activity provider
+        boolean hasFinalizedUni = universityParticipationRepository
+                .existsByExhibitionIdAndStatus(exhibitionId, ParticipationStatus.FINALIZED);
 
-        boolean hasConfirmedSchool = schoolParticipationRepository
-                .existsByExhibitionIdAndStatus(exhibitionId, ParticipationStatus.CONFIRMED);
+        boolean hasFinalizedProvider = activityProviderRequestRepository
+                .existsByExhibitionIdAndStatus(exhibitionId, com.capstone.personalityTest.model.Enum.Exhibition.ActivityProviderRequestStatus.FINALIZED);
 
-        if (!hasConfirmedUni && !hasConfirmedSchool) {
-            throw new RuntimeException("Cannot start exhibition without confirmed universities or schools");
+        if (!hasFinalizedUni && !hasFinalizedProvider) {
+            throw new RuntimeException("Cannot start exhibition. At least one university or activity provider must have FINALIZED participation.");
         }
 
         // Set status to ACTIVE and timestamps
@@ -59,18 +63,20 @@ public class ExhibitionLifecycleService {
         if (exhibition.getStartTime() == null) exhibition.setStartTime(LocalTime.now());
         exhibition.setUpdatedAt(LocalDateTime.now());
 
-        return exhibitionRepository.save(exhibition);
+        Exhibition savedExhibition = exhibitionRepository.save(exhibition);
+        return mapToResponse(savedExhibition);
     }
     
     // 5️⃣ Add Exhibition COMPLETED status
-    public Exhibition completeExhibition(Long exhibitionId, String orgOwnerEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse completeExhibition(Long exhibitionId, String orgOwnerEmail) {
         UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
-        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId())) {
+        boolean isDev = orgOwner.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId()) && !isDev) {
             throw new RuntimeException("Only the organization owner can complete the exhibition");
         }
 
@@ -80,8 +86,28 @@ public class ExhibitionLifecycleService {
 
         exhibition.setStatus(ExhibitionStatus.COMPLETED);
         exhibition.setUpdatedAt(LocalDateTime.now());
-        // Could set endDate here if not set, but likely set during creation.
 
-        return exhibitionRepository.save(exhibition);
+        Exhibition savedExhibition = exhibitionRepository.save(exhibition);
+        return mapToResponse(savedExhibition);
+    }
+
+    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse mapToResponse(Exhibition exhibition) {
+        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse(
+            exhibition.getId(),
+            exhibition.getOrganization().getId(),
+            exhibition.getTitle(),
+            exhibition.getDescription(),
+            exhibition.getTheme(),
+            exhibition.getStatus(),
+            exhibition.getStartDate(),
+            exhibition.getEndDate(),
+            exhibition.getStartTime(),
+            exhibition.getEndTime(),
+            exhibition.getMaxCapacity(),
+            exhibition.getExpectedVisitors(),
+            exhibition.getScheduleJson(),
+            exhibition.getCreatedAt(),
+            exhibition.getUpdatedAt()
+        );
     }
 }

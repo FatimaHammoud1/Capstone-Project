@@ -82,6 +82,17 @@ public class ActivityProviderController {
         return ResponseEntity.ok(request);
     }
     
+    // ----------------- Finalize Participation -----------------
+    @PostMapping("/finalize/{requestId}")
+    @PreAuthorize("hasAnyRole('ACTIVITY_PROVIDER', 'DEVELOPER')")
+    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse> finalizeParticipation(
+            @PathVariable Long requestId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+            
+        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse finalized = providerService.finalizeParticipation(requestId, userDetails.getUsername());
+        return ResponseEntity.ok(finalized);
+    }
+    
     // ----------------- Cancel Request -----------------
     @PostMapping("/{id}/cancel")
     @PreAuthorize("hasAnyRole('ACTIVITY_PROVIDER', 'DEVELOPER')")

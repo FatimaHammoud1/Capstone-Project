@@ -19,11 +19,11 @@ public class ExhibitionFinanceController {
     // ----------------- CONFIRM EXHIBITION & CALCULATE PAYMENTS -----------------
     @PostMapping("/confirm/{exhibitionId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<Exhibition> confirmExhibition(
+    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse> confirmExhibition(
             @PathVariable Long exhibitionId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Exhibition confirmed = financeService.confirmExhibition(
+        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse confirmed = financeService.confirmExhibition(
                 exhibitionId, userDetails.getUsername()
         );
         return ResponseEntity.ok(confirmed);

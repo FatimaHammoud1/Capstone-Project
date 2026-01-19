@@ -1,6 +1,5 @@
 package com.capstone.personalityTest.dto.ResponseDTO.Exhibition;
 
-import com.capstone.personalityTest.model.Enum.Exhibition.UniversityParticipationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,7 +17,7 @@ public class UniversityParticipationResponse {
     private Long universityId;
     private String universityName;
     private String contactEmail;
-    private UniversityParticipationStatus status;
+    private com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus status;
     private Integer approvedBoothsCount;
     private String boothDetails;
     private BigDecimal participationFee;

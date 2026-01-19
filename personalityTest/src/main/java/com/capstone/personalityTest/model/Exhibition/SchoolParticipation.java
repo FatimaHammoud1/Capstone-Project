@@ -38,5 +38,9 @@ public class SchoolParticipation {
 
     private LocalDateTime acceptedAt; // acceptance time
 
+    private LocalDateTime registeredAt;
+
+    private String rejectionReason;
+
     private LocalDateTime confirmedAt; // final confirmation
 }

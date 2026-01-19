@@ -15,4 +15,6 @@ public interface ActivityProviderRequestRepository extends JpaRepository<Activit
     
     long countByExhibition(Exhibition exhibition);
     long countByExhibitionAndStatus(Exhibition exhibition, ActivityProviderRequestStatus status);
+    
+    boolean existsByExhibitionIdAndStatus(Long exhibitionId, ActivityProviderRequestStatus status);
 }

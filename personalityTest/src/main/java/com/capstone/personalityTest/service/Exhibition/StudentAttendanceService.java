@@ -23,7 +23,7 @@ public class StudentAttendanceService {
     private final UserInfoRepository userInfoRepository;
 
     // ----------------- Mark Attendance -----------------
-    public StudentRegistration markAttendance(Long registrationId, boolean attended, String orgOwnerEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse markAttendance(Long registrationId, boolean attended, String orgOwnerEmail) {
         StudentRegistration registration = registrationRepository.findById(registrationId)
                 .orElseThrow(() -> new RuntimeException("Registration not found"));
 
@@ -33,7 +33,8 @@ public class StudentAttendanceService {
         UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId())) {
+        boolean isDev = orgOwner.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId()) && !isDev) {
             throw new RuntimeException("Only the organization owner can mark attendance");
         }
 
@@ -46,15 +47,31 @@ public class StudentAttendanceService {
         registration.setStatus(attended ? StudentRegistrationStatus.ATTENDED : StudentRegistrationStatus.NO_SHOW);
         registration.setAttendedAt(LocalDateTime.now());
 
-        return registrationRepository.save(registration);
+        return mapToResponse(registrationRepository.save(registration));
     }
 
     // ----------------- Mark Attendance for Multiple Students -----------------
-    public List<StudentRegistration> markAttendanceMultiple(List<Long> registrationIds, boolean attended, String orgOwnerEmail) {
-        List<StudentRegistration> updatedList = new ArrayList<>();
+    public List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse> markAttendanceMultiple(List<Long> registrationIds, boolean attended, String orgOwnerEmail) {
+        List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse> updatedList = new ArrayList<>();
         for (Long id : registrationIds) {
             updatedList.add(markAttendance(id, attended, orgOwnerEmail));
         }
         return updatedList;
+    }
+
+    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse mapToResponse(StudentRegistration registration) {
+        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse(
+            registration.getId(),
+            registration.getExhibition().getId(),
+            registration.getExhibition().getTitle(),
+            registration.getStudent().getId(),
+            registration.getStudent().getName(), 
+            registration.getStudent().getEmail(),
+            registration.getStatus(),
+            Boolean.TRUE.equals(registration.getApproved()),
+            registration.getRegisteredAt(),
+            registration.getApprovedAt(),
+            registration.getAttendedAt()
+        );
     }
 }

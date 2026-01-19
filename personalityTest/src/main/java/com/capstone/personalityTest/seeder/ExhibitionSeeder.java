@@ -109,6 +109,9 @@ public class ExhibitionSeeder implements CommandLineRunner {
                 new UserInfo(null, "School Admin", "school@school.com", passwordEncoder.encode("password"), TargetGender.MALE,
                         Set.of(roleRepository.findByCode("SCHOOL_ADMIN").orElseThrow())),
 
+                new UserInfo(null, "Creative Uni Admin", "artuni@university.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
+                        Set.of(roleRepository.findByCode("UNIVERSITY_ADMIN").orElseThrow())),
+
                 new UserInfo(null, "Activity Provider", "activity@provider.com", passwordEncoder.encode("password"), TargetGender.MALE,
                         Set.of(roleRepository.findByCode("ACTIVITY_PROVIDER").orElseThrow())),
 
@@ -154,6 +157,16 @@ public class ExhibitionSeeder implements CommandLineRunner {
         uni.setActive(true);
 
         universityRepository.save(uni);
+
+        University artUni = new University();
+        artUni.setName("Creative Arts University");
+        artUni.setContactEmail("contact@arts.edu");
+        artUni.setContactPhone("111222333");
+        UserInfo artOwner = userInfoRepository.findByEmail("artuni@university.com").orElseThrow();
+        artUni.setOwner(artOwner);
+        artUni.setActive(true);
+
+        universityRepository.save(artUni);
     }
 
     // ---------------- MUNICIPALITY ----------------

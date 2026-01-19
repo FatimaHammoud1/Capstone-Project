@@ -19,22 +19,22 @@ public class ExhibitionLifecycleController {
     // ----------------- START EXHIBITION -----------------
     @PostMapping("/start/{exhibitionId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<Exhibition> startExhibition(
+    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse> startExhibition(
             @PathVariable Long exhibitionId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Exhibition started = lifecycleService.startExhibition(exhibitionId, userDetails.getUsername());
+        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse started = lifecycleService.startExhibition(exhibitionId, userDetails.getUsername());
         return ResponseEntity.ok(started);
     }
     
     // ----------------- COMPLETE EXHIBITION -----------------
     @PostMapping("/complete/{exhibitionId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<Exhibition> completeExhibition(
+    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse> completeExhibition(
             @PathVariable Long exhibitionId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Exhibition completed = lifecycleService.completeExhibition(exhibitionId, userDetails.getUsername());
+        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse completed = lifecycleService.completeExhibition(exhibitionId, userDetails.getUsername());
         return ResponseEntity.ok(completed);
     }
 }

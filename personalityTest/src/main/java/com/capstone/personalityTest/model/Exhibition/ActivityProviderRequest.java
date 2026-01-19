@@ -29,6 +29,7 @@ public class ActivityProviderRequest {
     private ActivityProvider provider; // invited activity provider
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 32)
     private ActivityProviderRequestStatus status; // invitation lifecycle
 
     @Column(columnDefinition = "TEXT")

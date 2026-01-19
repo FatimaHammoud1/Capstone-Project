@@ -20,24 +20,24 @@ public class StudentAttendanceController {
     // ----------------- Mark Single Student Attendance -----------------
     @PostMapping("/attendance/{registrationId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<StudentRegistration> markAttendance(
+    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse> markAttendance(
             @PathVariable Long registrationId,
             @RequestParam boolean attended,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        StudentRegistration updated = attendanceService.markAttendance(registrationId, attended, userDetails.getUsername());
+        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse updated = attendanceService.markAttendance(registrationId, attended, userDetails.getUsername());
         return ResponseEntity.ok(updated);
     }
 
     // ----------------- Mark Multiple Students Attendance -----------------
     @PostMapping("/attendance-multiple")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<List<StudentRegistration>> markMultipleAttendance(
+    public ResponseEntity<List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse>> markMultipleAttendance(
             @RequestBody List<Long> registrationIds,
             @RequestParam boolean attended,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        List<StudentRegistration> updatedList = attendanceService.markAttendanceMultiple(registrationIds, attended, userDetails.getUsername());
+        List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse> updatedList = attendanceService.markAttendanceMultiple(registrationIds, attended, userDetails.getUsername());
         return ResponseEntity.ok(updatedList);
     }
 }

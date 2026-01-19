@@ -39,13 +39,13 @@ public class UniversityParticipationController {
     // ----------------- UNIVERSITY REGISTER -----------------
     @PostMapping("/register/{participationId}")
     @PreAuthorize("hasAnyRole('UNIVERSITY_ADMIN', 'DEVELOPER')")
-    public ResponseEntity<UniversityParticipation> registerUniversity(
+    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse> registerUniversity(
             @PathVariable Long participationId,
             @RequestBody Map<Long, Map<String, Object>> boothDetails, // boothId -> {content, contributors}
             @RequestParam int requestedBooths,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        UniversityParticipation registered = participationService.registerUniversity(
+        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse registered = participationService.registerUniversity(
                 participationId, requestedBooths, boothDetails, userDetails.getUsername()
         );
         return ResponseEntity.ok(registered);
@@ -54,36 +54,47 @@ public class UniversityParticipationController {
     // ----------------- APPROVE/REJECT UNIVERSITY -----------------
     @PostMapping("/review/{participationId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<UniversityParticipation> reviewUniversity(
+    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse> reviewUniversity(
             @PathVariable Long participationId,
             @RequestParam boolean approve,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        UniversityParticipation updated = participationService.reviewUniversity(
+        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse updated = participationService.reviewUniversity(
                 participationId, approve, userDetails.getUsername()
         );
         return ResponseEntity.ok(updated);
+    }
+
+    // ----------------- FINALIZE PARTICIPATION -----------------
+    @PostMapping("/finalize/{participationId}")
+    @PreAuthorize("hasAnyRole('UNIVERSITY_ADMIN', 'DEVELOPER')")
+    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse> finalizeParticipation(
+            @PathVariable Long participationId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+            
+        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse finalized = participationService.finalizeParticipation(participationId, userDetails.getUsername());
+        return ResponseEntity.ok(finalized);
     }
     
     // ----------------- CONFIRM PAYMENT -----------------
     @PostMapping("/confirm-payment/{participationId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<UniversityParticipation> confirmPayment(
+    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse> confirmPayment(
             @PathVariable Long participationId,
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        UniversityParticipation confirmed = participationService.confirmPayment(participationId, userDetails.getUsername());
+        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse confirmed = participationService.confirmPayment(participationId, userDetails.getUsername());
         return ResponseEntity.ok(confirmed);
     }
     
     // ----------------- CANCEL PARTICIPATION -----------------
     @PostMapping("/{id}/cancel")
     @PreAuthorize("hasAnyRole('UNIVERSITY_ADMIN', 'ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<UniversityParticipation> cancelParticipation(
+    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse> cancelParticipation(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
             
-        UniversityParticipation cancelled = participationService.cancelParticipation(id, userDetails.getUsername());
+        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse cancelled = participationService.cancelParticipation(id, userDetails.getUsername());
         return ResponseEntity.ok(cancelled);
     }
 }

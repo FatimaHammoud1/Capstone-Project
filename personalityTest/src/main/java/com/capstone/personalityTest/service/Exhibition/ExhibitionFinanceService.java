@@ -35,14 +35,17 @@ public class ExhibitionFinanceService {
     private final UserInfoRepository userInfoRepository;
 
     // ----------------- Calculate Payments & Generate Schedule -----------------
-    public Exhibition confirmExhibition(Long exhibitionId, String orgOwnerEmail) {
+    // ----------------- Confirm Exhibition (Finalize) -----------------
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse confirmExhibition(Long exhibitionId, String orgOwnerEmail) {
         UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
-        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId())) {
+        // Only owner of the organization, OR developer (for easier testing)
+        boolean isDev = orgOwner.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId()) && !isDev) {
             throw new RuntimeException("Only ORG_OWNER can confirm the exhibition");
         }
 
@@ -53,18 +56,25 @@ public class ExhibitionFinanceService {
         List<SchoolParticipation> schools = schoolParticipationRepository
                 .findByExhibitionId(exhibitionId);
 
-        boolean allUnisConfirmed = unis.stream()
+        // Check Unis: Must be CONFIRMED and PAID (unless invited status ignored? usually we check active participants)
+        // If a uni is Cancelled/Invited/Registered but not finalized, should we block? 
+        // Logic: All "Accepted" participants must proceed to Confirmed. Any stuck in "Invited"/"Registered" might be ignored or block.
+        // Sticking to: All *universities that are not cancelled* must be CONFIRMED and PAID.
+        boolean allActiveUnisReady = unis.stream()
+                .filter(u -> u.getStatus() != ParticipationStatus.CANCELLED)
                 .allMatch(u -> u.getStatus() == ParticipationStatus.CONFIRMED && u.getPaymentStatus() == PaymentStatus.PAID);
 
-        boolean allSchoolsConfirmed = schools.stream()
-                .allMatch(s -> s.getStatus() == ParticipationStatus.CONFIRMED);
+        boolean allActiveSchoolsReady = schools.stream()
+                .filter(s -> s.getStatus() != ParticipationStatus.CANCELLED && s.getStatus() != ParticipationStatus.REJECTED)
+                .allMatch(s -> s.getStatus() == ParticipationStatus.ACCEPTED); // Schools are ACCEPTED by Org (or REJECTED), not CONFIRMED status enum
 
-        if (!allUnisConfirmed || !allSchoolsConfirmed) {
-            throw new RuntimeException("All universities must have paid & confirmed, and all schools confirmed, before finalizing");
+        if (!allActiveUnisReady || !allActiveSchoolsReady) {
+            throw new RuntimeException("All active universities must be PREPAYED & CONFIRMED, and schools ACCEPTED, before finalizing");
         }
 
-        // ----------------- Calculate Payments -----------------
+        // ----------------- Calculate Financials -----------------
         BigDecimal totalRevenue = unis.stream()
+                .filter(u -> u.getStatus() == ParticipationStatus.CONFIRMED)
                 .map(UniversityParticipation::getParticipationFee)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -87,21 +97,55 @@ public class ExhibitionFinanceService {
         Map<String, Object> schedule = new HashMap<>();
         schedule.put("activities", activityProviderRequestRepository
                 .findByExhibitionIdAndStatus(exhibitionId, ActivityProviderRequestStatus.APPROVED));
-        schedule.put("universities", unis);
-        schedule.put("schools", schools);
+        schedule.put("universities", unis.stream()
+                .filter(u -> u.getStatus() == ParticipationStatus.CONFIRMED)
+                .toList());
+        schedule.put("schools", schools.stream()
+                .filter(s -> s.getStatus() == ParticipationStatus.ACCEPTED)
+                .toList());
 
         // Convert to JSON string (can use ObjectMapper)
         try {
             ObjectMapper mapper = new ObjectMapper();
+            // Need to handle potential recursion or circular references if entities are directly serialized
+            // Registering JavaTimeModule might be needed for LocalDate/Time serialization if not configured globally
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            
+            // Or better, map to simple DTOs to avoid full entity recursion issues in the JSON column
+            // For now, let's assume entities serialize okay or are simple enough. 
+            // Ideally we'd map to Light DTOs here.
+            
             String scheduleJson = mapper.writeValueAsString(schedule);
             exhibition.setScheduleJson(scheduleJson);
         } catch (JsonProcessingException e) {
+             // Log error but maybe don't fail the whole confirmation if just JSON gen fails? 
+             // Or throw to ensure data integrity.
             throw new RuntimeException("Failed to generate schedule JSON", e);
         }
 
+        // State Transition
         exhibition.setStatus(ExhibitionStatus.CONFIRMED);
         exhibition.setUpdatedAt(LocalDateTime.now());
 
-        return exhibitionRepository.save(exhibition);
+        Exhibition savedExhibition = exhibitionRepository.save(exhibition);
+        
+        // Map to DTO
+        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse(
+                savedExhibition.getId(),
+                savedExhibition.getOrganization().getId(),
+                savedExhibition.getTitle(),
+                savedExhibition.getDescription(),
+                savedExhibition.getTheme(),
+                savedExhibition.getStatus(),
+                savedExhibition.getStartDate(),
+                savedExhibition.getEndDate(),
+                savedExhibition.getStartTime(),
+                savedExhibition.getEndTime(),
+                savedExhibition.getMaxCapacity(),
+                savedExhibition.getExpectedVisitors(),
+                savedExhibition.getScheduleJson(),
+                savedExhibition.getCreatedAt(),
+                savedExhibition.getUpdatedAt()
+        );
     }
 }

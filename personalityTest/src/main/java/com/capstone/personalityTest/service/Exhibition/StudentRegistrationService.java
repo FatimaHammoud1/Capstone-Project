@@ -28,7 +28,7 @@ public class StudentRegistrationService {
     private final BoothRepository boothRepository;
 
     // ----------------- Register Student -----------------
-    public StudentRegistration registerStudent(Long exhibitionId, String studentEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse registerStudent(Long exhibitionId, String studentEmail) {
         UserInfo student = userInfoRepository.findByEmail(studentEmail)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
@@ -68,18 +68,21 @@ public class StudentRegistrationService {
         registration.setRegisteredAt(LocalDateTime.now());
         registration.setApproved(false); // Default false
 
-        return registrationRepository.save(registration);
+        StudentRegistration saved = registrationRepository.save(registration);
+        return mapToResponse(saved);
     }
 
     // Optional: list all registrations for a student
-    public List<StudentRegistration> getStudentRegistrations(String studentEmail) {
+    public List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse> getStudentRegistrations(String studentEmail) {
         UserInfo student = userInfoRepository.findByEmail(studentEmail)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
-        return registrationRepository.findByStudentId(student.getId());
+        return registrationRepository.findByStudentId(student.getId()).stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     // ----------------- Approve Student -----------------
-    public StudentRegistration approveStudent(Long registrationId, String orgOwnerEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse approveStudent(Long registrationId, String orgOwnerEmail) {
         StudentRegistration registration = registrationRepository.findById(registrationId)
                 .orElseThrow(() -> new RuntimeException("Registration not found"));
 
@@ -120,12 +123,13 @@ public class StudentRegistrationService {
         // Optionally update status if needed, but keeping it REGISTERED with approved flag for now as per logic, 
         // or could act as a secondary confirmation.
 
-        return registrationRepository.save(registration);
+        StudentRegistration saved = registrationRepository.save(registration);
+        return mapToResponse(saved);
     }
 
     // Optional: Approve multiple students at once
-    public List<StudentRegistration> approveStudents(List<Long> registrationIds, String orgOwnerEmail) {
-        List<StudentRegistration> approvedList = new ArrayList<>();
+    public List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse> approveStudents(List<Long> registrationIds, String orgOwnerEmail) {
+        List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse> approvedList = new ArrayList<>();
         for (Long id : registrationIds) {
             approvedList.add(approveStudent(id, orgOwnerEmail));
         }
@@ -134,7 +138,7 @@ public class StudentRegistrationService {
     
     // ----------------- Cancel Registration -----------------
     @Transactional
-    public StudentRegistration cancelRegistration(Long registrationId, String cancellerEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse cancelRegistration(Long registrationId, String cancellerEmail) {
         UserInfo canceller = userInfoRepository.findByEmail(cancellerEmail)
                 .orElseThrow(() -> new RuntimeException("Canceller not found"));
 
@@ -163,6 +167,23 @@ public class StudentRegistrationService {
         registration.setStatus(StudentRegistrationStatus.CANCELLED);
         // Side effects: Release seat - Implicit via count queries excluding CANCELLED
         
-        return registrationRepository.save(registration);
+        StudentRegistration saved = registrationRepository.save(registration);
+        return mapToResponse(saved);
+    }
+
+    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse mapToResponse(StudentRegistration registration) {
+        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.StudentRegistrationResponse(
+            registration.getId(),
+            registration.getExhibition().getId(),
+            registration.getExhibition().getTitle(),
+            registration.getStudent().getId(),
+            registration.getStudent().getName(), // Assuming getName() exists on UserInfo or construct from firstName/lastName
+            registration.getStudent().getEmail(),
+            registration.getStatus(),
+            Boolean.TRUE.equals(registration.getApproved()),
+            registration.getRegisteredAt(),
+            registration.getApprovedAt(),
+            registration.getAttendedAt()
+        );
     }
 }

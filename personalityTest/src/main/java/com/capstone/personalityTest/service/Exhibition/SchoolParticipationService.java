@@ -26,7 +26,7 @@ public class SchoolParticipationService {
     private final UserInfoRepository userInfoRepository;
 
     // ----------------- Invite School -----------------
-    public SchoolParticipation inviteSchool(Long exhibitionId, Long schoolId, LocalDateTime responseDeadline, String inviterEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse inviteSchool(Long exhibitionId, Long schoolId, LocalDateTime responseDeadline, String inviterEmail) {
         UserInfo inviter = userInfoRepository.findByEmail(inviterEmail)
                 .orElseThrow(() -> new RuntimeException("Inviter not found"));
 
@@ -65,11 +65,12 @@ public class SchoolParticipationService {
         participation.setInvitedAt(LocalDateTime.now());
         participation.setResponseDeadline(responseDeadline);
 
-        return participationRepository.save(participation);
+        SchoolParticipation saved = participationRepository.save(participation);
+        return mapToResponse(saved);
     }
 
-    // ----------------- School Accepts Invitation -----------------
-    public SchoolParticipation acceptInvitation(Long participationId, String schoolEmail) {
+    // ----------------- School Responds to Invitation (Accept/Reject) -----------------
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse respondToInvitation(Long participationId, boolean accept, String rejectionReason, Integer expectedStudents, String schoolEmail) {
         SchoolParticipation participation = participationRepository.findById(participationId)
                 .orElseThrow(() -> new RuntimeException("Participation not found"));
         
@@ -85,21 +86,38 @@ public class SchoolParticipationService {
 
         // Corrected check: Validate against School Owner
         if (!participation.getSchool().getOwner().getId().equals(user.getId()) && !isDev) {
-            throw new RuntimeException("You are not authorized to accept this invitation");
+            throw new RuntimeException("You are not authorized to respond to this invitation");
         }
 
         if (participation.getStatus() != ParticipationStatus.INVITED) {
-            throw new RuntimeException("Only INVITED schools can accept invitation");
+            throw new RuntimeException("Only INVITED schools can respond to invitation");
         }
 
-        participation.setStatus(ParticipationStatus.ACCEPTED);
-        participation.setAcceptedAt(LocalDateTime.now());
+        if (accept) {
+            if (expectedStudents == null || expectedStudents <= 0) {
+                throw new RuntimeException("Expected students count is required when accepting invitation");
+            }
+            participation.setExpectedStudents(expectedStudents);
+            participation.setStatus(ParticipationStatus.REGISTERED); // Changed from ACCEPTED to REGISTERED
+            participation.setRegisteredAt(LocalDateTime.now()); // Assuming we have registeredAt or re-use acceptedAt field logic?
+            // Entity has acceptedAt, invitedAt, confirmedAt. Let's use acceptedAt as the timestamp for this step or registeredAt if it exists?
+            // Checking fields: It has invitedAt, acceptedAt, confirmedAt. REGISTERED status usually implies "Signed Up".
+            // Let's set acceptedAt as the time of this action (School Response).
+            participation.setAcceptedAt(LocalDateTime.now()); 
+        } else {
+            if (rejectionReason == null || rejectionReason.trim().isEmpty()) {
+                throw new RuntimeException("Rejection reason is required when declining invitation");
+            }
+            participation.setRejectionReason(rejectionReason);
+            participation.setStatus(ParticipationStatus.CANCELLED); // Using CANCELLED for rejected invitations by School
+        }
 
-        return participationRepository.save(participation);
+        SchoolParticipation saved = participationRepository.save(participation);
+        return mapToResponse(saved);
     }
 
-    // ----------------- Confirm Participation -----------------
-    public SchoolParticipation confirmParticipation(Long participationId, String confirmerEmail) {
+    // ----------------- Confirm Participation (By Org - Approval/Rejection) -----------------
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse confirmParticipation(Long participationId, boolean approved, String confirmerEmail) {
         UserInfo inviter = userInfoRepository.findByEmail(confirmerEmail)
                 .orElseThrow(() -> new RuntimeException("Confirmer not found"));
 
@@ -117,19 +135,67 @@ public class SchoolParticipationService {
             throw new RuntimeException("Only ORG_OWNER can confirm school participation");
         }
 
-        if (participation.getStatus() != ParticipationStatus.ACCEPTED) {
-            throw new RuntimeException("Only ACCEPTED schools can be confirmed");
+        if (participation.getStatus() != ParticipationStatus.REGISTERED) {
+            throw new RuntimeException("Only REGISTERED schools can be reviewed by Org");
+        }
+        
+        if (approved) {
+             // Validate Capacity (Students are visitors)
+             // Ensure total expected visitors + this school's expected students <= exhibition expectedVisitors (if that represents max capacity for visitors)
+            
+             // Assuming expectedVisitors field on Exhibition is the TARGET/LIMIT for visitors:
+             Integer currentVisitorSum = participationRepository.findByExhibitionAndStatus(exhibition, ParticipationStatus.ACCEPTED).stream()
+                      .mapToInt(SchoolParticipation::getExpectedStudents)
+                      .sum();
+             
+             if (currentVisitorSum + participation.getExpectedStudents() > exhibition.getExpectedVisitors()) {
+                  throw new RuntimeException("Confirming this school exceeds exhibition visitor capacity (" + exhibition.getExpectedVisitors() + ")");
+             }
+
+             participation.setStatus(ParticipationStatus.ACCEPTED); // Org Approves -> ACCEPTED
+             participation.setConfirmedAt(LocalDateTime.now()); // Re-using confirmedAt for Org Approval time? Or stick to ACCEPTED semantic.
+             // Entity has confirmedAt. Let's use that.
+        } else {
+            participation.setStatus(ParticipationStatus.REJECTED); // Org Rejects -> REJECTED
         }
 
-        participation.setStatus(ParticipationStatus.CONFIRMED);
-        participation.setConfirmedAt(LocalDateTime.now());
+        SchoolParticipation saved = participationRepository.save(participation);
+        return mapToResponse(saved);
+    }
 
-        return participationRepository.save(participation);
+    // ----------------- Finalize Participation (After Schedule) -----------------
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse finalizeParticipation(Long participationId, String schoolEmail) {
+        UserInfo schoolUser = userInfoRepository.findByEmail(schoolEmail)
+                .orElseThrow(() -> new RuntimeException("School user not found"));
+
+        SchoolParticipation participation = participationRepository.findById(participationId)
+                .orElseThrow(() -> new RuntimeException("Participation not found"));
+        
+        Exhibition exhibition = participation.getExhibition();
+
+        boolean isDev = schoolUser.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        if (!participation.getSchool().getOwner().getId().equals(schoolUser.getId()) && !isDev) {
+            throw new RuntimeException("Only the school owner can finalize participation");
+        }
+
+        if (exhibition.getStatus() != ExhibitionStatus.CONFIRMED) {
+            throw new RuntimeException("Cannot finalize participation before exhibition is CONFIRMED (schedule ready)");
+        }
+
+        if (participation.getStatus() != ParticipationStatus.ACCEPTED) {
+            throw new RuntimeException("Only ACCEPTED schools can be finalized");
+        }
+
+        participation.setStatus(ParticipationStatus.FINALIZED);
+        // Could set a finalizedAt timestamp if entity had it.
+        
+        SchoolParticipation saved = participationRepository.save(participation);
+        return mapToResponse(saved);
     }
     
     // ----------------- Cancel School Participation -----------------
     @Transactional
-    public SchoolParticipation cancelParticipation(Long participationId, String cancellerEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse cancelParticipation(Long participationId, String cancellerEmail) {
         UserInfo canceller = userInfoRepository.findByEmail(cancellerEmail)
                 .orElseThrow(() -> new RuntimeException("Canceller not found"));
 
@@ -158,6 +224,24 @@ public class SchoolParticipationService {
 
         participation.setStatus(ParticipationStatus.CANCELLED);
         
-        return participationRepository.save(participation);
+        SchoolParticipation saved = participationRepository.save(participation);
+        return mapToResponse(saved);
+    }
+
+    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse mapToResponse(SchoolParticipation participation) {
+        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse(
+            participation.getId(),
+            participation.getExhibition().getId(),
+            participation.getSchool().getId(),
+            participation.getSchool().getName(),
+            participation.getSchool().getContactEmail(),
+            participation.getStatus(),
+            participation.getExpectedStudents(),
+            participation.getResponseDeadline(),
+            participation.getInvitedAt(),
+            participation.getAcceptedAt(),
+            participation.getRejectionReason(),
+            participation.getConfirmedAt()
+        );
     }
 }

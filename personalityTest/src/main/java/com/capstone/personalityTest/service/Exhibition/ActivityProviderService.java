@@ -190,6 +190,34 @@ public class ActivityProviderService {
             }
         }
 
+        return mapToResponse(savedRequest);}
+    // ----------------- Finalize Participation (After Schedule) -----------------
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse finalizeParticipation(Long requestId, String providerEmail) {
+        UserInfo providerUser = userInfoRepository.findByEmail(providerEmail)
+                .orElseThrow(() -> new RuntimeException("Provider user not found"));
+
+        ActivityProviderRequest request = providerRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+        
+        Exhibition exhibition = request.getExhibition();
+
+        boolean isDev = providerUser.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        if (!request.getProvider().getOwner().getId().equals(providerUser.getId()) && !isDev) {
+            throw new RuntimeException("Only the provider owner can finalize participation");
+        }
+
+        if (exhibition.getStatus() != ExhibitionStatus.CONFIRMED) {
+            throw new RuntimeException("Cannot finalize participation before exhibition is CONFIRMED (schedule ready)");
+        }
+
+        if (request.getStatus() != ActivityProviderRequestStatus.APPROVED) {
+            throw new RuntimeException("Only APPROVED requests can be finalized");
+        }
+
+        request.setStatus(ActivityProviderRequestStatus.FINALIZED);
+        // Maybe store finalizedAt timestamp if we added it, but for now just status update.
+        
+        ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
         return mapToResponse(savedRequest);
     }
     

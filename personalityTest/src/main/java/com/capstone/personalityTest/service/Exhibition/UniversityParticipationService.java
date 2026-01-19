@@ -73,7 +73,7 @@ public class UniversityParticipationService {
     }
 
     // ----------------- University Registers -----------------
-    public UniversityParticipation registerUniversity(Long participationId, int requestedBooths, Map<Long, Map<String, Object>> boothDetails, String universityEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse registerUniversity(Long participationId, int requestedBooths, Map<Long, Map<String, Object>> boothDetails, String universityEmail) {
         UniversityParticipation participation = participationRepository.findById(participationId)
                 .orElseThrow(() -> new RuntimeException("Participation request not found"));
 
@@ -109,11 +109,12 @@ public class UniversityParticipationService {
         participation.setRegisteredAt(LocalDateTime.now());
         participation.setStatus(ParticipationStatus.REGISTERED);
 
-        return participationRepository.save(participation);
+        UniversityParticipation saved = participationRepository.save(participation);
+        return mapToResponse(saved);
     }
 
     // ----------------- Approve or Reject University -----------------
-    public UniversityParticipation reviewUniversity(Long participationId, boolean approve, String reviewerEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse reviewUniversity(Long participationId, boolean approve, String reviewerEmail) {
         UserInfo reviewer = userInfoRepository.findByEmail(reviewerEmail)
                 .orElseThrow(() -> new RuntimeException("Reviewer not found"));
 
@@ -137,15 +138,32 @@ public class UniversityParticipationService {
 
         if (approve) {
             participation.setStatus(ParticipationStatus.ACCEPTED);
+            // Create booths for the university
+            if (participation.getApprovedBoothsCount() != null && participation.getApprovedBoothsCount() > 0) {
+                for (int i = 0; i < participation.getApprovedBoothsCount(); i++) {
+                     com.capstone.personalityTest.model.Exhibition.Booth booth = new com.capstone.personalityTest.model.Exhibition.Booth();
+                     booth.setExhibition(exhibition);
+                     booth.setBoothType(com.capstone.personalityTest.model.Enum.Exhibition.BoothType.UNIVERSITY);
+                     booth.setUniversityParticipationId(participation.getId());
+                     booth.setCreatedAt(LocalDateTime.now());
+                     booth.setZone("Unassigned");
+                     booth.setBoothNumber(0);
+                     // University booths might not have specific durations/max participants at creation like activities do
+                     // or we could default them.
+                     
+                     boothRepository.save(booth);
+                }
+            }
         } else {
             participation.setStatus(ParticipationStatus.CANCELLED); // rejected universities set as CANCELLED
         }
 
-        return participationRepository.save(participation);
+        UniversityParticipation saved = participationRepository.save(participation);
+        return mapToResponse(saved);
     }
     
     // 3️⃣ Explicit payment confirmation (Step 2 & 3 in Goal)
-    public UniversityParticipation confirmPayment(Long participationId, String orgOwnerEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse confirmPayment(Long participationId, String orgOwnerEmail) {
         UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -171,12 +189,43 @@ public class UniversityParticipationService {
         participation.setStatus(ParticipationStatus.CONFIRMED);
         participation.setConfirmedAt(LocalDateTime.now());
 
-        return participationRepository.save(participation);
+        UniversityParticipation saved = participationRepository.save(participation);
+        return mapToResponse(saved);
+    }
+    
+    // ----------------- Finalize Participation (After Schedule) -----------------
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse finalizeParticipation(Long participationId, String universityEmail) {
+        UserInfo uniUser = userInfoRepository.findByEmail(universityEmail)
+                .orElseThrow(() -> new RuntimeException("University user not found"));
+
+        UniversityParticipation participation = participationRepository.findById(participationId)
+                .orElseThrow(() -> new RuntimeException("Participation not found"));
+        
+        Exhibition exhibition = participation.getExhibition();
+
+        boolean isDev = uniUser.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        if (!participation.getUniversity().getOwner().getId().equals(uniUser.getId()) && !isDev) {
+            throw new RuntimeException("Only the university owner can finalize participation");
+        }
+
+        if (exhibition.getStatus() != ExhibitionStatus.CONFIRMED) {
+            throw new RuntimeException("Cannot finalize participation before exhibition is CONFIRMED (schedule ready)");
+        }
+
+        if (participation.getStatus() != ParticipationStatus.CONFIRMED) {
+            throw new RuntimeException("Only CONFIRMED (Paid) universities can be finalized");
+        }
+
+        participation.setStatus(ParticipationStatus.FINALIZED);
+        // Could set a finalizedAt timestamp if entity had it.
+        
+        UniversityParticipation saved = participationRepository.save(participation);
+        return mapToResponse(saved);
     }
     
     // ----------------- Cancel University Participation -----------------
     @Transactional
-    public UniversityParticipation cancelParticipation(Long participationId, String cancellerEmail) {
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse cancelParticipation(Long participationId, String cancellerEmail) {
         UserInfo canceller = userInfoRepository.findByEmail(cancellerEmail)
                 .orElseThrow(() -> new RuntimeException("Canceller not found"));
 
@@ -219,7 +268,8 @@ public class UniversityParticipationService {
         // If specific booths exist in Booth table, they should be cleaned up.
         // Assuming booth cleanup is implicit or manual for now without BoothService delete method exposed.
         
-        return participationRepository.save(participation);
+        UniversityParticipation saved = participationRepository.save(participation);
+        return mapToResponse(saved);
     }
 
     private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse mapToResponse(UniversityParticipation participation) {
