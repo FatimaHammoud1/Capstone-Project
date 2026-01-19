@@ -24,7 +24,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/documents")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+@PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
 public class CareerDocumentController {
 
     private final CareerDocumentService documentService;

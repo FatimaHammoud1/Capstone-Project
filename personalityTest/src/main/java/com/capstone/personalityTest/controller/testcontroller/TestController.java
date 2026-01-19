@@ -24,7 +24,7 @@ public class TestController {
     private final JwtService jwtService;
 
     // 1. Create a test (title + description only)
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @PostMapping
     public ResponseEntity<TestResponse> createTest(@Valid @RequestBody TestRequest testRequest) {
         TestResponse createdTest = testService.createTest(testRequest);
@@ -32,14 +32,14 @@ public class TestController {
     }
 
     // 5. Confirm test (finalize)
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @PutMapping("/{testId}/publish")
     public ResponseEntity<TestResponse> publishTest(@PathVariable Long testId) {
         TestResponse confirmedTest = testService.publishTest(testId);
         return new ResponseEntity<>(confirmedTest, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @PutMapping("/{testId}/active")
     public ResponseEntity<TestResponse> setTestActive(
             @PathVariable Long testId,
@@ -48,7 +48,7 @@ public class TestController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @PatchMapping("/{id}")
     public ResponseEntity<TestResponse> updateTest(
             @PathVariable Long id,
@@ -65,21 +65,21 @@ public class TestController {
         return testService.getAllTests(role);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @GetMapping("/{id}")
     public ResponseEntity<TestResponse> getTestById(@PathVariable Long id) {
         TestResponse test = testService.getTestById(id);
         return ResponseEntity.ok(test);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @DeleteMapping("/{testId}")
     public ResponseEntity<String> deleteTest(@PathVariable Long testId) {
         testService.deleteTest(testId);
         return new ResponseEntity<>("Test deleted successfully", HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @PostMapping("/versions")
     public TestResponse createVersion(@RequestBody CreateVersionRequest request) {
         return testService.createVersion(request);

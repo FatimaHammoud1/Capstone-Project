@@ -71,21 +71,6 @@ public class UserInfoService implements UserDetailsService {
     }
 
     // Add any additional methods for registering or managing users
-//    public void addUser(UserInfoRequest userInfoRequest) {
-//        //No repetition for user
-//        if (userRepo.findByEmail(userInfoRequest.getEmail()).isPresent()) {
-//            throw new EntityExistsException("User with email " + userInfoRequest.getEmail() + " already exists");
-//        }
-//
-//        // Encrypt password before saving
-//        userInfoRequest.setPassword(encoder.encode(userInfoRequest.getPassword()));
-//        UserInfo userInfo = userMapper.toEntity(userInfoRequest);
-//        if (userInfo.getRoles() == null || userInfo.getRoles().isEmpty()) {
-//            userInfo.setRoles(Set.of(Role.ROLE_USER));
-//        }
-//
-//        userRepo.save(userInfo);
-//    }
     public void addUser(UserInfoRequest userInfoRequest) {
         //No repetition for user
 

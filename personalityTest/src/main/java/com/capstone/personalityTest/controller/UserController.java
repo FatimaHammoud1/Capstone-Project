@@ -88,20 +88,20 @@ public class UserController {
     }
 
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @GetMapping("/users")
     public ResponseEntity<Page<UserInfoResponse>> getAllUsers (Pageable pageable){
         Page<UserInfoResponse> usersPage = service.getAllUsers(pageable);
         return new ResponseEntity<>(usersPage, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','USER', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER','USER', 'DEVELOPER')")
     @GetMapping("/users/{id}")
     public ResponseEntity<UserInfoResponse> getUserById (@PathVariable Long id){
         UserInfoResponse userById = service.getUserById(id);
         return new ResponseEntity<>(userById , HttpStatus.OK);
     }
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @DeleteMapping("/users/{id}")
     public ResponseEntity<String> deleteUser (@PathVariable Long id, Pageable pageable){
         if(service.deleteUser(id , pageable))

@@ -81,7 +81,7 @@ public class TestAttemptController {
     }
 
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     // Get all test attempts (for admin)
     @GetMapping
     public ResponseEntity<List<TestAttemptWithAnswersResponse>> getAllTestAttempts() {
