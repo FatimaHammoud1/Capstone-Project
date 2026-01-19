@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.capstone.personalityTest.model.UserInfo;
 
 @Entity
 @Data
@@ -22,4 +23,8 @@ public class Municipality {
     private String contactEmail;
 
     private String contactPhone;
+
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    private UserInfo owner;
 }

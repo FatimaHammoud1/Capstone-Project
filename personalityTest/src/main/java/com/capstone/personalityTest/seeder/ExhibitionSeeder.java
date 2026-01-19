@@ -180,9 +180,7 @@ public class ExhibitionSeeder implements CommandLineRunner {
         municipality.setRegion("Central District");
         municipality.setContactEmail("contact@city.gov");
         municipality.setContactPhone("987654321");
-        // municipality.setAdmin(admin); // Field removed in new model
-        // municipality.setActive(true); // Field removed in new model
-        // municipality.setCreatedAt(LocalDateTime.now()); // Field removed in new model
+        municipality.setOwner(admin);
 
         municipalityRepository.save(municipality);
     }
