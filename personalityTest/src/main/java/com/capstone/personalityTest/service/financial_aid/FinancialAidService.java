@@ -276,6 +276,67 @@ public class FinancialAidService {
         return mapToDonorDetailResponse(donor);
     }
 
+    public Map<String, Object> getFinancialAidStatistics(String userEmail) {
+        UserInfo owner = userInfoRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Organization organization = organizationRepository.findByOwnerId(owner.getId())
+                .orElseThrow(() -> new RuntimeException("Organization not found for this user"));
+
+        List<FinancialAidRequest> allRequests = financialAidRepository.findByOrganizationId(organization.getId());
+
+        long totalRequests = allRequests.size();
+        long pendingRequests = allRequests.stream().filter(r -> r.getStatus() == FinancialAidRequest.Status.PENDING).count();
+        long approvedRequests = allRequests.stream().filter(r -> r.getStatus() == FinancialAidRequest.Status.APPROVED).count();
+        long rejectedRequests = allRequests.stream().filter(r -> r.getStatus() == FinancialAidRequest.Status.REJECTED).count();
+        long cancelledRequests = allRequests.stream().filter(r -> r.getStatus() == FinancialAidRequest.Status.CANCELLED).count();
+        // Disbursed is a separate status, but logically it's also "approved" in the past. 
+        // The requirement separates them, so we will count DISBURSED separately.
+        long disbursedRequests = allRequests.stream().filter(r -> r.getStatus() == FinancialAidRequest.Status.DISBURSED).count();
+
+        // Total Requested Amount (Sum of all requests)
+        BigDecimal totalAmountRequested = allRequests.stream()
+                .map(FinancialAidRequest::getRequestedAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Total Amount Approved (Sum of approvedAmount for APPROVED and DISBURSED requests)
+        BigDecimal totalAmountApproved = allRequests.stream()
+                .filter(r -> (r.getStatus() == FinancialAidRequest.Status.APPROVED || r.getStatus() == FinancialAidRequest.Status.DISBURSED) 
+                        && r.getApprovedAmount() != null)
+                .map(FinancialAidRequest::getApprovedAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Total Amount Disbursed (Sum of approvedAmount for DISBURSED requests only)
+        BigDecimal totalAmountDisbursed = allRequests.stream()
+                .filter(r -> r.getStatus() == FinancialAidRequest.Status.DISBURSED && r.getApprovedAmount() != null)
+                .map(FinancialAidRequest::getApprovedAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Available Budget
+        List<Donor> donors = donorRepository.findByOrganizationId(organization.getId());
+        BigDecimal availableBudget = donors.stream()
+                .filter(d -> Boolean.TRUE.equals(d.getActive()))
+                .map(Donor::getAvailableBudget)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        long activeDonors = donors.stream().filter(d -> Boolean.TRUE.equals(d.getActive())).count();
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalRequests", totalRequests);
+        stats.put("pendingRequests", pendingRequests);
+        stats.put("approvedRequests", approvedRequests); 
+        stats.put("rejectedRequests", rejectedRequests);
+        stats.put("cancelledRequests", cancelledRequests);
+        stats.put("disbursedRequests", disbursedRequests); // Added for completeness
+        stats.put("totalAmountRequested", totalAmountRequested);
+        stats.put("totalAmountApproved", totalAmountApproved);
+        stats.put("totalAmountDisbursed", totalAmountDisbursed);
+        stats.put("availableBudget", availableBudget);
+        stats.put("activeDonors", activeDonors);
+
+        return stats;
+    }
+
     private DonorResponse mapToDonorResponse(Donor donor) {
         DonorResponse response = new DonorResponse();
         response.setId(donor.getId());

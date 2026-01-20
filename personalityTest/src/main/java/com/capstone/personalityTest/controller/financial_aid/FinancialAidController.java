@@ -102,4 +102,10 @@ public class FinancialAidController {
             Principal principal) {
         return ResponseEntity.ok(financialAidService.getDonorDetails(donorId, principal.getName()));
     }
+
+    @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<Map<String, Object>> getStats(Principal principal) {
+        return ResponseEntity.ok(financialAidService.getFinancialAidStatistics(principal.getName()));
+    }
 }
