@@ -4,6 +4,7 @@ package com.capstone.personalityTest.controller.financial_aid;
 
 import com.capstone.personalityTest.dto.RequestDTO.FinancialAidApplyRequest;
 import com.capstone.personalityTest.dto.RequestDTO.FinancialAidReviewRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.DonorResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidResponse;
 
 import com.capstone.personalityTest.model.financial_aid.FinancialAidRequest;
@@ -85,5 +86,20 @@ public class FinancialAidController {
             @PathVariable Long requestId,
             Principal principal) {
         return ResponseEntity.ok(financialAidService.disburseAid(requestId, principal.getName()));
+    }
+
+    @GetMapping("/donors")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<Map<String, List<DonorResponse>>> getDonors(Principal principal) {
+        List<DonorResponse> donors = financialAidService.getDonorsForOrganization(principal.getName());
+        return ResponseEntity.ok(Map.of("donors", donors));
+    }
+
+    @GetMapping("/donors/{donorId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<DonorResponse> getDonor(
+            @PathVariable Long donorId,
+            Principal principal) {
+        return ResponseEntity.ok(financialAidService.getDonorDetails(donorId, principal.getName()));
     }
 }

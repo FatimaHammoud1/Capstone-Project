@@ -2,6 +2,7 @@ package com.capstone.personalityTest.service.financial_aid;
 
 import com.capstone.personalityTest.dto.RequestDTO.FinancialAidApplyRequest;
 import com.capstone.personalityTest.dto.RequestDTO.FinancialAidReviewRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.DonorResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidResponse;
 
 import com.capstone.personalityTest.model.Exhibition.Organization;
@@ -247,6 +248,64 @@ public class FinancialAidService {
         FinancialAidRequest savedRequest = financialAidRepository.save(request);
 
         return mapToDetailResponse(savedRequest);
+    }
+
+    public List<DonorResponse> getDonorsForOrganization(String userEmail) {
+        UserInfo owner = userInfoRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Organization organization = organizationRepository.findByOwnerId(owner.getId())
+                .orElseThrow(() -> new RuntimeException("Organization not found for this user"));
+
+        return donorRepository.findByOrganizationId(organization.getId()).stream()
+                .map(this::mapToDonorResponse)
+                .collect(Collectors.toList());
+    }
+
+    public DonorResponse getDonorDetails(Long donorId, String userEmail) {
+        UserInfo owner = userInfoRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        Donor donor = donorRepository.findById(donorId)
+                .orElseThrow(() -> new RuntimeException("Donor not found"));
+        
+        if (!donor.getOrganization().getOwner().getId().equals(owner.getId())) {
+            throw new RuntimeException("Access denied: You are not the owner of this donor's organization.");
+        }
+        
+        return mapToDonorDetailResponse(donor);
+    }
+
+    private DonorResponse mapToDonorResponse(Donor donor) {
+        DonorResponse response = new DonorResponse();
+        response.setId(donor.getId());
+        response.setName(donor.getName());
+        response.setTotalBudget(donor.getTotalBudget());
+        response.setAvailableBudget(donor.getAvailableBudget());
+        response.setActive(donor.getActive());
+        return response;
+    }
+
+    private DonorResponse mapToDonorDetailResponse(Donor donor) {
+        DonorResponse response = mapToDonorResponse(donor);
+        
+        BigDecimal amountDistributed = donor.getTotalBudget().subtract(donor.getAvailableBudget());
+        response.setAmountDistributed(amountDistributed);
+        
+        // This is a simplified active requests count - roughly those approved but not yet disbursed/cancelled/rejected
+        // that are assigned to this donor. 
+        // More precise logic might depend on how 'activeRequests' is defined (e.g., PENDING requests 
+        // usually don't have a donor set yet).
+        // Let's assume active means "funds committed but not gone yet" -> APPROVED status.
+        // Actually, requests are assigned to a donor upon APPROVAL.
+        long activeCount = financialAidRepository.findByOrganizationId(donor.getOrganization().getId()).stream()
+                .filter(r -> r.getDonor() != null && r.getDonor().getId().equals(donor.getId()) 
+                        && r.getStatus() == FinancialAidRequest.Status.APPROVED)
+                .count();
+        
+        response.setActiveRequests(activeCount);
+        
+        return response;
     }
 
     private FinancialAidResponse mapToDetailResponse(FinancialAidRequest request) {
