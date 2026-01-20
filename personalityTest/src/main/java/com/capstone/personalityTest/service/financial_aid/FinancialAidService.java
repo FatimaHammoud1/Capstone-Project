@@ -91,11 +91,14 @@ public class FinancialAidService {
         FinancialAidRequest request = financialAidRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
         
-        UserInfo student = userInfoRepository.findByEmail(userEmail)
+        UserInfo user = userInfoRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        if (!request.getStudent().getId().equals(student.getId())) {
-            throw new RuntimeException("Access denied: You can only cancel your own requests.");
+        boolean isStudent = request.getStudent().getId().equals(user.getId());
+        boolean isOrgOwner = request.getOrganization().getOwner().getId().equals(user.getId());
+
+        if (!isStudent && !isOrgOwner) {
+            throw new RuntimeException("Access denied: You are not authorized to cancel this request.");
         }
         
         if (request.getStatus() == FinancialAidRequest.Status.DISBURSED 

@@ -49,7 +49,7 @@ public class FinancialAidController {
     }
 
     @PostMapping("/{requestId}/cancel")
-    @PreAuthorize("hasAnyRole('STUDENT', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('STUDENT','ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<FinancialAidResponse> cancelRequest(
             @PathVariable Long requestId,
             Principal principal) {
