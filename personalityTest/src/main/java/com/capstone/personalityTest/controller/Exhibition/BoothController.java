@@ -1,6 +1,6 @@
 package com.capstone.personalityTest.controller.Exhibition;
 
-import com.capstone.personalityTest.dto.RequestDTO.Exhibition.ScheduleUpdateRequest;
+import com.capstone.personalityTest.dto.RequestDTO.Exhibition.BoothAllocationUpdateRequest;
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.BoothResponse;
 import com.capstone.personalityTest.service.Exhibition.BoothService;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,6 @@ public class BoothController {
     private final BoothService boothService;
 
     // ----------------- GET BOOTHS -----------------
-    // ----------------- GET BOOTHS -----------------
     @GetMapping("/{exhibitionId}/booths")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<List<BoothResponse>> getBooths(@PathVariable Long exhibitionId) {
@@ -33,15 +32,15 @@ public class BoothController {
         return ResponseEntity.ok(boothService.getBoothById(boothId));
     }
 
-    // ----------------- UPDATE BOOTHS (Schedule & Zone) -----------------
-    @PostMapping("/{exhibitionId}/schedule")
+    // ----------------- UPDATE BOOTHS (Allocations) -----------------
+    @PostMapping("/{exhibitionId}/booth-allocation")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<Void> updateScheduleAndBooths(
+    public ResponseEntity<Void> updateBoothAllocation(
             @PathVariable Long exhibitionId,
-            @RequestBody ScheduleUpdateRequest request,
+            @RequestBody BoothAllocationUpdateRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        boothService.updateBoothAllocations(exhibitionId, request, userDetails.getUsername());
+        boothService.updateBoothAllocation(exhibitionId, request, userDetails.getUsername());
         return ResponseEntity.ok().build();
     }
 }

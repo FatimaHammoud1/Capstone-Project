@@ -1,6 +1,6 @@
 package com.capstone.personalityTest.service.Exhibition;
 
-import com.capstone.personalityTest.dto.RequestDTO.Exhibition.ScheduleUpdateRequest;
+import com.capstone.personalityTest.dto.RequestDTO.Exhibition.BoothAllocationUpdateRequest;
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.BoothResponse;
 import com.capstone.personalityTest.model.Enum.Exhibition.BoothType;
 import com.capstone.personalityTest.model.Exhibition.Booth;
@@ -25,20 +25,12 @@ public class BoothService {
     private final UserInfoRepository userInfoRepository;
 
     // ----------------- Get Booths for Exhibition -----------------
-    // ----------------- Get Booths for Exhibition -----------------
     public List<BoothResponse> getBoothsByExhibition(Long exhibitionId) {
         Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
-        // No security check needed for GET usually, or minimal (anyone can see booths?) 
-        // Logic: Return all booths converted to DTOs
-        // We lack a direct 'findByExhibition' in Repo interface in snippets, assuming standard JpaRepository derivation works or we need to add it.
-        // Actually we have `countByExhibition` and `deleteByExhibition` in Repo snippets, let's assume `findByExhibition` needs adding or derivation.
-        // Assuming we need to add `List<Booth> findByExhibition(Exhibition exhibition);` to repo first.
-        
-        // Wait, standard JPA method is findByExhibition
-        return boothRepository.findAll().stream() // Ideally findByExhibition(exhibition)
-                .filter(b -> b.getExhibition().getId().equals(exhibitionId)) // fallback filtering
+        return boothRepository.findAll().stream()
+                .filter(b -> b.getExhibition().getId().equals(exhibitionId))
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -50,7 +42,7 @@ public class BoothService {
     }
 
     // ----------------- Update Booth Assignments (Zone/Number) -----------------
-    public void updateBoothAllocations(Long exhibitionId, ScheduleUpdateRequest request, String orgOwnerEmail) {
+    public void updateBoothAllocation(Long exhibitionId, BoothAllocationUpdateRequest request, String orgOwnerEmail) {
         UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -62,28 +54,18 @@ public class BoothService {
             throw new RuntimeException("Only ORG_OWNER can update booth allocations");
         }
 
-        // Update schedule JSON if provided
-        if (request.getScheduleJson() != null) {
-            exhibition.setScheduleJson(request.getScheduleJson());
-            exhibitionRepository.save(exhibition);
+        // Update single booth
+        Booth booth = boothRepository.findById(request.getBoothId())
+                .orElseThrow(() -> new RuntimeException("Booth with ID " + request.getBoothId() + " not found"));
+        
+        if (!booth.getExhibition().getId().equals(exhibitionId)) {
+            throw new RuntimeException("Booth " + request.getBoothId() + " does not belong to exhibition " + exhibitionId);
         }
 
-        // Update individual booths
-        if (request.getBoothAllocations() != null) {
-            for (ScheduleUpdateRequest.BoothAllocation allocation : request.getBoothAllocations()) {
-                Booth booth = boothRepository.findById(allocation.getBoothId())
-                        .orElseThrow(() -> new RuntimeException("Booth with ID " + allocation.getBoothId() + " not found"));
-                
-                if (!booth.getExhibition().getId().equals(exhibitionId)) {
-                    throw new RuntimeException("Booth " + allocation.getBoothId() + " does not belong to exhibition " + exhibitionId);
-                }
-
-                if (allocation.getZone() != null) booth.setZone(allocation.getZone());
-                if (allocation.getBoothNumber() != null) booth.setBoothNumber(allocation.getBoothNumber());
-                
-                boothRepository.save(booth);
-            }
-        }
+        if (request.getZone() != null) booth.setZone(request.getZone());
+        if (request.getBoothNumber() != null) booth.setBoothNumber(request.getBoothNumber());
+        
+        boothRepository.save(booth);
     }
 
     private BoothResponse mapToResponse(Booth booth) {
