@@ -3,8 +3,9 @@ package com.capstone.personalityTest.controller.financial_aid;
 
 
 import com.capstone.personalityTest.dto.RequestDTO.FinancialAidApplyRequest;
-import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidDetailResponse;
+import com.capstone.personalityTest.dto.RequestDTO.FinancialAidReviewRequest;
 import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidResponse;
+
 import com.capstone.personalityTest.model.financial_aid.FinancialAidRequest;
 import com.capstone.personalityTest.service.financial_aid.FinancialAidService;
 import jakarta.validation.Valid;
@@ -41,7 +42,7 @@ public class FinancialAidController {
 
     @GetMapping("/{requestId}")
     @PreAuthorize("hasAnyRole('STUDENT', 'DEVELOPER')")
-    public ResponseEntity<FinancialAidDetailResponse> getRequestDetails(
+    public ResponseEntity<FinancialAidResponse> getRequestDetails(
             @PathVariable Long requestId,
             Principal principal) {
         return ResponseEntity.ok(financialAidService.getRequestDetails(requestId, principal.getName()));
@@ -67,5 +68,14 @@ public class FinancialAidController {
             @RequestParam(required = false) FinancialAidRequest.Status status,
             Principal principal) {
         return ResponseEntity.ok(financialAidService.getAllRequestsForOrganization(principal.getName(), status));
+    }
+
+    @PostMapping("/{requestId}/review")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<FinancialAidResponse> reviewRequest(
+            @PathVariable Long requestId,
+            @Valid @RequestBody FinancialAidReviewRequest reviewRequest,
+            Principal principal) {
+        return ResponseEntity.ok(financialAidService.reviewRequest(requestId, reviewRequest, principal.getName()));
     }
 }

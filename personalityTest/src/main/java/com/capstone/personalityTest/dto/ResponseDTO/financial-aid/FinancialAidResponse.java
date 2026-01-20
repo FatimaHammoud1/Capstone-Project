@@ -11,19 +11,25 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class FinancialAidDetailResponse {
+public class FinancialAidResponse {
     private Long id;
+    private Long studentId;         
+    private Long organizationId;    
+    private String organizationName;
     private String studentName;
-    private String studentPhone; // Added
+    private String studentPhone; 
     private BigDecimal requestedAmount;
     private BigDecimal approvedAmount;
     private Status status;
     private Double gpa;
-    private String fieldOfStudy; // Added
+    private String fieldOfStudy; 
     private String universityName;
-    private BigDecimal familyIncome; // Added
+    private BigDecimal familyIncome; 
     private Documents documents;
     private String reason;
+    private String rejectionReason; 
+    private Long donorId;           
+    private String donorName;       
     private LocalDateTime requestedAt;
     private LocalDateTime reviewedAt;
 

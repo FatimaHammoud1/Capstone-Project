@@ -1,8 +1,9 @@
 package com.capstone.personalityTest.service.financial_aid;
 
 import com.capstone.personalityTest.dto.RequestDTO.FinancialAidApplyRequest;
-import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidDetailResponse;
+import com.capstone.personalityTest.dto.RequestDTO.FinancialAidReviewRequest;
 import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidResponse;
+
 import com.capstone.personalityTest.model.Exhibition.Organization;
 import com.capstone.personalityTest.model.UserInfo;
 import com.capstone.personalityTest.model.financial_aid.Donor;
@@ -59,7 +60,7 @@ public class FinancialAidService {
 
         FinancialAidRequest savedRequest = financialAidRepository.save(aidRequest);
 
-        return mapToResponse(savedRequest);
+        return mapToDetailResponse(savedRequest);
     }
 
     public List<FinancialAidResponse> getStudentRequests(String userEmail) {
@@ -67,11 +68,11 @@ public class FinancialAidService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
         return financialAidRepository.findByStudentId(student.getId()).stream()
-                .map(this::mapToResponse)
+                .map(this::mapToDetailResponse)
                 .collect(Collectors.toList());
     }
 
-    public FinancialAidDetailResponse getRequestDetails(Long requestId, String userEmail) {
+    public FinancialAidResponse getRequestDetails(Long requestId, String userEmail) {
         FinancialAidRequest request = financialAidRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
         
@@ -112,7 +113,7 @@ public class FinancialAidService {
         request.setStatus(FinancialAidRequest.Status.CANCELLED);
         FinancialAidRequest savedRequest = financialAidRepository.save(request);
         
-        return mapToResponse(savedRequest);
+        return mapToDetailResponse(savedRequest);
     }
 
     public Map<String, Object> getPendingRequestsForOrganization(String userEmail) {
@@ -125,7 +126,7 @@ public class FinancialAidService {
         List<FinancialAidRequest> pendingRequests = financialAidRepository.findByOrganizationIdAndStatus(
                 organization.getId(), FinancialAidRequest.Status.PENDING);
 
-        List<FinancialAidDetailResponse> requestDtos = pendingRequests.stream()
+        List<FinancialAidResponse> requestDtos = pendingRequests.stream()
                 .map(this::mapToDetailResponse)
                 .collect(Collectors.toList());
 
@@ -157,7 +158,7 @@ public class FinancialAidService {
         }
 
         List<FinancialAidResponse> requestDtos = requests.stream()
-                .map(this::mapToResponse)
+                .map(this::mapToDetailResponse)
                 .collect(Collectors.toList());
         
         Map<String, Object> response = new HashMap<>();
@@ -166,24 +167,70 @@ public class FinancialAidService {
         return response;
     }
 
-    private FinancialAidResponse mapToResponse(FinancialAidRequest request) {
-        FinancialAidResponse response = new FinancialAidResponse();
-        response.setId(request.getId());
-        response.setStudentId(request.getStudent().getId());
-        response.setOrganizationId(request.getOrganization().getId());
-        response.setOrganizationName(request.getOrganization().getName());
-        response.setStudentName(request.getStudentName());
-        response.setStatus(request.getStatus());
-        response.setRequestedAmount(request.getRequestedAmount());
-        response.setApprovedAmount(request.getApprovedAmount());
-        response.setRequestedAt(request.getRequestedAt());
-        response.setReviewedAt(request.getReviewedAt());
-        return response;
+    @Transactional
+    public FinancialAidResponse reviewRequest(Long requestId, FinancialAidReviewRequest reviewRequest, String userEmail) {
+        UserInfo owner = userInfoRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        FinancialAidRequest request = financialAidRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        // Verify that the user is the owner of the organization
+        if (!request.getOrganization().getOwner().getId().equals(owner.getId())) {
+             throw new RuntimeException("Access denied: You are not the owner of this organization.");
+        }
+
+        if (request.getStatus() != FinancialAidRequest.Status.PENDING) {
+             throw new RuntimeException("Request has already been processed (Status: " + request.getStatus() + ")");
+        }
+
+        if ("APPROVE".equalsIgnoreCase(reviewRequest.getDecision())) {
+             if (reviewRequest.getApprovedAmount() == null || reviewRequest.getApprovedAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                 throw new RuntimeException("Approved amount must be greater than 0");
+             }
+
+             // Find a donor with enough budget
+             List<Donor> donors = donorRepository.findByOrganizationId(request.getOrganization().getId());
+             Donor selectedDonor = donors.stream()
+                     .filter(d -> Boolean.TRUE.equals(d.getActive()) && d.getAvailableBudget().compareTo(reviewRequest.getApprovedAmount()) >= 0)
+                     .findFirst()
+                     .orElseThrow(() -> new RuntimeException("Insufficient donor budget to approve this request."));
+
+             // Deduct budget
+             selectedDonor.setAvailableBudget(selectedDonor.getAvailableBudget().subtract(reviewRequest.getApprovedAmount()));
+             donorRepository.save(selectedDonor);
+
+             // Update Request
+             request.setStatus(FinancialAidRequest.Status.APPROVED);
+             request.setApprovedAmount(reviewRequest.getApprovedAmount());
+             request.setDonor(selectedDonor);
+
+        } else if ("REJECT".equalsIgnoreCase(reviewRequest.getDecision())) {
+             if (reviewRequest.getRejectionReason() == null || reviewRequest.getRejectionReason().isBlank()) {
+                 throw new RuntimeException("Rejection reason is required");
+             }
+             request.setStatus(FinancialAidRequest.Status.REJECTED);
+             request.setRejectionReason(reviewRequest.getRejectionReason());
+        } else {
+            throw new RuntimeException("Invalid decision: " + reviewRequest.getDecision());
+        }
+
+        request.setReviewedAt(LocalDateTime.now());
+        FinancialAidRequest savedRequest = financialAidRepository.save(request);
+
+        // TODO: Notify student
+
+        return mapToDetailResponse(savedRequest);
     }
 
-    private FinancialAidDetailResponse mapToDetailResponse(FinancialAidRequest request) {
-        FinancialAidDetailResponse response = new FinancialAidDetailResponse();
+
+
+    private FinancialAidResponse mapToDetailResponse(FinancialAidRequest request) {
+        FinancialAidResponse response = new FinancialAidResponse();
         response.setId(request.getId());
+        response.setStudentId(request.getStudent().getId());         // Mapping new field
+        response.setOrganizationId(request.getOrganization().getId()); // Mapping new field
+        response.setOrganizationName(request.getOrganization().getName()); // Mapping new field
         response.setStudentName(request.getStudentName());
         response.setStudentPhone(request.getStudentPhone());
         response.setRequestedAmount(request.getRequestedAmount());
@@ -194,13 +241,20 @@ public class FinancialAidService {
         response.setUniversityName(request.getUniversityName());
         response.setFamilyIncome(request.getFamilyIncome());
         
-        FinancialAidDetailResponse.Documents docs = new FinancialAidDetailResponse.Documents();
+        FinancialAidResponse.Documents docs = new FinancialAidResponse.Documents();
         docs.setIdCard(request.getIdCardUrl());
         docs.setFees(request.getUniversityFeesUrl());
         docs.setGrades(request.getGradeProofUrl());
         response.setDocuments(docs);
         
         response.setReason(request.getReason());
+        response.setRejectionReason(request.getRejectionReason());
+        
+        if (request.getDonor() != null) {
+            response.setDonorId(request.getDonor().getId());
+            response.setDonorName(request.getDonor().getName());
+        }
+        
         response.setRequestedAt(request.getRequestedAt());
         response.setReviewedAt(request.getReviewedAt());
         
