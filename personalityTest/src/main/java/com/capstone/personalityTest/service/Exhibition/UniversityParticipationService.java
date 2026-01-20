@@ -287,25 +287,16 @@ public class UniversityParticipationService {
             throw new RuntimeException("Not authorized to cancel this participation");
         }
 
-        if (participation.getStatus() != ParticipationStatus.ACCEPTED && participation.getStatus() != ParticipationStatus.CONFIRMED) {
-             throw new RuntimeException("Only ACCEPTED or CONFIRMED participations can be cancelled");
-        }
-
+        // If payment was made, mark as refundable
         if (participation.getPaymentStatus() == PaymentStatus.PAID) {
-            // Mark refundable logic (usually requires a field like `refundRequested` or `refundable`), 
-            // but prompt says "mark refundable flag" - assuming logic or existing PaymentStatus.REFUNDED?
-            // "If payment is PAID → mark refundable flag" - lacking field in provided entity, 
-            // will set PaymentStatus to REFUNDED to represent this state if Enum allows, 
-            // or just rely on manual process since "No automatic refund".
-            // Let's assume just Cancelled status implies refund needed if Paid.
-            // Or change PaymentStatus to enum value REFUND_NEEDED if we had it.
-            // Sticking to "do not process payment logic" and just cancel participation Status.
+            participation.setPaymentStatus(PaymentStatus.REFUNDED);
         }
 
         participation.setStatus(ParticipationStatus.CANCELLED);
-        // Side effects: Remove university booths - handled by releasing capacity naturally as they are no longer "Confirmed"
-        // If specific booths exist in Booth table, they should be cleaned up.
-        // Assuming booth cleanup is implicit or manual for now without BoothService delete method exposed.
+        
+        // Side effects: Remove university booths
+        List<Booth> booths = boothRepository.findByUniversityParticipationId(participation.getId());
+        boothRepository.deleteAll(booths);
         
         UniversityParticipation saved = participationRepository.save(participation);
         return mapToResponse(saved);

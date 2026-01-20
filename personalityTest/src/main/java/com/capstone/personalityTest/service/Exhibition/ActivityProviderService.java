@@ -294,30 +294,21 @@ public class ActivityProviderService {
             throw new RuntimeException("Cannot cancel request when exhibition is ACTIVE");
         }
         
-        // Verify owner or DEVELOPER
+        // Check if canceller is the Provider Owner or Org Owner
+        boolean isProviderOwner = request.getProvider().getOwner().getId().equals(canceller.getId());
+        boolean isOrgOwner = exhibition.getOrganization().getOwner().getId().equals(canceller.getId());
         boolean isDev = canceller.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         
-        // Corrected check: Validate against the Provider's Owner
-        if (!request.getProvider().getOwner().getId().equals(canceller.getId()) && !isDev) {
-             throw new RuntimeException("Only the provider owner can cancel this request");
-        }
-
-        if (request.getStatus() != ActivityProviderRequestStatus.PROPOSED && request.getStatus() != ActivityProviderRequestStatus.APPROVED) {
-            throw new RuntimeException("Only PROPOSED or APPROVED requests can be cancelled");
+        if (!isProviderOwner && !isOrgOwner && !isDev) {
+             throw new RuntimeException("Not authorized to cancel this request");
         }
         
-        // State Change -> REJECTED (as per requirement, though CANCELLED might be semantic preference, sticking to requirement "ActivityProviderRequest.status → REJECTED")
-        request.setStatus(ActivityProviderRequestStatus.REJECTED);
-        request.setOrgResponse("Cancelled by provider: " + reason);
-        // Side effects: Remove related booths? 
-        // Logic generally implies if approved, booths might have been created. 
-        // Assuming booths are created after approval or confirmation. If so, logic to remove them is needed.
-        // But in this flow, booths seem to be implicitly counted via requests or university participation. 
-        // If booths table has entries for this provider/request, delete them.
-        // Assuming Booth entity doesn't directly link to ActivityProviderRequest but logical capacity.
-        // If explicit booths exist for this provider in this exhibition:
-        // boothRepository.deleteByExhibitionAndProvider... (If such method/link exists).
-        // For now, simpler "Recalculate exhibition capacity" is automatic since capacity is summed from requests/booths.
+        request.setStatus(ActivityProviderRequestStatus.CANCELLED);
+        request.setOrgResponse("Cancelled: " + reason);
+        
+        // Side effects: Remove related booths
+        List<Booth> booths = boothRepository.findByActivityProviderRequestId(request.getId());
+        boothRepository.deleteAll(booths);
 
         ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
         return mapToResponse(savedRequest);

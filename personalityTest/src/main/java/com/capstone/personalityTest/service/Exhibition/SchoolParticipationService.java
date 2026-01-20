@@ -249,10 +249,6 @@ public class SchoolParticipationService {
             throw new RuntimeException("Not authorized to cancel this participation");
         }
 
-        if (participation.getStatus() != ParticipationStatus.ACCEPTED && participation.getStatus() != ParticipationStatus.CONFIRMED) {
-             throw new RuntimeException("Only ACCEPTED or CONFIRMED participations can be cancelled");
-        }
-
         participation.setStatus(ParticipationStatus.CANCELLED);
         
         SchoolParticipation saved = participationRepository.save(participation);
