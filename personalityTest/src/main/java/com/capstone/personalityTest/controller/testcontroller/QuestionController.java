@@ -19,7 +19,7 @@ public class QuestionController {
     private final QuestionService questionService;
 
     // 3. Add questions to a section
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @PatchMapping("/{testId}/sections/{sectionId}/questions")
     public ResponseEntity<TestResponse> addQuestions(
             @PathVariable Long testId,
@@ -29,7 +29,7 @@ public class QuestionController {
         return new ResponseEntity<>(updatedTest, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @DeleteMapping("/{testId}/questions/{questionId}")
     public ResponseEntity<String> deleteQuestion(@PathVariable Long testId, @PathVariable Long questionId) {
         questionService.deleteQuestion(testId, questionId);
@@ -37,7 +37,7 @@ public class QuestionController {
     }
 
     // Update Question
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @PatchMapping("/{testId}/questions/{questionId}")
     public ResponseEntity<TestResponse> updateQuestion(
             @PathVariable Long testId,

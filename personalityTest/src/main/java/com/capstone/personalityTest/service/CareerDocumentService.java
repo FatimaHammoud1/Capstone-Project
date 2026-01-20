@@ -2,7 +2,7 @@ package com.capstone.personalityTest.service;
 
 import com.capstone.personalityTest.dto.ResponseDTO.CareerDocumentResponse.CareerDocumentResponse;
 import com.capstone.personalityTest.mapper.CareerDocumentMapper;
-import com.capstone.personalityTest.model.BaseTest;
+import com.capstone.personalityTest.model.Test.BaseTest;
 import com.capstone.personalityTest.model.CareerDocument;
 import com.capstone.personalityTest.repository.BaseTestRepository;
 import com.capstone.personalityTest.repository.CareerDocumentRepository;

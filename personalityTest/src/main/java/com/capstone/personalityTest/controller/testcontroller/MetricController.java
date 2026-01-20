@@ -20,7 +20,7 @@ public class MetricController {
 
     private final MetricService metricService;
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @PostMapping
     public ResponseEntity<MetricResponse> createMetric(@Valid @RequestBody MetricRequest metricRequest) {
         MetricResponse createdMetric = metricService.createMetric(metricRequest);
@@ -45,7 +45,7 @@ public class MetricController {
         return ResponseEntity.ok(metric);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @PatchMapping("/{id}")
     public ResponseEntity<MetricResponse> updateMetric(
             @PathVariable Long id,
@@ -54,7 +54,7 @@ public class MetricController {
         return ResponseEntity.ok(updatedMetric);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteMetric(@PathVariable Long id) {
         metricService.deleteMetric(id);

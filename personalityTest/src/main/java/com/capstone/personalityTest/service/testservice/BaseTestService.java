@@ -2,7 +2,7 @@ package com.capstone.personalityTest.service.testservice;
 
 import com.capstone.personalityTest.dto.RequestDTO.TestRequest.BaseTestRequest;
 import com.capstone.personalityTest.mapper.TestMapper.BaseTestMapper;
-import com.capstone.personalityTest.model.BaseTest;
+import com.capstone.personalityTest.model.Test.BaseTest;
 import com.capstone.personalityTest.repository.BaseTestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

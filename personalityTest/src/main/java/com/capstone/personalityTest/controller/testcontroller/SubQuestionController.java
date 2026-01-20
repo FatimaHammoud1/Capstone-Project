@@ -19,7 +19,7 @@ public class SubQuestionController {
     private final SubQuestionService subQuestionService;
 
     // 4. Add subquestions to a question
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @PatchMapping("/{testId}/questions/{questionId}/subquestions")
     public ResponseEntity<TestResponse> addSubQuestions(
             @PathVariable Long testId,
@@ -29,7 +29,7 @@ public class SubQuestionController {
         return new ResponseEntity<>(updatedTest, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @DeleteMapping("/{testId}/subquestions/{subQuestionId}")
     public ResponseEntity<String> deleteSubQuestion(@PathVariable Long testId, @PathVariable Long subQuestionId) {
         subQuestionService.deleteSubQuestion(testId, subQuestionId);
@@ -37,7 +37,7 @@ public class SubQuestionController {
     }
 
     // Update SubQuestion
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @PatchMapping("/{testId}/subquestions/{subQuestionId}")
     public ResponseEntity<TestResponse> updateSubQuestion(
             @PathVariable Long testId,

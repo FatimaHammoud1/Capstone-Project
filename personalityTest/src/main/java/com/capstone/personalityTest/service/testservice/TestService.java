@@ -4,7 +4,7 @@ import com.capstone.personalityTest.dto.RequestDTO.TestRequest.CreateVersionRequ
 import com.capstone.personalityTest.dto.RequestDTO.TestRequest.TestRequest;
 import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.TestResponse;
 import com.capstone.personalityTest.mapper.TestMapper.TestMapper;
-import com.capstone.personalityTest.model.BaseTest;
+import com.capstone.personalityTest.model.Test.BaseTest;
 import com.capstone.personalityTest.model.Enum.TestStatus;
 import com.capstone.personalityTest.model.Test.Section;
 import com.capstone.personalityTest.model.Test.Test;

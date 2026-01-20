@@ -1,6 +1,5 @@
 package com.capstone.personalityTest.model.Test;
 
-import com.capstone.personalityTest.model.BaseTest;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

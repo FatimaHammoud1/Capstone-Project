@@ -88,27 +88,27 @@ public class UserController {
     }
 
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @GetMapping("/users")
     public ResponseEntity<Page<UserInfoResponse>> getAllUsers (Pageable pageable){
         Page<UserInfoResponse> usersPage = service.getAllUsers(pageable);
         return new ResponseEntity<>(usersPage, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','USER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER','USER', 'DEVELOPER')")
     @GetMapping("/users/{id}")
     public ResponseEntity<UserInfoResponse> getUserById (@PathVariable Long id){
         UserInfoResponse userById = service.getUserById(id);
         return new ResponseEntity<>(userById , HttpStatus.OK);
     }
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @DeleteMapping("/users/{id}")
     public ResponseEntity<String> deleteUser (@PathVariable Long id, Pageable pageable){
         if(service.deleteUser(id , pageable))
             return new ResponseEntity<>("User deleted successfully" , HttpStatus.OK);
         return new ResponseEntity<>(null , HttpStatus.BAD_REQUEST);
     }
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'DEVELOPER')")
     @PutMapping("/users/{id}")
     public ResponseEntity<String> updateUser (@PathVariable Long id ,
                                               @RequestBody UserUpdateRequest userUpdateRequest){

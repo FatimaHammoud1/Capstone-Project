@@ -1,7 +1,7 @@
 package com.capstone.personalityTest.controller.testcontroller;
 
 import com.capstone.personalityTest.dto.RequestDTO.TestRequest.BaseTestRequest;
-import com.capstone.personalityTest.model.BaseTest;
+import com.capstone.personalityTest.model.Test.BaseTest;
 import com.capstone.personalityTest.service.testservice.BaseTestService;
 
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/base-tests")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
 public class BaseTestController {
 
     private final BaseTestService service;
