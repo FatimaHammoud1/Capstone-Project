@@ -18,6 +18,10 @@ import java.util.List;
 
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse;
 import com.capstone.personalityTest.dto.RequestDTO.Exhibition.ExhibitionRequest;
+import com.capstone.personalityTest.dto.RequestDTO.Exhibition.BoothLimitsRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.InvitationCapacityResponse;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -55,7 +59,7 @@ public class ExhibitionService {
         exhibition.setEndDate(request.getEndDate());
         exhibition.setStartTime(request.getStartTime());
         exhibition.setEndTime(request.getEndTime());
-        exhibition.setMaxCapacity(request.getMaxCapacity());
+        exhibition.setStandardBoothSqm(request.getStandardBoothSqm());
         exhibition.setExpectedVisitors(request.getExpectedVisitors());
         // Schedule JSON is optional/generated later
         exhibition.setScheduleJson(request.getScheduleJson());
@@ -68,26 +72,9 @@ public class ExhibitionService {
         Exhibition savedExhibition = exhibitionRepository.save(exhibition);
 
         // Map Entity to Response DTO
-        return new ExhibitionResponse(
-                savedExhibition.getId(),
-                savedExhibition.getOrganization().getId(),
-                savedExhibition.getTitle(),
-                savedExhibition.getDescription(),
-                savedExhibition.getTheme(),
-                savedExhibition.getStatus(),
-                savedExhibition.getStartDate(),
-                savedExhibition.getEndDate(),
-                savedExhibition.getStartTime(),
-                savedExhibition.getEndTime(),
-                savedExhibition.getMaxCapacity(),
-                savedExhibition.getExpectedVisitors(),
-                savedExhibition.getScheduleJson(),
-                savedExhibition.getCreatedAt(),
-                savedExhibition.getUpdatedAt()
-        );
+        return mapToResponse(savedExhibition);
     }
 
-    // Optional: get all exhibitions of this org
     // Optional: get all exhibitions of this org
     public List<ExhibitionResponse> getExhibitionsByOrg(Long orgId) {
         return exhibitionRepository.findByOrganizationId(orgId).stream()
@@ -104,12 +91,6 @@ public class ExhibitionService {
     
     // ----------------- Get All Active Exhibitions -----------------
     public List<ExhibitionResponse> getAllActiveExhibitions() {
-        // Assuming ACTIVE status is what students/participants need to see for registration
-        // Could also include CONFIRMED if registration opens then.
-        // Usually, students register when ACTIVE (as per registerStudent logic).
-        // Use findAll().stream().filter(...) or create repository method findByStatus(ACTIVE)
-        // Assuming status based filtering is preferred.
-        // If repository doesn't have findByStatus, we can use filter. For performance, repository method is better but filter is safer without repo changes now.
         return exhibitionRepository.findAll().stream()
                 .filter(e -> e.getStatus() == ExhibitionStatus.ACTIVE)
                 .map(this::mapToResponse)
@@ -129,12 +110,143 @@ public class ExhibitionService {
             exhibition.getEndDate(),
             exhibition.getStartTime(),
             exhibition.getEndTime(),
-            exhibition.getMaxCapacity(),
+            exhibition.getTotalAvailableBooths(),
+            exhibition.getStandardBoothSqm(),
+            exhibition.getMaxBoothsPerUniversity(),
+            exhibition.getMaxBoothsPerProvider(),
             exhibition.getExpectedVisitors(),
+            exhibition.getActualVisitors(),
             exhibition.getScheduleJson(),
             exhibition.getCreatedAt(),
-            exhibition.getUpdatedAt()
+            exhibition.getUpdatedAt(),
+            exhibition.getFinalizationDeadline()
         );
+    }
+    
+    // ----------------- Get Available Booths Information -----------------
+    public Map<String, Integer> getAvailableBooths(Long exhibitionId) {
+        Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
+                .orElseThrow(() -> new RuntimeException("Exhibition not found"));
+        
+        // Get total available booths (calculated from venue)
+        Integer totalBooths = exhibition.getTotalAvailableBooths();
+        if (totalBooths == null) {
+            throw new RuntimeException("Exhibition does not have venue approved yet");
+        }
+        
+        // Count currently used booths
+        int usedBooths = boothRepository.countByExhibition(exhibition);
+        
+        // Calculate remaining
+        int remainingBooths = totalBooths - usedBooths;
+        
+        // Return as map
+        Map<String, Integer> boothInfo = new HashMap<>();
+        boothInfo.put("totalAvailableBooths", totalBooths);
+        boothInfo.put("usedBooths", usedBooths);
+        boothInfo.put("remainingBooths", remainingBooths);
+        
+        return boothInfo;
+    }
+    
+    // ----------------- Set Booth Limits & Calculate Invitation Capacity -----------------
+    public InvitationCapacityResponse setBoothLimits(
+            Long exhibitionId, 
+            BoothLimitsRequest request,
+            String orgOwnerEmail) {
+        
+        UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
+                .orElseThrow(() -> new RuntimeException("Exhibition not found"));
+        
+        // Authorization check
+        boolean isDev = orgOwner.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId()) && !isDev) {
+            throw new RuntimeException("Only organization owner can set booth limits");
+        }
+        
+        // Validate exhibition status (must be VENUE_APPROVED)
+        if (exhibition.getStatus() != ExhibitionStatus.VENUE_APPROVED) {
+            throw new RuntimeException("Can only set booth limits after venue is approved");
+        }
+        
+        // Validate limits are positive
+        if (request.getMaxBoothsPerUniversity() != null && request.getMaxBoothsPerUniversity() <= 0) {
+            throw new RuntimeException("Max booths per university must be positive");
+        }
+        if (request.getMaxBoothsPerProvider() != null && request.getMaxBoothsPerProvider() <= 0) {
+            throw new RuntimeException("Max booths per provider must be positive");
+        }
+        
+        // Set limits
+        exhibition.setMaxBoothsPerUniversity(request.getMaxBoothsPerUniversity());
+        exhibition.setMaxBoothsPerProvider(request.getMaxBoothsPerProvider());
+        exhibition.setUpdatedAt(LocalDateTime.now());
+        
+        Exhibition saved = exhibitionRepository.save(exhibition);
+        
+        // Calculate invitation capacity
+        Integer totalBooths = saved.getTotalAvailableBooths();
+        int usedBooths = boothRepository.countByExhibition(saved);
+        int remainingBooths = totalBooths - usedBooths;
+        
+        Integer maxUnisToInvite = null;
+        Integer maxProvsToInvite = null;
+        
+        if (saved.getMaxBoothsPerUniversity() != null && saved.getMaxBoothsPerUniversity() > 0) {
+            maxUnisToInvite = remainingBooths / saved.getMaxBoothsPerUniversity();
+        }
+        
+        if (saved.getMaxBoothsPerProvider() != null && saved.getMaxBoothsPerProvider() > 0) {
+            maxProvsToInvite = remainingBooths / saved.getMaxBoothsPerProvider();
+        }
+        
+        return new InvitationCapacityResponse(
+            saved.getMaxBoothsPerUniversity(),
+            saved.getMaxBoothsPerProvider(),
+            maxUnisToInvite,
+            maxProvsToInvite,
+            totalBooths,
+            remainingBooths
+        );
+    }
+    
+    // ----------------- Update Actual Visitors (After Attendance) -----------------
+    public void updateActualVisitors(Long exhibitionId) {
+        Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
+                .orElseThrow(() -> new RuntimeException("Exhibition not found"));
+        
+        // Sum from universities who attended (attendedAt is set)
+        int uniVisitors = universityParticipationRepository
+                .findByExhibitionId(exhibitionId)
+                .stream()
+                .filter(p -> p.getAttendedAt() != null)
+                .mapToInt(participation -> participation.getExpectedVisitors() != null ? participation.getExpectedVisitors() : 0)
+                .sum();
+        
+        // Sum from schools who attended (attendedAt is set)
+        int schoolVisitors = schoolParticipationRepository
+                .findByExhibitionId(exhibitionId)
+                .stream()
+                .filter(p -> p.getAttendedAt() != null)
+                .mapToInt(participation -> participation.getExpectedVisitors() != null ? participation.getExpectedVisitors() : 0)
+                .sum();
+        
+        // Sum from providers who attended (attendedAt is set)
+        int providerVisitors = providerRequestRepository
+                .findByExhibitionId(exhibitionId)
+                .stream()
+                .filter(r -> r.getAttendedAt() != null)
+                .mapToInt(request -> request.getExpectedVisitors() != null ? request.getExpectedVisitors() : 0)
+                .sum();
+        
+        int totalVisitors = uniVisitors + schoolVisitors + providerVisitors;
+        exhibition.setActualVisitors(totalVisitors);
+        exhibition.setUpdatedAt(LocalDateTime.now());
+        
+        exhibitionRepository.save(exhibition);
     }
     
     // ----------------- Cancel Exhibition -----------------

@@ -1,9 +1,13 @@
 package com.capstone.personalityTest.model.Exhibition;
 
+import com.capstone.personalityTest.model.UserInfo;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -25,6 +29,7 @@ public class ActivityProvider {
 
     @ManyToOne
     @JoinColumn(name = "owner_id")
-    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private com.capstone.personalityTest.model.UserInfo owner;
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private UserInfo owner;
+
 }

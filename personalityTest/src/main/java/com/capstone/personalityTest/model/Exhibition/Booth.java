@@ -1,10 +1,12 @@
 package com.capstone.personalityTest.model.Exhibition;
 
 import com.capstone.personalityTest.model.Enum.Exhibition.BoothType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,7 +21,7 @@ public class Booth {
 
     @ManyToOne
     @JoinColumn(name = "exhibition_id")
-    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Exhibition exhibition; // related exhibition
 
     @Enumerated(EnumType.STRING)
@@ -39,7 +41,7 @@ public class Booth {
 
     @ManyToOne
     @JoinColumn(name = "linked_activity_id")
-    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Activity activity;
 
     private LocalDateTime createdAt; // creation time

@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse;
+
 @RestController
 @RequestMapping("/api/venue-requests")
 @RequiredArgsConstructor
@@ -24,7 +26,7 @@ public class VenueRequestController {
     // ----------------- CREATE VENUE REQUEST -----------------
     @PostMapping("/create/{exhibitionId}/{venueId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse> createVenueRequest(
+    public ResponseEntity<VenueRequestResponse> createVenueRequest(
             @PathVariable Long exhibitionId,
             @PathVariable Long venueId,
             @RequestBody Map<String, String> body,
@@ -33,7 +35,7 @@ public class VenueRequestController {
 
         String orgNotes = body.get("orgNotes");
 
-        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse request = venueRequestService.createVenueRequest(
+        VenueRequestResponse request = venueRequestService.createVenueRequest(
                 exhibitionId, venueId, orgNotes, responseDeadline, userDetails.getUsername()
         );
 
@@ -43,7 +45,7 @@ public class VenueRequestController {
     // ----------------- GET ALL REQUESTS FOR EXHIBITION -----------------
     @GetMapping("/exhibition/{exhibitionId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse>> getRequests(@PathVariable Long exhibitionId) {
+    public ResponseEntity<List<VenueRequestResponse>> getRequests(@PathVariable Long exhibitionId) {
         return ResponseEntity.ok(venueRequestService.getRequestsForExhibition(exhibitionId));
     }
 }

@@ -14,6 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderResponse;
+import java.util.List;
+import java.util.HashSet;
+import java.util.stream.Collectors;
+import java.math.BigDecimal;
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse;
 import com.capstone.personalityTest.model.Enum.Exhibition.BoothType;
 import com.capstone.personalityTest.model.Exhibition.Activity;
@@ -29,6 +34,8 @@ public class ActivityProviderService {
     private final UserInfoRepository userInfoRepository;
     private final BoothRepository boothRepository;
     private final ActivityRepository activityRepository;
+    private final ExhibitionService exhibitionService;
+
 
     // ----------------- Invite Activity Provider -----------------
     public ActivityProviderRequestResponse inviteProvider(Long exhibitionId, Long providerId, String orgRequirements, String inviterEmail, LocalDateTime responseDeadline) {
@@ -38,19 +45,21 @@ public class ActivityProviderService {
         Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
-        // Guard: Locked if CONFIRMED or later
-        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
-            throw new RuntimeException("Exhibition is locked");
-        }
-
         // Only ORG_OWNER of the organization or DEVELOPER
         boolean isDev = inviter.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         if (!exhibition.getOrganization().getOwner().getId().equals(inviter.getId()) && !isDev) {
             throw new RuntimeException("You are not the owner of this organization");
         }
 
-        if (exhibition.getStatus().ordinal() < ExhibitionStatus.VENUE_APPROVED.ordinal()) {
-             throw new RuntimeException("Exhibition must be VENUE_APPROVED to invite providers");
+        // Validate exhibition status: must be VENUE_APPROVED or PLANNING
+        if (exhibition.getStatus() != ExhibitionStatus.VENUE_APPROVED && exhibition.getStatus() != ExhibitionStatus.PLANNING) {
+            throw new RuntimeException("Can only invite providers after venue is approved");
+        }
+        
+        // Transition to PLANNING if first invitation
+        if (exhibition.getStatus() == ExhibitionStatus.VENUE_APPROVED) {
+            exhibition.setStatus(ExhibitionStatus.PLANNING);
+            exhibitionRepository.save(exhibition);
         }
 
         ActivityProvider provider = activityProviderRepository.findById(providerId)
@@ -60,12 +69,6 @@ public class ActivityProviderService {
         boolean alreadyInvited = providerRequestRepository.existsByExhibitionAndProvider(exhibition, provider);
         if (alreadyInvited) {
             throw new RuntimeException("This provider has already been invited for this exhibition");
-        }
-        
-        // Update exhibition status to ACTIVITY_PENDING if it was VENUE_APPROVED
-        if (exhibition.getStatus() == ExhibitionStatus.VENUE_APPROVED) {
-            exhibition.setStatus(ExhibitionStatus.ACTIVITY_PENDING);
-            exhibitionRepository.save(exhibition);
         }
 
         ActivityProviderRequest request = new ActivityProviderRequest();
@@ -82,7 +85,7 @@ public class ActivityProviderService {
 
     // ----------------- Submit Proposal (by Provider) -----------------
     // Updated to accept activityIds
-    public ActivityProviderRequestResponse submitProposal(Long requestId, String proposalText, Integer boothsCount, java.math.BigDecimal totalCost, java.util.List<Long> activityIds, String providerEmail) {
+    public ActivityProviderRequestResponse submitProposal(Long requestId, String proposalText, Integer boothsCount, BigDecimal totalCost, List<Long> activityIds, String providerEmail) {
         UserInfo providerUser = userInfoRepository.findByEmail(providerEmail)
                 .orElseThrow(() -> new RuntimeException("Provider user not found"));
 
@@ -94,12 +97,16 @@ public class ActivityProviderService {
             throw new RuntimeException("Only the provider owner can submit a proposal");
         }
 
-        if (request.getStatus() != ActivityProviderRequestStatus.INVITED) {
-             throw new RuntimeException("Proposal can only be submitted for INVITED requests");
+        // Allow proposal submission if INVITED or REJECTED (can re-submit after rejection)
+        if (request.getStatus() != ActivityProviderRequestStatus.INVITED && request.getStatus() != ActivityProviderRequestStatus.REJECTED) {
+             throw new RuntimeException("Proposal can only be submitted for INVITED or REJECTED requests");
         }
 
+        // Validate response deadline - auto-cancel if passed
         if (request.getResponseDeadline() != null && LocalDateTime.now().isAfter(request.getResponseDeadline())) {
-            throw new RuntimeException("Submission deadline has passed");
+            request.setStatus(ActivityProviderRequestStatus.CANCELLED);
+            providerRequestRepository.save(request);
+            throw new RuntimeException("Submission deadline has passed. Your invitation has been automatically cancelled.");
         }
 
         request.setProviderProposal(proposalText);
@@ -110,7 +117,7 @@ public class ActivityProviderService {
         
         // Link activities
         if (activityIds != null && !activityIds.isEmpty()) {
-            java.util.List<Activity> activities = activityRepository.findAllById(activityIds);
+            List<Activity> activities = activityRepository.findAllById(activityIds);
             // Validation: Ensure activities belong to this provider
             for (Activity activity : activities) {
                 // Assuming activities must belong to provider. Activity entity must have provider set.
@@ -119,7 +126,7 @@ public class ActivityProviderService {
                      throw new RuntimeException("Activity " + activity.getName() + " does not belong to this provider");
                 }
             }
-            request.setProposedActivities(new java.util.HashSet<>(activities));
+            request.setProposedActivities(new HashSet<>(activities));
         }
 
         ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
@@ -136,8 +143,9 @@ public class ActivityProviderService {
                 
         Exhibition exhibition = request.getExhibition();
 
-        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
-            throw new RuntimeException("Exhibition is locked");
+        // Validate exhibition status
+        if (exhibition.getStatus() != ExhibitionStatus.PLANNING) {
+            throw new RuntimeException("Can only review proposals during PLANNING phase");
         }
 
         boolean isDev = reviewer.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
@@ -149,12 +157,27 @@ public class ActivityProviderService {
             throw new RuntimeException("Only PROPOSED requests can be reviewed");
         }
 
-        int totalBooths = boothRepository.countByExhibition(exhibition);
-        if (approve && (totalBooths + request.getProposedBoothsCount()) > exhibition.getMaxCapacity()) {
-            throw new RuntimeException("Approving this request exceeds exhibition max capacity");
-        }
-
         if (approve) {
+            Integer proposedBooths = request.getProposedBoothsCount();
+            
+            // Validate proposed booths is positive
+            if (proposedBooths == null || proposedBooths <= 0) {
+                throw new RuntimeException("Proposed booths count is invalid");
+            }
+            
+            // Validate per-provider booth limit (if set)
+            if (exhibition.getMaxBoothsPerProvider() != null && proposedBooths > exhibition.getMaxBoothsPerProvider()) {
+                throw new RuntimeException("Proposed booths (" + proposedBooths + ") exceeds max per provider (" + exhibition.getMaxBoothsPerProvider() + ")");
+            }
+            
+            // Validate total available booths
+            int totalBooths = boothRepository.countByExhibition(exhibition);
+            int remainingBooths = exhibition.getTotalAvailableBooths() - totalBooths;
+            
+            if (proposedBooths > remainingBooths) {
+                throw new RuntimeException("Proposed booths (" + proposedBooths + ") exceeds remaining capacity (" + remainingBooths + ")");
+            }
+            
             request.setStatus(ActivityProviderRequestStatus.APPROVED);
             request.setApprovedAt(LocalDateTime.now());
             request.setReviewedAt(LocalDateTime.now()); 
@@ -184,18 +207,41 @@ public class ActivityProviderService {
         }
 
         ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
+
+        return mapToResponse(savedRequest);
+    }
+    
+    // ----------------- Confirm Provider Commitment -----------------
+    public ActivityProviderRequestResponse confirmProvider(Long requestId, String providerEmail) {
+        UserInfo providerUser = userInfoRepository.findByEmail(providerEmail)
+                .orElseThrow(() -> new RuntimeException("Provider user not found"));
+
+        ActivityProviderRequest request = providerRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
         
-        if (approve) {
-            long totalRequests = providerRequestRepository.countByExhibition(exhibition);
-            long totalApproved = providerRequestRepository.countByExhibitionAndStatus(exhibition, ActivityProviderRequestStatus.APPROVED);
-            
-            if (totalRequests > 0 && totalRequests == totalApproved) {
-                exhibition.setStatus(ExhibitionStatus.ACTIVITY_APPROVED);
-                exhibitionRepository.save(exhibition);
-            }
+        Exhibition exhibition = request.getExhibition();
+
+        boolean isDev = providerUser.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        if (!request.getProvider().getOwner().getId().equals(providerUser.getId()) && !isDev) {
+            throw new RuntimeException("Only the provider owner can confirm commitment");
         }
 
-        return mapToResponse(savedRequest);}
+        // Validate exhibition status
+        if (exhibition.getStatus() != ExhibitionStatus.PLANNING) {
+            throw new RuntimeException("Can only confirm during PLANNING phase");
+        }
+
+        if (request.getStatus() != ActivityProviderRequestStatus.APPROVED) {
+            throw new RuntimeException("Only APPROVED requests can be confirmed");
+        }
+
+        request.setStatus(ActivityProviderRequestStatus.CONFIRMED);
+        // Can add confirmedAt timestamp if needed
+        
+        ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
+        return mapToResponse(savedRequest);
+    }
+    
     // ----------------- Finalize Participation (After Schedule) -----------------
     public ActivityProviderRequestResponse finalizeParticipation(Long requestId, String providerEmail) {
         UserInfo providerUser = userInfoRepository.findByEmail(providerEmail)
@@ -215,12 +261,19 @@ public class ActivityProviderService {
             throw new RuntimeException("Cannot finalize participation before exhibition is CONFIRMED (schedule ready)");
         }
 
-        if (request.getStatus() != ActivityProviderRequestStatus.APPROVED) {
-            throw new RuntimeException("Only APPROVED requests can be finalized");
+        if (request.getStatus() != ActivityProviderRequestStatus.CONFIRMED) {
+            throw new RuntimeException("Only CONFIRMED requests can be finalized");
+        }
+        
+        // Validate finalization deadline - auto-cancel if passed
+        if (exhibition.getFinalizationDeadline() != null && LocalDateTime.now().isAfter(exhibition.getFinalizationDeadline())) {
+            request.setStatus(ActivityProviderRequestStatus.CANCELLED);
+            providerRequestRepository.save(request);
+            throw new RuntimeException("Finalization deadline has passed. Your request has been automatically cancelled.");
         }
 
         request.setStatus(ActivityProviderRequestStatus.FINALIZED);
-        // Maybe store finalizedAt timestamp if we added it, but for now just status update.
+        request.setFinalizedAt(LocalDateTime.now());
         
         ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
         return mapToResponse(savedRequest);
@@ -277,14 +330,14 @@ public class ActivityProviderService {
         return mapToResponse(request);
     }
 
-    public java.util.List<ActivityProviderRequestResponse> getRequestsByExhibition(Long exhibitionId) {
+    public List<ActivityProviderRequestResponse> getRequestsByExhibition(Long exhibitionId) {
         Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
         return providerRequestRepository.findAll().stream()
                 .filter(r -> r.getExhibition().getId().equals(exhibitionId))
                 .map(this::mapToResponse)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
     }
 
     private ActivityProviderRequestResponse mapToResponse(ActivityProviderRequest request) {
@@ -306,5 +359,20 @@ public class ActivityProviderService {
                 request.getReviewedAt(),
                 request.getApprovedAt()
         );
+    }
+    
+    // ----------------- Get All Active Providers -----------------
+    public List<ActivityProviderResponse> getAllActiveProviders() {
+        return activityProviderRepository.findAll().stream()
+                .filter(provider -> Boolean.TRUE.equals(provider.getActive()))
+                .map(provider -> new ActivityProviderResponse(
+                    provider.getId(),
+                    provider.getName(),
+                    provider.getContactEmail(),
+                    provider.getContactPhone(),
+                    provider.getActive(),
+                    provider.getOwner() != null ? provider.getOwner().getId() : null
+                ))
+                .collect(Collectors.toList());
     }
 }

@@ -94,31 +94,32 @@ public class ExhibitionSeeder implements CommandLineRunner {
         if (userInfoRepository.count() > 0) return;
 
         userInfoRepository.saveAll(List.of(
+                // 1. DEVELOPER
                 new UserInfo(null, "System Dev", "dev@system.com", passwordEncoder.encode("password"), TargetGender.MALE,
                         Set.of(roleRepository.findByCode("DEVELOPER").orElseThrow())),
 
+                // 2. ORG_OWNER
                 new UserInfo(null, "Org Owner", "org@org.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
                         Set.of(roleRepository.findByCode("ORG_OWNER").orElseThrow())),
 
+                // 3. MUNICIPALITY_ADMIN
                 new UserInfo(null, "Municipality Admin", "muni@city.com", passwordEncoder.encode("password"), TargetGender.MALE,
                         Set.of(roleRepository.findByCode("MUNICIPALITY_ADMIN").orElseThrow())),
 
+                // 4. UNIVERSITY_ADMIN
                 new UserInfo(null, "University Admin", "uni@university.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
                         Set.of(roleRepository.findByCode("UNIVERSITY_ADMIN").orElseThrow())),
 
+                // 5. SCHOOL_ADMIN
                 new UserInfo(null, "School Admin", "school@school.com", passwordEncoder.encode("password"), TargetGender.MALE,
                         Set.of(roleRepository.findByCode("SCHOOL_ADMIN").orElseThrow())),
 
-                new UserInfo(null, "Creative Uni Admin", "artuni@university.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
-                        Set.of(roleRepository.findByCode("UNIVERSITY_ADMIN").orElseThrow())),
-
-                new UserInfo(null, "Activity Provider", "activity@provider.com", passwordEncoder.encode("password"), TargetGender.MALE,
+                // 6. ACTIVITY_PROVIDER
+                new UserInfo(null, "Activity Provider", "activity@provider.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
                         Set.of(roleRepository.findByCode("ACTIVITY_PROVIDER").orElseThrow())),
 
-                new UserInfo(null, "Tech Provider", "tech@provider.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
-                        Set.of(roleRepository.findByCode("ACTIVITY_PROVIDER").orElseThrow())),
-
-                new UserInfo(null, "Student User", "student@user.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
+                // 7. STUDENT
+                new UserInfo(null, "Student User", "student@user.com", passwordEncoder.encode("password"), TargetGender.MALE,
                         Set.of(roleRepository.findByCode("STUDENT").orElseThrow()))
         ));
 
@@ -130,43 +131,69 @@ public class ExhibitionSeeder implements CommandLineRunner {
 
         UserInfo owner = userInfoRepository.findByEmail("org@org.com").orElseThrow();
 
-        Organization org = new Organization();
-        org.setName("Career Guidance Organization");
-        org.setDescription("Supports students in career exploration");
-        org.setOwner(owner);
-        org.setType(OrganizationType.CAREER_GUIDANCE);
-        org.setActive(true);
-        org.setCreatedAt(LocalDateTime.now());
-
-        organizationRepository.save(org);
+        organizationRepository.saveAll(List.of(
+                new Organization(
+                        null,
+                        "Career Guidance Organization",
+                        "Supports students in career exploration",
+                        owner,
+                        OrganizationType.CAREER_GUIDANCE,
+                        true,
+                        LocalDateTime.now()
+                ),
+                new Organization(
+                        null,
+                        "Tech Education Hub",
+                        "Promotes technology education and innovation",
+                        owner,
+                        OrganizationType.CAREER_GUIDANCE,
+                        true,
+                        LocalDateTime.now()
+                ),
+                new Organization(
+                        null,
+                        "Future Skills Foundation",
+                        "Prepares students for future careers",
+                        owner,
+                        OrganizationType.CAREER_GUIDANCE,
+                        true,
+                        LocalDateTime.now()
+                )
+        ));
     }
 
     // ---------------- UNIVERSITY ----------------
     private void seedUniversities() {
         if (universityRepository.count() > 0) return;
 
-        University uni = new University();
-        uni.setName("Tech University");
-        // uni.setShortName("TU"); // Field removed in new model
-        uni.setContactEmail("contact@tu.edu");
-        uni.setContactPhone("123456789");
-        // uni.setAddress("123 Main Street"); // Field removed in new model
-        // uni.setWebsite("www.tu.edu"); // Field removed in new model
         UserInfo owner = userInfoRepository.findByEmail("uni@university.com").orElseThrow();
-        uni.setOwner(owner);
-        uni.setActive(true);
 
-        universityRepository.save(uni);
-
-        University artUni = new University();
-        artUni.setName("Creative Arts University");
-        artUni.setContactEmail("contact@arts.edu");
-        artUni.setContactPhone("111222333");
-        UserInfo artOwner = userInfoRepository.findByEmail("artuni@university.com").orElseThrow();
-        artUni.setOwner(artOwner);
-        artUni.setActive(true);
-
-        universityRepository.save(artUni);
+        universityRepository.saveAll(List.of(
+                new University(
+                        null,
+                        "Tech University",
+                        "contact@tu.edu",
+                        "123456789",
+                        true,
+                        owner
+                ),
+                new University(
+                        null,
+                        "Creative Arts University",
+                        "contact@arts.edu",
+                        "111222333",
+                        true,
+                        owner
+                ),
+                new University(
+                        null,
+                        "Medical Sciences University",
+                        "contact@medsci.edu",
+                        "444555666",
+                        true,
+                        owner
+                )
+        ));
     }
 
     // ---------------- MUNICIPALITY ----------------
@@ -175,14 +202,32 @@ public class ExhibitionSeeder implements CommandLineRunner {
 
         UserInfo admin = userInfoRepository.findByEmail("muni@city.com").orElseThrow();
 
-        Municipality municipality = new Municipality();
-        municipality.setName("City Municipality");
-        municipality.setRegion("Central District");
-        municipality.setContactEmail("contact@city.gov");
-        municipality.setContactPhone("987654321");
-        municipality.setOwner(admin);
-
-        municipalityRepository.save(municipality);
+        municipalityRepository.saveAll(List.of(
+                new Municipality(
+                        null,
+                        "City Municipality",
+                        "Central District",
+                        "contact@city.gov",
+                        "987654321",
+                        admin
+                ),
+                new Municipality(
+                        null,
+                        "North District Municipality",
+                        "North District",
+                        "north@city.gov",
+                        "123123123",
+                        admin
+                ),
+                new Municipality(
+                        null,
+                        "South Coast Municipality",
+                        "South District",
+                        "south@city.gov",
+                        "456456456",
+                        admin
+                )
+        ));
     }
 
     // ---------------- ACTIVITY PROVIDER ----------------
@@ -191,61 +236,80 @@ public class ExhibitionSeeder implements CommandLineRunner {
 
         UserInfo owner = userInfoRepository.findByEmail("activity@provider.com").orElseThrow();
 
-        ActivityProvider provider = new ActivityProvider();
-        provider.setName("Fun Science Lab");
-        // provider.setDescription("Interactive science activities for students"); // Field removed in new model
-        provider.setContactEmail("info@funlab.com");
-        provider.setContactPhone("11223344");
-        provider.setOwner(owner); // Re-enabled owner field
-        provider.setActive(true);
-        // provider.setCreatedAt(LocalDateTime.now()); // Field removed in new model
-
-        activityProviderRepository.save(provider);
-
-        UserInfo techOwner = userInfoRepository.findByEmail("tech@provider.com").orElseThrow();
-        ActivityProvider techProvider = new ActivityProvider();
-        techProvider.setName("Tech Innovators");
-        techProvider.setContactEmail("contact@techinnovators.com");
-        techProvider.setContactPhone("99887766");
-        techProvider.setOwner(techOwner);
-        techProvider.setActive(true);
-        
-        activityProviderRepository.save(techProvider);
+        activityProviderRepository.saveAll(List.of(
+                new ActivityProvider(
+                        null,
+                        "Fun Science Lab",
+                        "contact@funlab.com",
+                        "11223344",
+                        true,
+                        owner
+                ),
+                new ActivityProvider(
+                        null,
+                        "Tech Innovators",
+                        "contact@tech.com",
+                        "99887766",
+                        true,
+                        owner
+                ),
+                new ActivityProvider(
+                        null,
+                        "Art & Design Studio",
+                        "contact@artdesign.com",
+                        "55443322",
+                        true,
+                        owner
+                )
+        ));
     }
 
     // ---------------- ACTIVITIES ----------------
     private void seedActivities() {
         if (activityRepository.count() > 0) return;
 
-        // Fetch the activity provider we seeded earlier
-        ActivityProvider provider = activityProviderRepository.findAll().stream()
+        // Fetch the activity providers
+        ActivityProvider funLab = activityProviderRepository.findAll().stream()
                 .filter(p -> "Fun Science Lab".equals(p.getName()))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow();
 
-        if (provider == null && activityProviderRepository.count() > 0) {
-            provider = activityProviderRepository.findAll().get(0);
-        }
-
-        ActivityProvider techProvider = activityProviderRepository.findAll().stream()
+        ActivityProvider techInnovators = activityProviderRepository.findAll().stream()
                 .filter(p -> "Tech Innovators".equals(p.getName()))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow();
+                
+        ActivityProvider artStudio = activityProviderRepository.findAll().stream()
+                .filter(p -> "Art & Design Studio".equals(p.getName()))
+                .findFirst()
+                .orElseThrow();
 
         activityRepository.saveAll(List.of(
 
+                // Fun Science Lab Activities
                 new Activity(
                         null,
                         "AI Career Workshop",
                         "Introduction to artificial intelligence careers",
                         ActivityType.WORKSHOP,
-                        60, // suggestedDurationMinutes
-                        30, // suggestedMaxParticipants
+                        60, 
+                        30, 
                         true,
-                        provider
+                        funLab
                 ),
-                
-                 new Activity(
+                new Activity(
+                        null,
+                        "Medical Lab Simulation",
+                        "Hands-on medical lab experience",
+                        ActivityType.DEMO, 
+                        90,
+                        20,
+                        true,
+                        funLab
+                ),
+
+                // Tech Innovators Activities
+                new Activity(
                         null,
                         "VR Experience",
                         "Immersive Virtual Reality session",
@@ -253,9 +317,8 @@ public class ExhibitionSeeder implements CommandLineRunner {
                         30, 
                         10,
                         true,
-                        techProvider
+                        techInnovators
                 ),
-
                 new Activity(
                         null,
                         "Coding Bootcamp Intro",
@@ -264,40 +327,29 @@ public class ExhibitionSeeder implements CommandLineRunner {
                         120, 
                         25,
                         true,
-                        techProvider
+                        techInnovators
                 ),
 
+                // Art & Design Studio Activities
                 new Activity(
                         null,
-                        "Robotics Demo",
-                        "Live robotics demonstration and interaction",
+                        "Digital Art Basics",
+                        "Introduction to digital painting",
+                        ActivityType.WORKSHOP,
+                        90,
+                        15,
+                        true,
+                        artStudio
+                ),
+                new Activity(
+                        null,
+                        "3D Modeling Demo",
+                        "Live 3D character modeling",
                         ActivityType.DEMO,
                         45,
-                        50,
+                        30,
                         true,
-                        provider
-                ),
-
-                new Activity(
-                        null,
-                        "Medical Lab Simulation",
-                        "Hands-on medical lab experience",
-                        ActivityType.DEMO, // Changed to DEMO as SIMULATION type was not defined in Enum
-                        90,
-                        20,
-                        true,
-                        provider
-                ),
-
-                new Activity(
-                        null,
-                        "Engineering Design Challenge",
-                        "Problem-solving engineering activity",
-                        ActivityType.WORKSHOP, // Changed to WORKSHOP as COMPETITION type was not defined in Enum
-                        120,
-                        40,
-                        true,
-                        provider
+                        artStudio
                 )
 
         ));
@@ -357,6 +409,7 @@ public class ExhibitionSeeder implements CommandLineRunner {
                         500,
                         1000.0,
                         new java.math.BigDecimal("2000.00"),
+                        true,
                         true
                 ),
                 new Venue(
@@ -367,6 +420,7 @@ public class ExhibitionSeeder implements CommandLineRunner {
                         300,
                         750.0,
                         new java.math.BigDecimal("1500.00"),
+                        true,
                         true
                 ),
                 new Venue(
@@ -377,7 +431,10 @@ public class ExhibitionSeeder implements CommandLineRunner {
                         200,
                         500.0,
                         new java.math.BigDecimal("1200.00"),
+                        true,
                         true
+
+
                 )
         ));
     }

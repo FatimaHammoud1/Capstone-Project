@@ -10,6 +10,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderResponse;
+import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.math.BigDecimal;
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse;
 
 @RestController
@@ -34,25 +39,26 @@ public class ActivityProviderController {
         return ResponseEntity.ok(request);
     }
 
+
     // ----------------- Submit Proposal -----------------
     @PostMapping("/submit-proposal/{requestId}")
     @PreAuthorize("hasAnyRole('ACTIVITY_PROVIDER', 'DEVELOPER')")
     public ResponseEntity<ActivityProviderRequestResponse> submitProposal(
             @PathVariable Long requestId,
-            @RequestBody java.util.Map<String, Object> body,
+            @RequestBody Map<String, Object> body,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         String proposalText = (String) body.get("proposalText");
         Integer boothsCount = (Integer) body.get("boothsCount");
         // Handle BigDecimal conversion safely
-        java.math.BigDecimal totalCost = new java.math.BigDecimal(body.get("totalCost").toString());
+        BigDecimal totalCost = new BigDecimal(body.get("totalCost").toString());
         
         // Parse activity IDs
-        java.util.List<Long> activityIds = null;
+        List<Long> activityIds = null;
         if (body.containsKey("activityIds")) {
             // Need gentle casting
-            java.util.List<?> rawList = (java.util.List<?>) body.get("activityIds");
-            activityIds = new java.util.ArrayList<>();
+            List<?> rawList = (List<?>) body.get("activityIds");
+            activityIds = new ArrayList<>();
             for (Object obj : rawList) {
                 if (obj instanceof Integer) {
                     activityIds.add(((Integer) obj).longValue());
@@ -119,8 +125,15 @@ public class ActivityProviderController {
 
     @GetMapping("/exhibition/{exhibitionId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<java.util.List<ActivityProviderRequestResponse>> getRequestsByExhibition(
+    public ResponseEntity<List<ActivityProviderRequestResponse>> getRequestsByExhibition(
             @PathVariable Long exhibitionId) {
         return ResponseEntity.ok(providerService.getRequestsByExhibition(exhibitionId));
+    }
+    
+    // ----------------- Get All Active Providers -----------------
+    @GetMapping("/all-providers")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<List<ActivityProviderResponse>> getAllActiveProviders() {
+        return ResponseEntity.ok(providerService.getAllActiveProviders());
     }
 }

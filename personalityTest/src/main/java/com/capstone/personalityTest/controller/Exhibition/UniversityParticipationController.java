@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.List;
 
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityResponse;
 
 @RestController
 @RequestMapping("/api/universities")
@@ -108,9 +110,17 @@ public class UniversityParticipationController {
         return ResponseEntity.ok(participationService.getParticipationById(participationId));
     }
 
+
     @GetMapping("/exhibition/{exhibitionId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<java.util.List<UniversityParticipationResponse>> getParticipationsByExhibition(@PathVariable Long exhibitionId) {
+    public ResponseEntity<List<UniversityParticipationResponse>> getParticipationsByExhibition(@PathVariable Long exhibitionId) {
         return ResponseEntity.ok(participationService.getParticipationsByExhibition(exhibitionId));
+    }
+    
+    // ----------------- Get All Active Universities -----------------
+    @GetMapping("/all-universities")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<List<UniversityResponse>> getAllActiveUniversities() {
+        return ResponseEntity.ok(participationService.getAllActiveUniversities());
     }
 }

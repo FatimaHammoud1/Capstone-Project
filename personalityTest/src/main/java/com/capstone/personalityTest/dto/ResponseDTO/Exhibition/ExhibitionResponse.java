@@ -23,9 +23,14 @@ public class ExhibitionResponse {
     private LocalDate endDate;
     private LocalTime startTime;
     private LocalTime endTime;
-    private Integer maxCapacity;
+    private Integer totalAvailableBooths;
+    private Double standardBoothSqm;
+    private Integer maxBoothsPerUniversity;
+    private Integer maxBoothsPerProvider;
     private Integer expectedVisitors;
+    private Integer actualVisitors;
     private String scheduleJson;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime finalizationDeadline;
 }

@@ -50,16 +50,16 @@ public class SchoolParticipationController {
         return ResponseEntity.ok(participation);
     }
 
-    // ----------------- CONFIRM SCHOOL -----------------
-    @PostMapping("/confirm/{participationId}")
+    // ----------------- ACCEPT SCHOOL (ORG REVIEWS) -----------------
+    @PostMapping("/accept/{participationId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<SchoolParticipationResponse> confirmParticipation(
+    public ResponseEntity<SchoolParticipationResponse> acceptSchool(
             @PathVariable Long participationId,
             @RequestParam boolean approved,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        SchoolParticipationResponse confirmed = participationService.confirmParticipation(participationId, approved, userDetails.getUsername());
-        return ResponseEntity.ok(confirmed);
+        SchoolParticipationResponse accepted = participationService.acceptSchool(participationId, approved, userDetails.getUsername());
+        return ResponseEntity.ok(accepted);
     }
     
     // ----------------- FINALIZE PARTICIPATION -----------------

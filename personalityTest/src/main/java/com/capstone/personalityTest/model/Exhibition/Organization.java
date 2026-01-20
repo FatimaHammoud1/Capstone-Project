@@ -2,10 +2,12 @@ package com.capstone.personalityTest.model.Exhibition;
 
 import com.capstone.personalityTest.model.Enum.Exhibition.OrganizationType;
 import com.capstone.personalityTest.model.UserInfo;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -24,7 +26,7 @@ public class Organization {
 
     @ManyToOne
     @JoinColumn(name = "owner_id")
-    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private UserInfo owner;
 
     @Enumerated(EnumType.STRING)

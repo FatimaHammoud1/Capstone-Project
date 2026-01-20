@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +37,7 @@ public class ExhibitionFinanceService {
 
     // ----------------- Calculate Payments & Generate Schedule -----------------
     // ----------------- Confirm Exhibition (Finalize) -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse confirmExhibition(Long exhibitionId, String orgOwnerEmail) {
+    public ExhibitionResponse confirmExhibition(Long exhibitionId, LocalDateTime finalizationDeadline, String orgOwnerEmail) {
         UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -125,27 +126,33 @@ public class ExhibitionFinanceService {
 
         // State Transition
         exhibition.setStatus(ExhibitionStatus.CONFIRMED);
+        exhibition.setFinalizationDeadline(finalizationDeadline);
         exhibition.setUpdatedAt(LocalDateTime.now());
 
         Exhibition savedExhibition = exhibitionRepository.save(exhibition);
         
         // Map to DTO
-        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse(
-                savedExhibition.getId(),
-                savedExhibition.getOrganization().getId(),
-                savedExhibition.getTitle(),
-                savedExhibition.getDescription(),
-                savedExhibition.getTheme(),
-                savedExhibition.getStatus(),
-                savedExhibition.getStartDate(),
-                savedExhibition.getEndDate(),
-                savedExhibition.getStartTime(),
-                savedExhibition.getEndTime(),
-                savedExhibition.getMaxCapacity(),
-                savedExhibition.getExpectedVisitors(),
-                savedExhibition.getScheduleJson(),
-                savedExhibition.getCreatedAt(),
-                savedExhibition.getUpdatedAt()
+        return new ExhibitionResponse(
+            savedExhibition.getId(),
+            savedExhibition.getOrganization().getId(),
+            savedExhibition.getTitle(),
+            savedExhibition.getDescription(),
+            savedExhibition.getTheme(),
+            savedExhibition.getStatus(),
+            savedExhibition.getStartDate(),
+            savedExhibition.getEndDate(),
+            savedExhibition.getStartTime(),
+            savedExhibition.getEndTime(),
+            savedExhibition.getTotalAvailableBooths(),
+            savedExhibition.getStandardBoothSqm(),
+            savedExhibition.getMaxBoothsPerUniversity(),
+            savedExhibition.getMaxBoothsPerProvider(),
+            savedExhibition.getExpectedVisitors(),
+            savedExhibition.getActualVisitors(),
+            savedExhibition.getScheduleJson(),
+            savedExhibition.getCreatedAt(),
+            savedExhibition.getUpdatedAt(),
+            savedExhibition.getFinalizationDeadline()
         );
     }
 }

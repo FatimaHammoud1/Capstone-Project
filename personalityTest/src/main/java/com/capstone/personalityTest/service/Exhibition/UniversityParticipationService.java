@@ -17,6 +17,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityResponse;
+import java.util.stream.Collectors;
+import java.util.List;
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityParticipationResponse;
 import com.capstone.personalityTest.model.Exhibition.Booth;
 import com.capstone.personalityTest.model.Enum.Exhibition.BoothType;
@@ -30,6 +33,7 @@ public class UniversityParticipationService {
     private final UniversityParticipationRepository participationRepository;
     private final UserInfoRepository userInfoRepository;
     private final BoothRepository boothRepository;
+    private final ExhibitionService exhibitionService;
 
     // ----------------- Invite University -----------------
     public UniversityParticipationResponse inviteUniversity(Long exhibitionId, Long universityId, BigDecimal participationFee, LocalDateTime responseDeadline, String inviterEmail) {
@@ -45,9 +49,15 @@ public class UniversityParticipationService {
             throw new RuntimeException("Only ORG_OWNER can invite universities");
         }
 
-        // Guard: Locked if CONFIRMED or later
-        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
-            throw new RuntimeException("Exhibition is locked");
+        // Validate exhibition status: must be VENUE_APPROVED or PLANNING
+        if (exhibition.getStatus() != ExhibitionStatus.VENUE_APPROVED && exhibition.getStatus() != ExhibitionStatus.PLANNING) {
+            throw new RuntimeException("Can only invite universities after venue is approved");
+        }
+        
+        // Transition to PLANNING if first invitation
+        if (exhibition.getStatus() == ExhibitionStatus.VENUE_APPROVED) {
+            exhibition.setStatus(ExhibitionStatus.PLANNING);
+            exhibitionRepository.save(exhibition);
         }
 
         University university = universityRepository.findById(universityId)
@@ -57,12 +67,6 @@ public class UniversityParticipationService {
         if (alreadyInvited) {
             throw new RuntimeException("This university has already been invited for this exhibition");
         }
-        
-        // 1️⃣ Missing Exhibition status transition: UNIVERSITY_INVITED (only once)
-        if (exhibition.getStatus() == ExhibitionStatus.ACTIVITY_APPROVED) {
-            exhibition.setStatus(ExhibitionStatus.UNIVERSITY_INVITED);
-            exhibitionRepository.save(exhibition);
-        }
 
         UniversityParticipation participation = new UniversityParticipation();
         participation.setExhibition(exhibition);
@@ -71,6 +75,9 @@ public class UniversityParticipationService {
         participation.setParticipationFee(participationFee);
         participation.setInvitedAt(LocalDateTime.now());
         participation.setResponseDeadline(responseDeadline);
+        
+        // Set max booths info from exhibition (will be included in response)
+        // The university will see this in the response via exhibition data
 
         UniversityParticipation saved = participationRepository.save(participation);
         return mapToResponse(saved);
@@ -82,9 +89,10 @@ public class UniversityParticipationService {
                 .orElseThrow(() -> new RuntimeException("Participation request not found"));
 
         Exhibition exhibition = participation.getExhibition();
-        // Guard: Locked if CONFIRMED or later
-        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
-            throw new RuntimeException("Exhibition is locked");
+        
+        // Validate exhibition status
+        if (exhibition.getStatus() != ExhibitionStatus.PLANNING) {
+            throw new RuntimeException("Can only register during PLANNING phase");
         }
 
         University university = participation.getUniversity();
@@ -92,19 +100,39 @@ public class UniversityParticipationService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         boolean isDev = user.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         
-        // Corrected check: Validate against University Owner
+        // Validate against University Owner
         if (!university.getOwner().getId().equals(user.getId()) && !isDev) {
             throw new RuntimeException("You are not authorized to register this university");
         }
 
-        if (participation.getStatus() != ParticipationStatus.INVITED) {
-            throw new RuntimeException("University must be INVITED to register");
+        // Allow registration if INVITED or REJECTED (can re-register after rejection)
+        if (participation.getStatus() != ParticipationStatus.INVITED && participation.getStatus() != ParticipationStatus.REJECTED) {
+            throw new RuntimeException("University must be INVITED or REJECTED to register");
+        }
+        
+        // Validate response deadline - auto-cancel if passed
+        if (participation.getResponseDeadline() != null && LocalDateTime.now().isAfter(participation.getResponseDeadline())) {
+            participation.setStatus(ParticipationStatus.CANCELLED);
+            participationRepository.save(participation);
+            throw new RuntimeException("Response deadline has passed. Your invitation has been automatically cancelled.");
+        }
+        
+        // Validate requested booths is positive
+        if (requestedBooths <= 0) {
+            throw new RuntimeException("Requested booths must be positive");
         }
 
-        // Capacity check: sum of all booths already assigned
+        // Validate per-university booth limit (if set)
+        if (exhibition.getMaxBoothsPerUniversity() != null && requestedBooths > exhibition.getMaxBoothsPerUniversity()) {
+            throw new RuntimeException("Requested booths (" + requestedBooths + ") exceeds max per university (" + exhibition.getMaxBoothsPerUniversity() + ")");
+        }
+
+        // Validate total available booths
         int totalExistingBooths = boothRepository.countByExhibition(exhibition);
-        if (totalExistingBooths + requestedBooths > exhibition.getMaxCapacity()) {
-            throw new RuntimeException("Requested booths exceed exhibition max capacity");
+        int remainingBooths = exhibition.getTotalAvailableBooths() - totalExistingBooths;
+        
+        if (requestedBooths > remainingBooths) {
+            throw new RuntimeException("Requested booths (" + requestedBooths + ") exceeds remaining capacity (" + remainingBooths + ")");
         }
 
         // Save booth details JSON
@@ -215,13 +243,20 @@ public class UniversityParticipationService {
         if (exhibition.getStatus() != ExhibitionStatus.CONFIRMED) {
             throw new RuntimeException("Cannot finalize participation before exhibition is CONFIRMED (schedule ready)");
         }
+        
+        // Validate finalization deadline - auto-cancel if passed
+        if (exhibition.getFinalizationDeadline() != null && LocalDateTime.now().isAfter(exhibition.getFinalizationDeadline())) {
+            participation.setStatus(ParticipationStatus.CANCELLED);
+            participationRepository.save(participation);
+            throw new RuntimeException("Finalization deadline has passed. Your participation has been automatically cancelled.");
+        }
 
         if (participation.getStatus() != ParticipationStatus.CONFIRMED) {
             throw new RuntimeException("Only CONFIRMED (Paid) universities can be finalized");
         }
 
         participation.setStatus(ParticipationStatus.FINALIZED);
-        // Could set a finalizedAt timestamp if entity had it.
+        participation.setFinalizedAt(LocalDateTime.now());
         
         UniversityParticipation saved = participationRepository.save(participation);
         return mapToResponse(saved);
@@ -321,5 +356,21 @@ public class UniversityParticipationService {
             participation.getRegisteredAt(),
             participation.getConfirmedAt()
         );
+    }
+    
+
+    // ----------------- Get All Active Universities -----------------
+    public List<UniversityResponse> getAllActiveUniversities() {
+        return universityRepository.findAll().stream()
+                .filter(university -> Boolean.TRUE.equals(university.getActive()))
+                .map(university -> new UniversityResponse(
+                    university.getId(),
+                    university.getName(),
+                    university.getContactEmail(),
+                    university.getContactPhone(),
+                    university.getActive(),
+                    university.getOwner() != null ? university.getOwner().getId() : null
+                ))
+                .collect(Collectors.toList());
     }
 }

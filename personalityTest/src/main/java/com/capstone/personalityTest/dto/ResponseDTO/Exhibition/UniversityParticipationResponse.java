@@ -7,17 +7,18 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class UniversityParticipationResponse {
     private Long id;
     private Long exhibitionId;
     private Long universityId;
     private String universityName;
     private String contactEmail;
-    private com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus status;
+    private ParticipationStatus status;
     private Integer approvedBoothsCount;
     private String boothDetails;
     private BigDecimal participationFee;

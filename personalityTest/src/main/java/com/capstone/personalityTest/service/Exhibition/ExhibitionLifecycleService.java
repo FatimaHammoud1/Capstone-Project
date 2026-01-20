@@ -104,11 +104,16 @@ public class ExhibitionLifecycleService {
             exhibition.getEndDate(),
             exhibition.getStartTime(),
             exhibition.getEndTime(),
-            exhibition.getMaxCapacity(),
+            exhibition.getTotalAvailableBooths(),
+            exhibition.getStandardBoothSqm(),
+            exhibition.getMaxBoothsPerUniversity(),
+            exhibition.getMaxBoothsPerProvider(),
             exhibition.getExpectedVisitors(),
+            exhibition.getActualVisitors(),
             exhibition.getScheduleJson(),
             exhibition.getCreatedAt(),
-            exhibition.getUpdatedAt()
+            exhibition.getUpdatedAt(),
+            exhibition.getFinalizationDeadline()
         );
     }
 }

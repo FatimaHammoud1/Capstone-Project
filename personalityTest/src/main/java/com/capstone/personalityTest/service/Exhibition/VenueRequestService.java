@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class VenueRequestService {
@@ -26,7 +29,7 @@ public class VenueRequestService {
     private final UserInfoRepository userInfoRepository;
 
     // ----------------- Create Venue Request -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse createVenueRequest(Long exhibitionId, Long venueId, String orgNotes, LocalDateTime responseDeadline, String creatorEmail) {
+    public VenueRequestResponse createVenueRequest(Long exhibitionId, Long venueId, String orgNotes, LocalDateTime responseDeadline, String creatorEmail) {
         UserInfo creator = userInfoRepository.findByEmail(creatorEmail)
                 .orElseThrow(() -> new RuntimeException("Creator not found"));
 
@@ -71,14 +74,14 @@ public class VenueRequestService {
     }
 
     // Optional: Get all requests for this exhibition
-    public List<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse> getRequestsForExhibition(Long exhibitionId) {
+    public List<VenueRequestResponse> getRequestsForExhibition(Long exhibitionId) {
         return venueRequestRepository.findByExhibitionId(exhibitionId).stream()
                 .map(this::mapToResponse)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
     }
 
-    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse mapToResponse(VenueRequest request) {
-        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse(
+    private VenueRequestResponse mapToResponse(VenueRequest request) {
+        return new VenueRequestResponse(
                 request.getId(),
                 request.getExhibition().getId(),
                 request.getVenue().getId(),

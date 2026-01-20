@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse;
 import com.capstone.personalityTest.dto.RequestDTO.Exhibition.ExhibitionRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.InvitationCapacityResponse;
+import com.capstone.personalityTest.dto.RequestDTO.Exhibition.BoothLimitsRequest;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/exhibitions")
@@ -51,6 +54,25 @@ public class ExhibitionController {
     public ResponseEntity<List<ExhibitionResponse>> getActiveExhibitions() {
         // Publicly accessible list for students to browse
         return ResponseEntity.ok(exhibitionService.getAllActiveExhibitions());
+    }
+    
+
+    // ----------------- Get Available Booths -----------------
+    @GetMapping("/{exhibitionId}/available-booths")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<Map<String, Integer>> getAvailableBooths(@PathVariable Long exhibitionId) {
+        return ResponseEntity.ok(exhibitionService.getAvailableBooths(exhibitionId));
+    }
+    
+    // ----------------- Set Booth Limits -----------------
+    @PostMapping("/{exhibitionId}/booth-limits")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<InvitationCapacityResponse> setBoothLimits(
+            @PathVariable Long exhibitionId,
+            @RequestBody BoothLimitsRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        return ResponseEntity.ok(exhibitionService.setBoothLimits(exhibitionId, request, userDetails.getUsername()));
     }
     
     // ----------------- Cancel Exhibition -----------------

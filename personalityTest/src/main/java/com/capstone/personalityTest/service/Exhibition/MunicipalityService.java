@@ -7,6 +7,7 @@ import com.capstone.personalityTest.model.Exhibition.Venue;
 import com.capstone.personalityTest.model.Exhibition.VenueRequest;
 import com.capstone.personalityTest.model.UserInfo;
 import com.capstone.personalityTest.repository.Exhibition.ExhibitionRepository;
+import com.capstone.personalityTest.repository.Exhibition.MunicipalityRepository;
 import com.capstone.personalityTest.repository.Exhibition.VenueRepository;
 import com.capstone.personalityTest.repository.Exhibition.VenueRequestRepository;
 import com.capstone.personalityTest.repository.UserInfoRepository;
@@ -15,6 +16,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.MunicipalityResponse;
+import com.capstone.personalityTest.model.Exhibition.Municipality;
+import java.util.stream.Collectors;
 import java.util.List;
 
 @Service
@@ -25,9 +30,10 @@ public class MunicipalityService {
     private final ExhibitionRepository exhibitionRepository;
     private final UserInfoRepository userInfoRepository;
     private final VenueRepository venueRepository;
+    private final MunicipalityRepository municipalityRepository;
 
     // ----------------- Approve or Reject Venue Request -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse reviewVenueRequest(Long venueRequestId, boolean approve, String responseText, String reviewerEmail) {
+    public VenueRequestResponse reviewVenueRequest(Long venueRequestId, boolean approve, String responseText, String reviewerEmail) {
         UserInfo reviewer = userInfoRepository.findByEmail(reviewerEmail)
                 .orElseThrow(() -> new RuntimeException("Reviewer not found"));
 
@@ -78,6 +84,18 @@ public class MunicipalityService {
             // Update exhibition status
             exhibition.setStatus(ExhibitionStatus.VENUE_APPROVED);
             exhibition.setUpdatedAt(LocalDateTime.now());
+
+            // Calculate available booths from venue space
+            Double venueSqm = venue.getSpaceSqm();
+            Double boothSqm = exhibition.getEffectiveBoothSqm(); // uses default if not set
+            
+            if (venueSqm != null && boothSqm != null && boothSqm > 0) {
+                int availableBooths = (int) Math.floor(venueSqm / boothSqm);
+                exhibition.setTotalAvailableBooths(availableBooths);
+            } else {
+                throw new RuntimeException("Cannot calculate booth capacity: venue space or booth size is invalid");
+            }
+            
             exhibitionRepository.save(exhibition);
 
             // Mark venue as unavailable (reserved)
@@ -98,7 +116,7 @@ public class MunicipalityService {
 
         VenueRequest savedRequest = venueRequestRepository.save(request);
 
-        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.VenueRequestResponse(
+        return new VenueRequestResponse(
                 savedRequest.getId(),
                 savedRequest.getExhibition().getId(),
                 savedRequest.getVenue().getId(),
@@ -110,6 +128,24 @@ public class MunicipalityService {
                 savedRequest.getResponseDeadline(),
                 savedRequest.getRequestedAt(),
                 savedRequest.getReviewedAt()
+        );
+    }
+
+    // ----------------- Get All Municipalities -----------------
+    public List<MunicipalityResponse> getAllMunicipalities() {
+        return municipalityRepository.findAll().stream()
+                .map(this::mapToMunicipalityResponse)
+                .collect(Collectors.toList());
+    }
+
+    private MunicipalityResponse mapToMunicipalityResponse(Municipality municipality) {
+        return new MunicipalityResponse(
+                municipality.getId(),
+                municipality.getName(),
+                municipality.getRegion(),
+                municipality.getContactEmail(),
+                municipality.getContactPhone(),
+                municipality.getOwner() != null ? municipality.getOwner().getId() : null
         );
     }
 }

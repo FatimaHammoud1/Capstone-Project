@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse;
 
@@ -41,11 +43,11 @@ public class SchoolParticipationService {
             throw new RuntimeException("Only ORG_OWNER can invite schools");
         }
         
-        // Guard: Locked if CONFIRMED or later
-        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
-            throw new RuntimeException("Exhibition is locked");
+        // Validate exhibition status: must be VENUE_APPROVED or PLANNING
+        if (exhibition.getStatus() != ExhibitionStatus.VENUE_APPROVED && exhibition.getStatus() != ExhibitionStatus.PLANNING) {
+            throw new RuntimeException("Can only invite schools after venue is approved");
         }
-
+        
         School school = schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new RuntimeException("School not found"));
 
@@ -53,10 +55,10 @@ public class SchoolParticipationService {
         if (alreadyInvited) {
             throw new RuntimeException("This school has already been invited for this exhibition");
         }
-
-        // 1️⃣ Missing Exhibition status transition: SCHOOL_INVITED (only once)
-        if (exhibition.getStatus() == ExhibitionStatus.UNIVERSITY_INVITED) {
-            exhibition.setStatus(ExhibitionStatus.SCHOOL_INVITED);
+        
+        // Transition to PLANNING if first invitation
+        if (exhibition.getStatus() == ExhibitionStatus.VENUE_APPROVED) {
+            exhibition.setStatus(ExhibitionStatus.PLANNING);
             exhibitionRepository.save(exhibition);
         }
 
@@ -77,9 +79,10 @@ public class SchoolParticipationService {
                 .orElseThrow(() -> new RuntimeException("Participation not found"));
         
         Exhibition exhibition = participation.getExhibition();
-        // Guard: Locked if CONFIRMED or later
-        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
-             throw new RuntimeException("Exhibition is locked");
+        
+        // Validate exhibition status
+        if (exhibition.getStatus() != ExhibitionStatus.PLANNING) {
+            throw new RuntimeException("Can only respond during PLANNING phase");
         }
 
         UserInfo user = userInfoRepository.findByEmail(schoolEmail)
@@ -94,12 +97,19 @@ public class SchoolParticipationService {
         if (participation.getStatus() != ParticipationStatus.INVITED) {
             throw new RuntimeException("Only INVITED schools can respond to invitation");
         }
+        
+        // Validate response deadline - auto-cancel if passed
+        if (participation.getResponseDeadline() != null && LocalDateTime.now().isAfter(participation.getResponseDeadline())) {
+            participation.setStatus(ParticipationStatus.CANCELLED);
+            participationRepository.save(participation);
+            throw new RuntimeException("Response deadline has passed. Your invitation has been automatically cancelled.");
+        }
 
         if (accept) {
             if (expectedStudents == null || expectedStudents <= 0) {
                 throw new RuntimeException("Expected students count is required when accepting invitation");
             }
-            participation.setExpectedStudents(expectedStudents);
+            participation.setExpectedVisitors(expectedStudents);
             participation.setStatus(ParticipationStatus.REGISTERED); // Changed from ACCEPTED to REGISTERED
             participation.setRegisteredAt(LocalDateTime.now()); // Assuming we have registeredAt or re-use acceptedAt field logic?
             // Entity has acceptedAt, invitedAt, confirmedAt. Let's use acceptedAt as the timestamp for this step or registeredAt if it exists?
@@ -119,7 +129,8 @@ public class SchoolParticipationService {
     }
 
     // ----------------- Confirm Participation (By Org - Approval/Rejection) -----------------
-    public SchoolParticipationResponse confirmParticipation(Long participationId, boolean approved, String confirmerEmail) {
+    // ----------------- Accept School (Org Reviews Registration) -----------------
+    public SchoolParticipationResponse acceptSchool(Long participationId, boolean approved, String confirmerEmail) {
         UserInfo inviter = userInfoRepository.findByEmail(confirmerEmail)
                 .orElseThrow(() -> new RuntimeException("Confirmer not found"));
 
@@ -142,25 +153,43 @@ public class SchoolParticipationService {
         }
         
         if (approved) {
-             // Validate Capacity (Students are visitors)
-             // Ensure total expected visitors + this school's expected students <= exhibition expectedVisitors (if that represents max capacity for visitors)
-            
-             // Assuming expectedVisitors field on Exhibition is the TARGET/LIMIT for visitors:
-             Integer currentVisitorSum = participationRepository.findByExhibitionAndStatus(exhibition, ParticipationStatus.ACCEPTED).stream()
-                      .mapToInt(SchoolParticipation::getExpectedStudents)
-                      .sum();
-             
-             if (currentVisitorSum + participation.getExpectedStudents() > exhibition.getExpectedVisitors()) {
-                  throw new RuntimeException("Confirming this school exceeds exhibition visitor capacity (" + exhibition.getExpectedVisitors() + ")");
-             }
-
-             participation.setStatus(ParticipationStatus.ACCEPTED); // Org Approves -> ACCEPTED
-             participation.setConfirmedAt(LocalDateTime.now()); // Re-using confirmedAt for Org Approval time? Or stick to ACCEPTED semantic.
-             // Entity has confirmedAt. Let's use that.
+            participation.setStatus(ParticipationStatus.ACCEPTED); // Org Approves -> ACCEPTED
+            participation.setConfirmedAt(LocalDateTime.now());
         } else {
             participation.setStatus(ParticipationStatus.REJECTED); // Org Rejects -> REJECTED
         }
 
+        SchoolParticipation saved = participationRepository.save(participation);
+        return mapToResponse(saved);
+    }
+
+    // ----------------- Confirm School Commitment -----------------
+    public SchoolParticipationResponse confirmSchool(Long participationId, String schoolEmail) {
+        UserInfo schoolUser = userInfoRepository.findByEmail(schoolEmail)
+                .orElseThrow(() -> new RuntimeException("School user not found"));
+
+        SchoolParticipation participation = participationRepository.findById(participationId)
+                .orElseThrow(() -> new RuntimeException("Participation not found"));
+        
+        Exhibition exhibition = participation.getExhibition();
+
+        boolean isDev = schoolUser.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        if (!participation.getSchool().getOwner().getId().equals(schoolUser.getId()) && !isDev) {
+            throw new RuntimeException("Only the school owner can confirm commitment");
+        }
+
+        // Validate exhibition status
+        if (exhibition.getStatus() != ExhibitionStatus.PLANNING) {
+            throw new RuntimeException("Can only confirm during PLANNING phase");
+        }
+
+        if (participation.getStatus() != ParticipationStatus.ACCEPTED) {
+            throw new RuntimeException("Only ACCEPTED schools can be confirmed");
+        }
+
+        participation.setStatus(ParticipationStatus.CONFIRMED);
+        participation.setConfirmedAt(LocalDateTime.now());
+        
         SchoolParticipation saved = participationRepository.save(participation);
         return mapToResponse(saved);
     }
@@ -184,12 +213,12 @@ public class SchoolParticipationService {
             throw new RuntimeException("Cannot finalize participation before exhibition is CONFIRMED (schedule ready)");
         }
 
-        if (participation.getStatus() != ParticipationStatus.ACCEPTED) {
-            throw new RuntimeException("Only ACCEPTED schools can be finalized");
+        if (participation.getStatus() != ParticipationStatus.CONFIRMED) {
+            throw new RuntimeException("Only CONFIRMED schools can be finalized");
         }
 
         participation.setStatus(ParticipationStatus.FINALIZED);
-        // Could set a finalizedAt timestamp if entity had it.
+        participation.setFinalizedAt(LocalDateTime.now());
         
         SchoolParticipation saved = participationRepository.save(participation);
         return mapToResponse(saved);
@@ -237,14 +266,15 @@ public class SchoolParticipationService {
         return mapToResponse(participation);
     }
 
-    public java.util.List<SchoolParticipationResponse> getParticipationsByExhibition(Long exhibitionId) {
+
+    public List<SchoolParticipationResponse> getParticipationsByExhibition(Long exhibitionId) {
         Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
         return participationRepository.findAll().stream()
                 .filter(p -> p.getExhibition().getId().equals(exhibitionId))
                 .map(this::mapToResponse)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
     }
 
     private SchoolParticipationResponse mapToResponse(SchoolParticipation participation) {
@@ -255,7 +285,7 @@ public class SchoolParticipationService {
             participation.getSchool().getName(),
             participation.getSchool().getContactEmail(),
             participation.getStatus(),
-            participation.getExpectedStudents(),
+            participation.getExpectedVisitors(),
             participation.getResponseDeadline(),
             participation.getInvitedAt(),
             participation.getAcceptedAt(),

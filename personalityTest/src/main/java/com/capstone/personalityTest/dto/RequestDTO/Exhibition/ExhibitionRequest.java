@@ -18,7 +18,7 @@ public class ExhibitionRequest {
     private LocalDate endDate;
     private LocalTime startTime;
     private LocalTime endTime;
-    private Integer maxCapacity;
+    private Double standardBoothSqm; // booth size in sqm (e.g., 9.0)
     private Integer expectedVisitors;
     private String scheduleJson;
 }

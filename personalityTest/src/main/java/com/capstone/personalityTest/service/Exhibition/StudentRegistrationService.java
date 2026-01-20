@@ -47,21 +47,6 @@ public class StudentRegistrationService {
             throw new RuntimeException("Student already registered for this exhibition");
         }
 
-        // Validation: check capacity
-        int totalRegistered = registrationRepository.countByExhibitionId(exhibitionId);
-
-        // Sum of activity booth max participants
-        int totalActivityParticipants = boothRepository.sumMaxParticipantsByExhibitionIdAndType(exhibitionId, BoothType.ACTIVITY_PROVIDER);
-
-        // Sum of university booths participants
-        int totalUniversityBooths = boothRepository.sumMaxParticipantsByExhibitionIdAndType(exhibitionId, BoothType.UNIVERSITY);
-
-        int totalOccupied = totalRegistered + totalActivityParticipants + totalUniversityBooths;
-
-        if (totalOccupied >= exhibition.getMaxCapacity()) {
-            throw new RuntimeException("Exhibition capacity full, cannot register more students");
-        }
-
         // Create registration
         StudentRegistration registration = new StudentRegistration();
         registration.setExhibition(exhibition);
@@ -104,19 +89,6 @@ public class StudentRegistrationService {
         // Only REGISTERED students can be approved
         if (registration.getStatus() != StudentRegistrationStatus.REGISTERED) {
             throw new RuntimeException("Only registered students can be approved");
-        }
-
-        // Capacity check
-        int totalApproved = registrationRepository.countByExhibitionIdAndApprovedTrue(exhibition.getId());
-        
-        // Using BoothRepository for these sums as they are related to Booth entity
-        int totalActivityParticipants = boothRepository.sumMaxParticipantsByExhibitionIdAndType(exhibition.getId(), BoothType.ACTIVITY_PROVIDER);
-        int totalUniversityBooths = boothRepository.sumMaxParticipantsByExhibitionIdAndType(exhibition.getId(), BoothType.UNIVERSITY);
-
-        int totalOccupied = totalApproved + totalActivityParticipants + totalUniversityBooths;
-
-        if (totalOccupied >= exhibition.getMaxCapacity()) {
-            throw new RuntimeException("Exhibition capacity reached, cannot approve more students");
         }
 
         // Approve registration

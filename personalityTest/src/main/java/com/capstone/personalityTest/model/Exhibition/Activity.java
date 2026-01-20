@@ -1,6 +1,7 @@
 package com.capstone.personalityTest.model.Exhibition;
 
 import com.capstone.personalityTest.model.Enum.Exhibition.ActivityType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,6 +33,6 @@ public class Activity {
 
     @ManyToOne
     @JoinColumn(name = "provider_id")
-    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ActivityProvider provider;
 }

@@ -6,6 +6,8 @@ import com.capstone.personalityTest.model.Exhibition.ActivityProvider;
 import com.capstone.personalityTest.model.Enum.Exhibition.ActivityProviderRequestStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import java.util.Arrays;
 import java.util.List;
 
 @Repository
@@ -17,4 +19,7 @@ public interface ActivityProviderRequestRepository extends JpaRepository<Activit
     long countByExhibitionAndStatus(Exhibition exhibition, ActivityProviderRequestStatus status);
     
     boolean existsByExhibitionIdAndStatus(Long exhibitionId, ActivityProviderRequestStatus status);
+
+
+    List<ActivityProviderRequest> findByExhibitionId(Long exhibitionId);
 }

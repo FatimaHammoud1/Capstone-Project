@@ -1,10 +1,12 @@
 package com.capstone.personalityTest.model.Exhibition;
 
 import com.capstone.personalityTest.model.Enum.Exhibition.ActivityProviderRequestStatus;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -20,12 +22,12 @@ public class ActivityProviderRequest {
 
     @ManyToOne
     @JoinColumn(name = "exhibition_id")
-    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Exhibition exhibition; // related exhibition
 
     @ManyToOne
     @JoinColumn(name = "provider_id")
-    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ActivityProvider provider; // invited activity provider
 
     @Enumerated(EnumType.STRING)
@@ -61,4 +63,10 @@ public class ActivityProviderRequest {
         joinColumns = @JoinColumn(name = "request_id"), 
         inverseJoinColumns = @JoinColumn(name = "activity_id"))
     private java.util.Set<Activity> proposedActivities = new java.util.HashSet<>();
+
+    private Integer expectedVisitors; // expected number of visitors from this provider
+
+    private LocalDateTime finalizedAt; // finalization time (after schedule)
+
+    private LocalDateTime attendedAt; // attendance time (when provider actually attended)
 }

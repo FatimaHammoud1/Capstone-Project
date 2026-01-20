@@ -9,6 +9,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDateTime;
+
 @RestController
 @RequestMapping("/api/exhibitions")
 @RequiredArgsConstructor
@@ -19,12 +23,13 @@ public class ExhibitionFinanceController {
     // ----------------- CONFIRM EXHIBITION & CALCULATE PAYMENTS -----------------
     @PostMapping("/confirm/{exhibitionId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse> confirmExhibition(
+    public ResponseEntity<ExhibitionResponse> confirmExhibition(
             @PathVariable Long exhibitionId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime finalizationDeadline,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse confirmed = financeService.confirmExhibition(
-                exhibitionId, userDetails.getUsername()
+        ExhibitionResponse confirmed = financeService.confirmExhibition(
+                exhibitionId, finalizationDeadline, userDetails.getUsername()
         );
         return ResponseEntity.ok(confirmed);
     }
