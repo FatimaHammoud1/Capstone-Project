@@ -15,5 +15,11 @@ public class DonorResponse {
     private BigDecimal totalBudget;
     private BigDecimal availableBudget;
     private Boolean active;
-    
+
+    private BigDecimal amountDistributed;
+
+    private long  activeRequests;
+
+
+
 }
