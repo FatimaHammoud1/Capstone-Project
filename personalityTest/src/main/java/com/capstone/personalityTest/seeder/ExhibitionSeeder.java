@@ -9,6 +9,9 @@ import com.capstone.personalityTest.model.UserInfo;
 import com.capstone.personalityTest.repository.Exhibition.*;
 import com.capstone.personalityTest.repository.RoleRepository;
 import com.capstone.personalityTest.repository.UserInfoRepository;
+import com.capstone.personalityTest.repository.financial_aid.DonorRepository;
+import com.capstone.personalityTest.model.financial_aid.Donor;
+import java.math.BigDecimal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +34,7 @@ public class ExhibitionSeeder implements CommandLineRunner {
     private final ActivityRepository activityRepository;
     private final SchoolRepository schoolRepository;
     private final VenueRepository venueRepository;
+    private final DonorRepository donorRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -43,7 +47,9 @@ public class ExhibitionSeeder implements CommandLineRunner {
             ActivityProviderRepository activityProviderRepository,
             ActivityRepository activityRepository,
             SchoolRepository schoolRepository,
-            VenueRepository venueRepository,PasswordEncoder passwordEncoder
+            VenueRepository venueRepository,
+            DonorRepository donorRepository,
+            PasswordEncoder passwordEncoder
     ) {
 
         this.roleRepository = roleRepository;
@@ -55,10 +61,11 @@ public class ExhibitionSeeder implements CommandLineRunner {
         this.activityRepository = activityRepository;
         this.schoolRepository = schoolRepository;
         this.venueRepository = venueRepository;
-        this.passwordEncoder =passwordEncoder;
+        this.donorRepository = donorRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
-
+ 
 
 
     @Override
@@ -72,6 +79,7 @@ public class ExhibitionSeeder implements CommandLineRunner {
         seedActivities();
         seedSchools();
         seedVenues();
+        seedDonors();
     }
 
     // ---------------- ROLES ----------------
@@ -85,7 +93,8 @@ public class ExhibitionSeeder implements CommandLineRunner {
                 new Role(null, "UNIVERSITY_ADMIN", "University Admin", "Manages university participation", new HashSet<>()),
                 new Role(null, "SCHOOL_ADMIN", "School Admin", "Manages school participation", new HashSet<>()),
                 new Role(null, "ACTIVITY_PROVIDER", "Activity Provider", "Provides activities and demos", new HashSet<>()),
-                new Role(null, "STUDENT", "Student", "Registers and attends exhibitions", new HashSet<>())
+                new Role(null, "STUDENT", "Student", "Registers and attends exhibitions", new HashSet<>()),
+                new Role(null, "DONOR", "Donor", "Provides financial aid", new HashSet<>())
         ));
     }
 
@@ -120,7 +129,11 @@ public class ExhibitionSeeder implements CommandLineRunner {
 
                 // 7. STUDENT
                 new UserInfo(null, "Student User", "student@user.com", passwordEncoder.encode("password"), TargetGender.MALE,
-                        Set.of(roleRepository.findByCode("STUDENT").orElseThrow()))
+                        Set.of(roleRepository.findByCode("STUDENT").orElseThrow())),
+
+                // 8. DONOR
+                new UserInfo(null, "Donor User", "donor@user.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
+                        Set.of(roleRepository.findByCode("DONOR").orElseThrow()))
         ));
 
     }
@@ -440,4 +453,20 @@ public class ExhibitionSeeder implements CommandLineRunner {
     }
 
 
+    // ---------------- DONORS ----------------
+    private void seedDonors() {
+        if (donorRepository.count() > 0) return;
+
+        UserInfo donorUser = userInfoRepository.findByEmail("donor@user.com").orElseThrow();
+        Organization org = organizationRepository.findAll().stream()
+                .filter(o -> "Career Guidance Organization".equals(o.getName()))
+                .findFirst()
+                .orElseThrow();
+
+        donorRepository.saveAll(List.of(
+                new Donor(null, org, donorUser, "Tech Future Fund", new BigDecimal("50000"), new BigDecimal("50000"), true),
+                new Donor(null, org, donorUser, "Education For All", new BigDecimal("75000"), new BigDecimal("75000"), true),
+                new Donor(null, org, donorUser, "Community Grant", new BigDecimal("25000"), new BigDecimal("25000"), true)
+        ));
+    }
 }
