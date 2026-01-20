@@ -146,7 +146,7 @@ public class UniversityParticipationService {
     }
 
     // ----------------- Approve or Reject University -----------------
-    public UniversityParticipationResponse reviewUniversity(Long participationId, boolean approve, String reviewerEmail) {
+    public UniversityParticipationResponse reviewUniversity(Long participationId, boolean approve, LocalDateTime confirmationDeadline, String reviewerEmail) {
         UserInfo reviewer = userInfoRepository.findByEmail(reviewerEmail)
                 .orElseThrow(() -> new RuntimeException("Reviewer not found"));
 
@@ -170,6 +170,7 @@ public class UniversityParticipationService {
 
         if (approve) {
             participation.setStatus(ParticipationStatus.ACCEPTED);
+            participation.setConfirmationDeadline(confirmationDeadline);
             // Create booths for the university
             if (participation.getApprovedBoothsCount() != null && participation.getApprovedBoothsCount() > 0) {
                 for (int i = 0; i < participation.getApprovedBoothsCount(); i++) {
@@ -213,6 +214,13 @@ public class UniversityParticipationService {
         boolean isDev = orgOwner.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId()) && !isDev) {
              throw new RuntimeException("Only ORG_OWNER can confirm payment");
+        }
+
+        // Validate confirmation deadline - auto-cancel if passed
+        if (participation.getConfirmationDeadline() != null && LocalDateTime.now().isAfter(participation.getConfirmationDeadline())) {
+            participation.setStatus(ParticipationStatus.CANCELLED);
+            participationRepository.save(participation);
+            throw new RuntimeException("Confirmation deadline has passed. Your participation has been automatically cancelled.");
         }
 
         participation.setPaymentStatus(PaymentStatus.PAID);

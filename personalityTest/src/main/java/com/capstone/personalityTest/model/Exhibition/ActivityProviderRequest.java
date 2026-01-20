@@ -46,6 +46,8 @@ public class ActivityProviderRequest {
 
     private LocalDateTime responseDeadline; // deadline to respond
 
+    private LocalDateTime confirmationDeadline; // deadline to confirm after approval
+
     @Column(columnDefinition = "TEXT")
     private String orgResponse; // organizer response (approval note or rejection reason)
 

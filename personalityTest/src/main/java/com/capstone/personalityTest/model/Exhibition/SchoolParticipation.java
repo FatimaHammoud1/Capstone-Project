@@ -36,6 +36,8 @@ public class SchoolParticipation {
 
     private LocalDateTime responseDeadline; // acceptance deadline
 
+    private LocalDateTime confirmationDeadline; // deadline to confirm after approval
+
     private LocalDateTime invitedAt; // invitation time
 
     private LocalDateTime acceptedAt; // acceptance time

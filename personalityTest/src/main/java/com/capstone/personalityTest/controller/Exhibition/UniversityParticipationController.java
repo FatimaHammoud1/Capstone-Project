@@ -61,10 +61,11 @@ public class UniversityParticipationController {
     public ResponseEntity<UniversityParticipationResponse> reviewUniversity(
             @PathVariable Long participationId,
             @RequestParam boolean approve,
+            @RequestParam(required = false) LocalDateTime confirmationDeadline,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         UniversityParticipationResponse updated = participationService.reviewUniversity(
-                participationId, approve, userDetails.getUsername()
+                participationId, approve, confirmationDeadline, userDetails.getUsername()
         );
         return ResponseEntity.ok(updated);
     }

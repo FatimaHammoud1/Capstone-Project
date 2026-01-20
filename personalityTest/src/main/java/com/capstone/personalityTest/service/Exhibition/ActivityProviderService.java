@@ -134,7 +134,7 @@ public class ActivityProviderService {
     }
 
     // ----------------- Approve or Reject Provider Proposal -----------------
-    public ActivityProviderRequestResponse reviewProviderProposal(Long requestId, boolean approve, String comments, String reviewerEmail) {
+    public ActivityProviderRequestResponse reviewProviderProposal(Long requestId, boolean approve, LocalDateTime confirmationDeadline, String comments, String reviewerEmail) {
         UserInfo reviewer = userInfoRepository.findByEmail(reviewerEmail)
                 .orElseThrow(() -> new RuntimeException("Reviewer not found"));
 
@@ -179,6 +179,7 @@ public class ActivityProviderService {
             }
             
             request.setStatus(ActivityProviderRequestStatus.APPROVED);
+            request.setConfirmationDeadline(confirmationDeadline);
             request.setApprovedAt(LocalDateTime.now());
             request.setReviewedAt(LocalDateTime.now()); 
             request.setOrgResponse(comments);
@@ -233,6 +234,13 @@ public class ActivityProviderService {
 
         if (request.getStatus() != ActivityProviderRequestStatus.APPROVED) {
             throw new RuntimeException("Only APPROVED requests can be confirmed");
+        }
+
+        // Validate confirmation deadline - auto-cancel if passed
+        if (request.getConfirmationDeadline() != null && LocalDateTime.now().isAfter(request.getConfirmationDeadline())) {
+            request.setStatus(ActivityProviderRequestStatus.CANCELLED);
+            providerRequestRepository.save(request);
+            throw new RuntimeException("Confirmation deadline has passed. Your request has been automatically cancelled.");
         }
 
         request.setStatus(ActivityProviderRequestStatus.CONFIRMED);

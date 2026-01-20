@@ -130,7 +130,7 @@ public class SchoolParticipationService {
 
     // ----------------- Confirm Participation (By Org - Approval/Rejection) -----------------
     // ----------------- Accept School (Org Reviews Registration) -----------------
-    public SchoolParticipationResponse acceptSchool(Long participationId, boolean approved, String confirmerEmail) {
+    public SchoolParticipationResponse acceptSchool(Long participationId, boolean approved, LocalDateTime confirmationDeadline, String confirmerEmail) {
         UserInfo inviter = userInfoRepository.findByEmail(confirmerEmail)
                 .orElseThrow(() -> new RuntimeException("Confirmer not found"));
 
@@ -154,6 +154,7 @@ public class SchoolParticipationService {
         
         if (approved) {
             participation.setStatus(ParticipationStatus.ACCEPTED); // Org Approves -> ACCEPTED
+            participation.setConfirmationDeadline(confirmationDeadline);
             participation.setConfirmedAt(LocalDateTime.now());
         } else {
             participation.setStatus(ParticipationStatus.REJECTED); // Org Rejects -> REJECTED
@@ -185,6 +186,13 @@ public class SchoolParticipationService {
 
         if (participation.getStatus() != ParticipationStatus.ACCEPTED) {
             throw new RuntimeException("Only ACCEPTED schools can be confirmed");
+        }
+
+        // Validate confirmation deadline - auto-cancel if passed
+        if (participation.getConfirmationDeadline() != null && LocalDateTime.now().isAfter(participation.getConfirmationDeadline())) {
+            participation.setStatus(ParticipationStatus.CANCELLED);
+            participationRepository.save(participation);
+            throw new RuntimeException("Confirmation deadline has passed. Your participation has been automatically cancelled.");
         }
 
         participation.setStatus(ParticipationStatus.CONFIRMED);

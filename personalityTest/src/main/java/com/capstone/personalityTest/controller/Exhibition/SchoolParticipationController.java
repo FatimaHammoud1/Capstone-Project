@@ -56,9 +56,10 @@ public class SchoolParticipationController {
     public ResponseEntity<SchoolParticipationResponse> acceptSchool(
             @PathVariable Long participationId,
             @RequestParam boolean approved,
+            @RequestParam(required = false) LocalDateTime confirmationDeadline,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        SchoolParticipationResponse accepted = participationService.acceptSchool(participationId, approved, userDetails.getUsername());
+        SchoolParticipationResponse accepted = participationService.acceptSchool(participationId, approved, confirmationDeadline, userDetails.getUsername());
         return ResponseEntity.ok(accepted);
     }
     

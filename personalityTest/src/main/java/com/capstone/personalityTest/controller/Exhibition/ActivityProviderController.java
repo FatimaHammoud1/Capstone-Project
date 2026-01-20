@@ -82,11 +82,12 @@ public class ActivityProviderController {
     public ResponseEntity<ActivityProviderRequestResponse> reviewProposal(
             @PathVariable Long requestId,
             @RequestParam boolean approve,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime confirmationDeadline,
             @RequestParam(required = false) String comments,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         ActivityProviderRequestResponse request = providerService.reviewProviderProposal(
-                requestId, approve, comments, userDetails.getUsername());
+                requestId, approve, confirmationDeadline, comments, userDetails.getUsername());
         return ResponseEntity.ok(request);
     }
     

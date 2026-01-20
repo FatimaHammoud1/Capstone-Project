@@ -51,6 +51,8 @@ public class UniversityParticipation {
 
     private LocalDateTime responseDeadline; // invitation deadline
 
+    private LocalDateTime confirmationDeadline; // deadline to confirm after approval
+
     private LocalDateTime invitedAt; // invitation time
 
     private LocalDateTime registeredAt; // registration time
