@@ -1,6 +1,9 @@
 package com.capstone.personalityTest.controller.financial_aid;
 
-import com.capstone.personalityTest.dto.RequestDTO.financial_aid.FinancialAidApplyRequest;
+
+
+import com.capstone.personalityTest.dto.RequestDTO.FinancialAidApplyRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidDetailResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidResponse;
 import com.capstone.personalityTest.service.financial_aid.FinancialAidService;
 import jakarta.validation.Valid;
@@ -33,5 +36,13 @@ public class FinancialAidController {
     public ResponseEntity<Map<String, List<FinancialAidResponse>>>  getMyRequests(Principal principal) {
         List<FinancialAidResponse> requests = financialAidService.getStudentRequests(principal.getName());
         return ResponseEntity.ok(Map.of("requests", requests));
+    }
+
+    @GetMapping("/{requestId}")
+    @PreAuthorize("hasAnyRole('STUDENT', 'DEVELOPER')")
+    public ResponseEntity<FinancialAidDetailResponse> getRequestDetails(
+            @PathVariable Long requestId,
+            Principal principal) {
+        return ResponseEntity.ok(financialAidService.getRequestDetails(requestId, principal.getName()));
     }
 }

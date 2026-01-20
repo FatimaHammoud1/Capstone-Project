@@ -1,6 +1,7 @@
 package com.capstone.personalityTest.service.financial_aid;
 
-import com.capstone.personalityTest.dto.RequestDTO.financial_aid.FinancialAidApplyRequest;
+import com.capstone.personalityTest.dto.RequestDTO.FinancialAidApplyRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidDetailResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidResponse;
 import com.capstone.personalityTest.model.Exhibition.Organization;
 import com.capstone.personalityTest.model.UserInfo;
@@ -64,6 +65,20 @@ public class FinancialAidService {
                 .collect(Collectors.toList());
     }
 
+    public FinancialAidDetailResponse getRequestDetails(Long requestId, String userEmail) {
+        FinancialAidRequest request = financialAidRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+        
+        UserInfo student = userInfoRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!request.getStudent().getId().equals(student.getId())) {
+             throw new RuntimeException("Access denied: You can only view your own requests.");
+        }
+
+        return mapToDetailResponse(request);
+    }
+
     private FinancialAidResponse mapToResponse(FinancialAidRequest request) {
         FinancialAidResponse response = new FinancialAidResponse();
         response.setId(request.getId());
@@ -76,6 +91,29 @@ public class FinancialAidService {
         response.setApprovedAmount(request.getApprovedAmount());
         response.setRequestedAt(request.getRequestedAt());
         response.setReviewedAt(request.getReviewedAt());
+        return response;
+    }
+
+    private FinancialAidDetailResponse mapToDetailResponse(FinancialAidRequest request) {
+        FinancialAidDetailResponse response = new FinancialAidDetailResponse();
+        response.setId(request.getId());
+        response.setStudentName(request.getStudentName());
+        response.setRequestedAmount(request.getRequestedAmount());
+        response.setApprovedAmount(request.getApprovedAmount());
+        response.setStatus(request.getStatus());
+        response.setGpa(request.getGpa());
+        response.setUniversityName(request.getUniversityName());
+        
+        FinancialAidDetailResponse.Documents docs = new FinancialAidDetailResponse.Documents();
+        docs.setIdCard(request.getIdCardUrl());
+        docs.setFees(request.getUniversityFeesUrl());
+        docs.setGrades(request.getGradeProofUrl());
+        response.setDocuments(docs);
+        
+        response.setReason(request.getReason());
+        response.setRequestedAt(request.getRequestedAt());
+        response.setReviewedAt(request.getReviewedAt());
+        
         return response;
     }
 }
