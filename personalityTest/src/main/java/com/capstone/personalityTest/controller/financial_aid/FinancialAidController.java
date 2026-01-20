@@ -1,0 +1,37 @@
+package com.capstone.personalityTest.controller.financial_aid;
+
+import com.capstone.personalityTest.dto.RequestDTO.financial_aid.FinancialAidApplyRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidResponse;
+import com.capstone.personalityTest.service.financial_aid.FinancialAidService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/financial-aid")
+@RequiredArgsConstructor
+public class FinancialAidController {
+
+    private final FinancialAidService financialAidService;
+
+    @PostMapping("/request")
+    @PreAuthorize("hasAnyRole('STUDENT', 'DEVELOPER')")
+    public ResponseEntity<FinancialAidResponse> requestFinancialAid(
+            @Valid @RequestBody FinancialAidApplyRequest request,
+            Principal principal) {
+        return ResponseEntity.ok(financialAidService.requestFinancialAid(request, principal.getName()));
+    }
+
+    @GetMapping("/my-requests")
+    @PreAuthorize("hasAnyRole('STUDENT', 'DEVELOPER')")
+    public ResponseEntity<Map<String, List<FinancialAidResponse>>>  getMyRequests(Principal principal) {
+        List<FinancialAidResponse> requests = financialAidService.getStudentRequests(principal.getName());
+        return ResponseEntity.ok(Map.of("requests", requests));
+    }
+}
