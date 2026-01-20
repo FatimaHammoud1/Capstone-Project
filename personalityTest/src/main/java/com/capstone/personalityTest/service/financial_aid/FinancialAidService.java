@@ -5,9 +5,11 @@ import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidDetailResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidResponse;
 import com.capstone.personalityTest.model.Exhibition.Organization;
 import com.capstone.personalityTest.model.UserInfo;
+import com.capstone.personalityTest.model.financial_aid.Donor;
 import com.capstone.personalityTest.model.financial_aid.FinancialAidRequest;
 import com.capstone.personalityTest.repository.Exhibition.OrganizationRepository;
 import com.capstone.personalityTest.repository.UserInfoRepository;
+import com.capstone.personalityTest.repository.financial_aid.DonorRepository;
 import com.capstone.personalityTest.repository.financial_aid.FinancialAidRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class FinancialAidService {
     private final FinancialAidRepository financialAidRepository;
     private final UserInfoRepository userInfoRepository;
     private final OrganizationRepository organizationRepository;
+    private final DonorRepository donorRepository;
 
     @Transactional
     public FinancialAidResponse requestFinancialAid(FinancialAidApplyRequest request, String userEmail) {
@@ -77,6 +80,39 @@ public class FinancialAidService {
         }
 
         return mapToDetailResponse(request);
+    }
+
+    @Transactional
+    public FinancialAidResponse cancelRequest(Long requestId, String userEmail) {
+        FinancialAidRequest request = financialAidRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+        
+        UserInfo student = userInfoRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Verify ownership
+        if (!request.getStudent().getId().equals(student.getId())) {
+            throw new RuntimeException("Access denied: You can only cancel your own requests.");
+        }
+        
+        // Check status
+        if (request.getStatus() == FinancialAidRequest.Status.DISBURSED 
+            || request.getStatus() == FinancialAidRequest.Status.REJECTED 
+            || request.getStatus() == FinancialAidRequest.Status.CANCELLED) {
+             throw new RuntimeException("Cannot cancel request with status: " + request.getStatus());
+        }
+        
+        // Refund if APPROVED (and has approveAmount + donor)
+        if (request.getStatus() == FinancialAidRequest.Status.APPROVED && request.getApprovedAmount() != null && request.getDonor() != null) {
+            Donor donor = request.getDonor();
+            donor.setAvailableBudget(donor.getAvailableBudget().add(request.getApprovedAmount()));
+            donorRepository.save(donor);
+        }
+        
+        request.setStatus(FinancialAidRequest.Status.CANCELLED);
+        FinancialAidRequest savedRequest = financialAidRepository.save(request);
+        
+        return mapToResponse(savedRequest);
     }
 
     private FinancialAidResponse mapToResponse(FinancialAidRequest request) {

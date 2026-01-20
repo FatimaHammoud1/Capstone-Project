@@ -45,4 +45,12 @@ public class FinancialAidController {
             Principal principal) {
         return ResponseEntity.ok(financialAidService.getRequestDetails(requestId, principal.getName()));
     }
+
+    @PostMapping("/{requestId}/cancel")
+    @PreAuthorize("hasAnyRole('STUDENT', 'DEVELOPER')")
+    public ResponseEntity<FinancialAidResponse> cancelRequest(
+            @PathVariable Long requestId,
+            Principal principal) {
+        return ResponseEntity.ok(financialAidService.cancelRequest(requestId, principal.getName()));
+    }
 }

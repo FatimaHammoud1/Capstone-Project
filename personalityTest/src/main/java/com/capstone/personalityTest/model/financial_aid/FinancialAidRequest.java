@@ -32,6 +32,10 @@ public class FinancialAidRequest {
     @JoinColumn(name = "organization_id")
     private Organization organization;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "donor_id")
+    private Donor donor;
+
     @Enumerated(EnumType.STRING)
     private Status status;
 
@@ -83,6 +87,7 @@ public class FinancialAidRequest {
     public enum Status {
         PENDING,
         APPROVED,
+        DISBURSED,
         REJECTED,
         CANCELLED
     }
