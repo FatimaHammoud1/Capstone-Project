@@ -31,4 +31,9 @@ public class SchoolService {
                 school.getOwner() != null ? school.getOwner().getId() : null
         );
     }
+    public SchoolResponse getSchoolById(Long schoolId) {
+        School school = schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new RuntimeException("School not found"));
+        return mapToResponse(school);
+    }
 }

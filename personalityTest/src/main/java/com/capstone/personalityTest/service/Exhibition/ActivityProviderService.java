@@ -375,4 +375,18 @@ public class ActivityProviderService {
                 ))
                 .collect(Collectors.toList());
     }
+
+    // ----------------- Get Provider By ID -----------------
+    public ActivityProviderResponse getProviderById(Long providerId) {
+        ActivityProvider provider = activityProviderRepository.findById(providerId)
+                .orElseThrow(() -> new RuntimeException("Provider not found"));
+        return new ActivityProviderResponse(
+                provider.getId(),
+                provider.getName(),
+                provider.getContactEmail(),
+                provider.getContactPhone(),
+                provider.getActive(),
+                provider.getOwner() != null ? provider.getOwner().getId() : null
+        );
+    }
 }

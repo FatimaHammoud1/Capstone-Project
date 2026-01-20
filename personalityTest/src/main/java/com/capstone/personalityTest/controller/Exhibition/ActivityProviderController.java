@@ -136,4 +136,11 @@ public class ActivityProviderController {
     public ResponseEntity<List<ActivityProviderResponse>> getAllActiveProviders() {
         return ResponseEntity.ok(providerService.getAllActiveProviders());
     }
+
+    // ----------------- Get Provider By ID -----------------
+    @GetMapping("/provider/{providerId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<ActivityProviderResponse> getProviderById(@PathVariable Long providerId) {
+        return ResponseEntity.ok(providerService.getProviderById(providerId));
+    }
 }

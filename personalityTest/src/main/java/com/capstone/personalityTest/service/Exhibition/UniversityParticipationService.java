@@ -373,4 +373,18 @@ public class UniversityParticipationService {
                 ))
                 .collect(Collectors.toList());
     }
+
+    // ----------------- Get University By ID -----------------
+    public UniversityResponse getUniversityById(Long universityId) {
+        University university = universityRepository.findById(universityId)
+                .orElseThrow(() -> new RuntimeException("University not found"));
+        return new UniversityResponse(
+                university.getId(),
+                university.getName(),
+                university.getContactEmail(),
+                university.getContactPhone(),
+                university.getActive(),
+                university.getOwner() != null ? university.getOwner().getId() : null
+        );
+    }
 }

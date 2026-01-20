@@ -13,6 +13,7 @@ import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionRespons
 import com.capstone.personalityTest.dto.RequestDTO.Exhibition.ExhibitionRequest;
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.InvitationCapacityResponse;
 import com.capstone.personalityTest.dto.RequestDTO.Exhibition.BoothLimitsRequest;
+import com.capstone.personalityTest.model.Enum.Exhibition.ExhibitionStatus;
 import java.util.Map;
 
 @RestController
@@ -39,6 +40,12 @@ public class ExhibitionController {
     public ResponseEntity<List<ExhibitionResponse>> getExhibitionsByOrg(@PathVariable Long orgId) {
         return ResponseEntity.ok(exhibitionService.getExhibitionsByOrg(orgId));
     }
+
+    // ----------------- Get All Exhibitions -----------------
+    @GetMapping
+    public ResponseEntity<List<ExhibitionResponse>> getAllExhibitions() {
+        return ResponseEntity.ok(exhibitionService.getAllExhibitions());
+    }
     
     // ----------------- Get Exhibition By ID -----------------
     @GetMapping("/{exhibitionId}")
@@ -54,6 +61,12 @@ public class ExhibitionController {
     public ResponseEntity<List<ExhibitionResponse>> getActiveExhibitions() {
         // Publicly accessible list for students to browse
         return ResponseEntity.ok(exhibitionService.getAllActiveExhibitions());
+    }
+
+    // ----------------- Get Exhibition Status -----------------
+    @GetMapping("/{exhibitionId}/status")
+    public ResponseEntity<ExhibitionStatus> getExhibitionStatus(@PathVariable Long exhibitionId) {
+        return ResponseEntity.ok(exhibitionService.getExhibitionStatus(exhibitionId));
     }
     
 

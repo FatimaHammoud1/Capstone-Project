@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequestMapping("/api/schools")
@@ -20,5 +21,10 @@ public class SchoolController {
     @GetMapping
     public ResponseEntity<List<SchoolResponse>> getAllSchools() {
         return ResponseEntity.ok(schoolService.getAllSchools());
+    }
+
+    @GetMapping("/{schoolId}")
+    public ResponseEntity<SchoolResponse> getSchoolById(@PathVariable Long schoolId) {
+        return ResponseEntity.ok(schoolService.getSchoolById(schoolId));
     }
 }

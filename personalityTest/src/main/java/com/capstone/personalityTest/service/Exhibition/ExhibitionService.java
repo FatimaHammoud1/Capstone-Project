@@ -96,6 +96,20 @@ public class ExhibitionService {
                 .map(this::mapToResponse)
                 .toList();
     }
+
+    // ----------------- Get All Exhibitions -----------------
+    public List<ExhibitionResponse> getAllExhibitions() {
+        return exhibitionRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // ----------------- Get Exhibition Status -----------------
+    public ExhibitionStatus getExhibitionStatus(Long exhibitionId) {
+        Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
+                .orElseThrow(() -> new RuntimeException("Exhibition not found"));
+        return exhibition.getStatus();
+    }
     
     // Helper to map
     private ExhibitionResponse mapToResponse(Exhibition exhibition) {

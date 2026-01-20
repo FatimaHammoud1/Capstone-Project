@@ -123,4 +123,11 @@ public class UniversityParticipationController {
     public ResponseEntity<List<UniversityResponse>> getAllActiveUniversities() {
         return ResponseEntity.ok(participationService.getAllActiveUniversities());
     }
+
+    // ----------------- Get Bank University By ID -----------------
+    @GetMapping("/university/{universityId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<UniversityResponse> getUniversityById(@PathVariable Long universityId) {
+        return ResponseEntity.ok(participationService.getUniversityById(universityId));
+    }
 }
