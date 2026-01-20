@@ -142,6 +142,30 @@ public class FinancialAidService {
         return response;
     }
 
+    public Map<String, Object> getAllRequestsForOrganization(String userEmail, FinancialAidRequest.Status status) {
+        UserInfo owner = userInfoRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Organization organization = organizationRepository.findByOwnerId(owner.getId())
+                .orElseThrow(() -> new RuntimeException("Organization not found for this user"));
+
+        List<FinancialAidRequest> requests;
+        if (status != null) {
+            requests = financialAidRepository.findByOrganizationIdAndStatus(organization.getId(), status);
+        } else {
+            requests = financialAidRepository.findByOrganizationId(organization.getId());
+        }
+
+        List<FinancialAidResponse> requestDtos = requests.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("requests", requestDtos);
+
+        return response;
+    }
+
     private FinancialAidResponse mapToResponse(FinancialAidRequest request) {
         FinancialAidResponse response = new FinancialAidResponse();
         response.setId(request.getId());

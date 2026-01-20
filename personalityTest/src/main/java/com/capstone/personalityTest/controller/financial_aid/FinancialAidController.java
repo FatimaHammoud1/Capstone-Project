@@ -5,6 +5,7 @@ package com.capstone.personalityTest.controller.financial_aid;
 import com.capstone.personalityTest.dto.RequestDTO.FinancialAidApplyRequest;
 import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidDetailResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidResponse;
+import com.capstone.personalityTest.model.financial_aid.FinancialAidRequest;
 import com.capstone.personalityTest.service.financial_aid.FinancialAidService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -58,5 +59,13 @@ public class FinancialAidController {
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<Map<String, Object>> getPendingRequests(Principal principal) {
         return ResponseEntity.ok(financialAidService.getPendingRequestsForOrganization(principal.getName()));
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<Map<String, Object>> getAllRequests(
+            @RequestParam(required = false) FinancialAidRequest.Status status,
+            Principal principal) {
+        return ResponseEntity.ok(financialAidService.getAllRequestsForOrganization(principal.getName(), status));
     }
 }
