@@ -1,7 +1,7 @@
 package com.capstone.personalityTest.mapper;
 
-import com.capstone.personalityTest.dto.ResponseDTO.AIResultResponseDTO;
-import com.capstone.personalityTest.model.AIResult;
+import com.capstone.personalityTest.dto.ResponseDTO.test.AIResultResponseDTO;
+import com.capstone.personalityTest.model.testm.AIResult;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;

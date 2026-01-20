@@ -1,9 +1,9 @@
 package com.capstone.personalityTest.service.financial_aid;
 
 import com.capstone.personalityTest.dto.RequestDTO.FinancialAidApplyRequest;
-import com.capstone.personalityTest.dto.RequestDTO.FinancialAidReviewRequest;
-import com.capstone.personalityTest.dto.ResponseDTO.DonorResponse;
-import com.capstone.personalityTest.dto.ResponseDTO.FinancialAidResponse;
+import com.capstone.personalityTest.dto.RequestDTO.financial_aid.FinancialAidReviewRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.financial_aid.DonorResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.financial_aid.FinancialAidResponse;
 
 import com.capstone.personalityTest.model.Exhibition.Organization;
 import com.capstone.personalityTest.model.UserInfo;

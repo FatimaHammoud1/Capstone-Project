@@ -1,12 +1,12 @@
 package com.capstone.personalityTest.mapper;
 
 
-import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.AnswerResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.test.TestAttemptResponse.AnswerResponse;
 import com.capstone.personalityTest.model.Enum.AnswerType;
-import com.capstone.personalityTest.model.TestAttempt.Answer.Answer;
-import com.capstone.personalityTest.model.TestAttempt.Answer.CheckBoxAnswer;
-import com.capstone.personalityTest.model.TestAttempt.Answer.OpenAnswer;
-import com.capstone.personalityTest.model.TestAttempt.Answer.ScaleAnswer;
+import com.capstone.personalityTest.model.testm.TestAttempt.Answer.Answer;
+import com.capstone.personalityTest.model.testm.TestAttempt.Answer.CheckBoxAnswer;
+import com.capstone.personalityTest.model.testm.TestAttempt.Answer.OpenAnswer;
+import com.capstone.personalityTest.model.testm.TestAttempt.Answer.ScaleAnswer;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.AfterMapping;

@@ -1,8 +1,8 @@
 package com.capstone.personalityTest.mapper.TestMapper;
 
-import com.capstone.personalityTest.dto.RequestDTO.TestRequest.SubQuestionRequest;
-import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.SubQuestionResponse;
-import com.capstone.personalityTest.model.Test.SubQuestion;
+import com.capstone.personalityTest.dto.RequestDTO.test.TestRequest.SubQuestionRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.test.TestResponse.SubQuestionResponse;
+import com.capstone.personalityTest.model.testm.Test.SubQuestion;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;

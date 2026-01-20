@@ -1,7 +1,7 @@
 package com.capstone.personalityTest.mapper.TestMapper;
 
-import com.capstone.personalityTest.dto.RequestDTO.TestRequest.BaseTestRequest;
-import com.capstone.personalityTest.model.Test.BaseTest;
+import com.capstone.personalityTest.dto.RequestDTO.test.TestRequest.BaseTestRequest;
+import com.capstone.personalityTest.model.testm.Test.BaseTest;
 import org.mapstruct.Mapper;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 

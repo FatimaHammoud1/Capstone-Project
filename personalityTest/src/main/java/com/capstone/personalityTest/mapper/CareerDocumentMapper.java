@@ -1,7 +1,7 @@
 package com.capstone.personalityTest.mapper;
 
 import com.capstone.personalityTest.dto.ResponseDTO.CareerDocumentResponse.CareerDocumentResponse;
-import com.capstone.personalityTest.model.CareerDocument;
+import com.capstone.personalityTest.model.testm.CareerDocument;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;

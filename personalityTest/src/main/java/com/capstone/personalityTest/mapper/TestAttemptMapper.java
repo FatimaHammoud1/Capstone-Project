@@ -1,9 +1,9 @@
 package com.capstone.personalityTest.mapper;
 
-import com.capstone.personalityTest.dto.RequestDTO.TestAttemptRequest.TestAttemptRequest;
-import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptResponse;
-import com.capstone.personalityTest.dto.ResponseDTO.TestAttemptResponse.TestAttemptWithAnswersResponse;
-import com.capstone.personalityTest.model.TestAttempt.TestAttempt;
+import com.capstone.personalityTest.dto.RequestDTO.test.TestAttemptRequest.TestAttemptRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.test.TestAttemptResponse.TestAttemptResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.test.TestAttemptResponse.TestAttemptWithAnswersResponse;
+import com.capstone.personalityTest.model.testm.TestAttempt.TestAttempt;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

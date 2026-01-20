@@ -1,9 +1,9 @@
 package com.capstone.personalityTest.mapper.TestMapper;
 
 //uses = { ... } → this tells MapStruct how to map nested levels.
-import com.capstone.personalityTest.dto.RequestDTO.TestRequest.SectionRequest;
-import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.SectionResponse;
-import com.capstone.personalityTest.model.Test.Section;
+import com.capstone.personalityTest.dto.RequestDTO.test.TestRequest.SectionRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.test.TestResponse.SectionResponse;
+import com.capstone.personalityTest.model.testm.Test.Section;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;

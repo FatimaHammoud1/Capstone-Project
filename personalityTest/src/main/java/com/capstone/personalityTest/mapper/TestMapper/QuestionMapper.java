@@ -1,15 +1,12 @@
 package com.capstone.personalityTest.mapper.TestMapper;
 
 
-import com.capstone.personalityTest.dto.RequestDTO.TestRequest.QuestionRequest;
-import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.QuestionResponse;
-import com.capstone.personalityTest.dto.ResponseDTO.TestResponse.SubQuestionResponse;
-import com.capstone.personalityTest.model.Test.Question;
-import com.capstone.personalityTest.model.Test.SubQuestion;
+import com.capstone.personalityTest.dto.RequestDTO.test.TestRequest.QuestionRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.test.TestResponse.QuestionResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.test.TestResponse.SubQuestionResponse;
+import com.capstone.personalityTest.model.testm.Test.Question;
 import org.mapstruct.*;
-import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
