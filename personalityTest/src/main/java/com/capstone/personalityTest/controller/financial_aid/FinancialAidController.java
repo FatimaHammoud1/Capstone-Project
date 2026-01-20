@@ -78,4 +78,12 @@ public class FinancialAidController {
             Principal principal) {
         return ResponseEntity.ok(financialAidService.reviewRequest(requestId, reviewRequest, principal.getName()));
     }
+
+    @PostMapping("/{requestId}/disburse")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<FinancialAidResponse> disburseAid(
+            @PathVariable Long requestId,
+            Principal principal) {
+        return ResponseEntity.ok(financialAidService.disburseAid(requestId, principal.getName()));
+    }
 }

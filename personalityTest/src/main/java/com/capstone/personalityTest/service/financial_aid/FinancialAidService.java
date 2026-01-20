@@ -223,7 +223,28 @@ public class FinancialAidService {
         return mapToDetailResponse(savedRequest);
     }
 
+    @Transactional
+    public FinancialAidResponse disburseAid(Long requestId, String userEmail) {
+        UserInfo owner = userInfoRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
+        FinancialAidRequest request = financialAidRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        // Verify that the user is the owner of the organization
+        if (!request.getOrganization().getOwner().getId().equals(owner.getId())) {
+             throw new RuntimeException("Access denied: You are not the owner of this organization.");
+        }
+
+        if (request.getStatus() != FinancialAidRequest.Status.APPROVED) {
+             throw new RuntimeException("Cannot disburse aid. Request status must be APPROVED. Current status: " + request.getStatus());
+        }
+
+        request.setStatus(FinancialAidRequest.Status.DISBURSED);
+        FinancialAidRequest savedRequest = financialAidRepository.save(request);
+
+        return mapToDetailResponse(savedRequest);
+    }
 
     private FinancialAidResponse mapToDetailResponse(FinancialAidRequest request) {
         FinancialAidResponse response = new FinancialAidResponse();
