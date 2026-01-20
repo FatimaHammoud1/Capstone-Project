@@ -10,4 +10,5 @@ import java.util.List;
 public interface FinancialAidRepository extends JpaRepository<FinancialAidRequest, Long> {
     List<FinancialAidRequest> findByStudentId(Long studentId);
     List<FinancialAidRequest> findByOrganizationId(Long organizationId);
+    List<FinancialAidRequest> findByOrganizationIdAndStatus(Long organizationId, FinancialAidRequest.Status status);
 }

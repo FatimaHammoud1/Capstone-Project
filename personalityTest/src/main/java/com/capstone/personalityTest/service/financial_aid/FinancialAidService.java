@@ -15,8 +15,11 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -90,19 +93,16 @@ public class FinancialAidService {
         UserInfo student = userInfoRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        // Verify ownership
         if (!request.getStudent().getId().equals(student.getId())) {
             throw new RuntimeException("Access denied: You can only cancel your own requests.");
         }
         
-        // Check status
         if (request.getStatus() == FinancialAidRequest.Status.DISBURSED 
             || request.getStatus() == FinancialAidRequest.Status.REJECTED 
             || request.getStatus() == FinancialAidRequest.Status.CANCELLED) {
              throw new RuntimeException("Cannot cancel request with status: " + request.getStatus());
         }
         
-        // Refund if APPROVED (and has approveAmount + donor)
         if (request.getStatus() == FinancialAidRequest.Status.APPROVED && request.getApprovedAmount() != null && request.getDonor() != null) {
             Donor donor = request.getDonor();
             donor.setAvailableBudget(donor.getAvailableBudget().add(request.getApprovedAmount()));
@@ -113,6 +113,33 @@ public class FinancialAidService {
         FinancialAidRequest savedRequest = financialAidRepository.save(request);
         
         return mapToResponse(savedRequest);
+    }
+
+    public Map<String, Object> getPendingRequestsForOrganization(String userEmail) {
+        UserInfo owner = userInfoRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Organization organization = organizationRepository.findByOwnerId(owner.getId())
+                .orElseThrow(() -> new RuntimeException("Organization not found for this user"));
+
+        List<FinancialAidRequest> pendingRequests = financialAidRepository.findByOrganizationIdAndStatus(
+                organization.getId(), FinancialAidRequest.Status.PENDING);
+
+        List<FinancialAidDetailResponse> requestDtos = pendingRequests.stream()
+                .map(this::mapToDetailResponse)
+                .collect(Collectors.toList());
+
+        List<Donor> donors = donorRepository.findByOrganizationId(organization.getId());
+        BigDecimal totalAvailableBudget = donors.stream()
+                .filter(d -> Boolean.TRUE.equals(d.getActive()))
+                .map(Donor::getAvailableBudget)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("requests", requestDtos);
+        response.put("availableBudget", totalAvailableBudget);
+
+        return response;
     }
 
     private FinancialAidResponse mapToResponse(FinancialAidRequest request) {
@@ -134,11 +161,14 @@ public class FinancialAidService {
         FinancialAidDetailResponse response = new FinancialAidDetailResponse();
         response.setId(request.getId());
         response.setStudentName(request.getStudentName());
+        response.setStudentPhone(request.getStudentPhone());
         response.setRequestedAmount(request.getRequestedAmount());
         response.setApprovedAmount(request.getApprovedAmount());
         response.setStatus(request.getStatus());
         response.setGpa(request.getGpa());
+        response.setFieldOfStudy(request.getFieldOfStudy());
         response.setUniversityName(request.getUniversityName());
+        response.setFamilyIncome(request.getFamilyIncome());
         
         FinancialAidDetailResponse.Documents docs = new FinancialAidDetailResponse.Documents();
         docs.setIdCard(request.getIdCardUrl());

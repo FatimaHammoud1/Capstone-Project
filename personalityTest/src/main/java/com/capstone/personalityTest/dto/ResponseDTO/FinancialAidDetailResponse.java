@@ -14,11 +14,14 @@ import java.time.LocalDateTime;
 public class FinancialAidDetailResponse {
     private Long id;
     private String studentName;
+    private String studentPhone; // Added
     private BigDecimal requestedAmount;
     private BigDecimal approvedAmount;
     private Status status;
     private Double gpa;
+    private String fieldOfStudy; // Added
     private String universityName;
+    private BigDecimal familyIncome; // Added
     private Documents documents;
     private String reason;
     private LocalDateTime requestedAt;

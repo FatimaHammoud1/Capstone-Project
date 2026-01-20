@@ -53,4 +53,10 @@ public class FinancialAidController {
             Principal principal) {
         return ResponseEntity.ok(financialAidService.cancelRequest(requestId, principal.getName()));
     }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<Map<String, Object>> getPendingRequests(Principal principal) {
+        return ResponseEntity.ok(financialAidService.getPendingRequestsForOrganization(principal.getName()));
+    }
 }
