@@ -1,14 +1,20 @@
 package com.capstone.personalityTest.service.Exhibition;
 
+import com.capstone.personalityTest.model.Enum.Exhibition.ActivityProviderRequestStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.ExhibitionStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus;
+import com.capstone.personalityTest.model.Enum.Exhibition.PaymentStatus;
 import com.capstone.personalityTest.model.Exhibition.Exhibition;
+import com.capstone.personalityTest.model.Exhibition.SchoolParticipation;
+import com.capstone.personalityTest.model.Exhibition.UniversityParticipation;
 import com.capstone.personalityTest.model.UserInfo;
 import com.capstone.personalityTest.repository.Exhibition.ExhibitionRepository;
 import com.capstone.personalityTest.repository.Exhibition.SchoolParticipationRepository;
 import com.capstone.personalityTest.repository.Exhibition.UniversityParticipationRepository;
 import com.capstone.personalityTest.repository.Exhibition.ActivityProviderRequestRepository;
 import com.capstone.personalityTest.repository.UserInfoRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse;
@@ -16,6 +22,9 @@ import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionRespons
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -25,8 +34,77 @@ public class ExhibitionLifecycleService {
     private final UniversityParticipationRepository universityParticipationRepository;
     private final SchoolParticipationRepository schoolParticipationRepository;
     private final UserInfoRepository userInfoRepository;
-
     private final ActivityProviderRequestRepository activityProviderRequestRepository;
+    private final ExhibitionFinanceService financeService;
+
+    // ----------------- Confirm Exhibition (Status Change + Schedule Generation) -----------------
+    public ExhibitionResponse confirmExhibition(Long exhibitionId, LocalDateTime finalizationDeadline, String orgOwnerEmail) {
+        UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
+                .orElseThrow(() -> new RuntimeException("Exhibition not found"));
+
+        // Only owner of the organization, OR developer (for easier testing)
+        boolean isDev = orgOwner.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId()) && !isDev) {
+            throw new RuntimeException("Only ORG_OWNER can confirm the exhibition");
+        }
+
+        // Validate that all universities and schools are confirmed
+        List<UniversityParticipation> unis = universityParticipationRepository
+                .findByExhibitionId(exhibitionId);
+
+        List<SchoolParticipation> schools = schoolParticipationRepository
+                .findByExhibitionId(exhibitionId);
+
+        // Check Unis: Must be CONFIRMED and PAID
+        boolean allActiveUnisReady = unis.stream()
+                .filter(u -> u.getStatus() != ParticipationStatus.CANCELLED)
+                .allMatch(u -> u.getStatus() == ParticipationStatus.CONFIRMED && u.getPaymentStatus() == PaymentStatus.PAID);
+
+        boolean allActiveSchoolsReady = schools.stream()
+                .filter(s -> s.getStatus() != ParticipationStatus.CANCELLED && s.getStatus() != ParticipationStatus.REJECTED)
+                .allMatch(s -> s.getStatus() == ParticipationStatus.ACCEPTED);
+
+        if (!allActiveUnisReady || !allActiveSchoolsReady) {
+            throw new RuntimeException("All active universities must be PREPAYED & CONFIRMED, and schools ACCEPTED, before finalizing");
+        }
+
+        // ----------------- Generate Schedule JSON -----------------
+        Map<String, Object> schedule = new HashMap<>();
+        schedule.put("activities", activityProviderRequestRepository
+                .findByExhibitionIdAndStatus(exhibitionId, ActivityProviderRequestStatus.APPROVED));
+        schedule.put("universities", unis.stream()
+                .filter(u -> u.getStatus() == ParticipationStatus.CONFIRMED)
+                .toList());
+        schedule.put("schools", schools.stream()
+                .filter(s -> s.getStatus() == ParticipationStatus.ACCEPTED)
+                .toList());
+
+        // Convert to JSON string
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            
+            String scheduleJson = mapper.writeValueAsString(schedule);
+            exhibition.setScheduleJson(scheduleJson);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to generate schedule JSON", e);
+        }
+
+        // State Transition
+        exhibition.setStatus(ExhibitionStatus.CONFIRMED);
+        exhibition.setFinalizationDeadline(finalizationDeadline);
+        exhibition.setUpdatedAt(LocalDateTime.now());
+
+        Exhibition savedExhibition = exhibitionRepository.save(exhibition);
+        
+        // Automatically calculate financials after confirmation
+        financeService.calculateFinancials(exhibitionId);
+        
+        return mapToResponse(savedExhibition);
+    }
 
     // ----------------- Start Exhibition -----------------
     public ExhibitionResponse startExhibition(Long exhibitionId, String orgOwnerEmail) {

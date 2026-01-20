@@ -17,6 +17,20 @@ public class ExhibitionLifecycleController {
 
     private final ExhibitionLifecycleService lifecycleService;
 
+    // ----------------- CONFIRM EXHIBITION -----------------
+    @PostMapping("/confirm/{exhibitionId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<ExhibitionResponse> confirmExhibition(
+            @PathVariable Long exhibitionId,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime finalizationDeadline,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        ExhibitionResponse confirmed = lifecycleService.confirmExhibition(
+                exhibitionId, finalizationDeadline, userDetails.getUsername()
+        );
+        return ResponseEntity.ok(confirmed);
+    }
+
     // ----------------- START EXHIBITION -----------------
     @PostMapping("/start/{exhibitionId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")

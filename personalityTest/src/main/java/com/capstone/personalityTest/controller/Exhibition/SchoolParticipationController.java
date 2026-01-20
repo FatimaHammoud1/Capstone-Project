@@ -1,6 +1,6 @@
 package com.capstone.personalityTest.controller.Exhibition;
 
-import com.capstone.personalityTest.model.Exhibition.SchoolParticipation;
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse;
 import com.capstone.personalityTest.service.Exhibition.SchoolParticipationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -8,7 +8,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse;
 
@@ -62,6 +64,17 @@ public class SchoolParticipationController {
         SchoolParticipationResponse accepted = participationService.acceptSchool(participationId, approved, confirmationDeadline, userDetails.getUsername());
         return ResponseEntity.ok(accepted);
     }
+
+    // ----------------- CONFIRM SCHOOL (SCHOOL CONFIRMS COMMITMENT) -----------------
+    @PostMapping("/confirm/{participationId}")
+    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'DEVELOPER')")
+    public ResponseEntity<SchoolParticipationResponse> confirmSchool(
+            @PathVariable Long participationId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        SchoolParticipationResponse confirmed = participationService.confirmSchool(participationId, userDetails.getUsername());
+        return ResponseEntity.ok(confirmed);
+    }
     
     // ----------------- FINALIZE PARTICIPATION -----------------
     @PostMapping("/finalize/{participationId}")
@@ -94,7 +107,7 @@ public class SchoolParticipationController {
 
     @GetMapping("/exhibition/{exhibitionId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<java.util.List<SchoolParticipationResponse>> getParticipationsByExhibition(@PathVariable Long exhibitionId) {
+    public ResponseEntity<List<SchoolParticipationResponse>> getParticipationsByExhibition(@PathVariable Long exhibitionId) {
         return ResponseEntity.ok(participationService.getParticipationsByExhibition(exhibitionId));
     }
 }

@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ActivityProviderRequestResponse;
 
 @RestController
-@RequestMapping("/api/activity-provider-requests")
+@RequestMapping("/api/activity-providers")
 @RequiredArgsConstructor
 public class ActivityProviderController {
 
@@ -89,6 +89,17 @@ public class ActivityProviderController {
         ActivityProviderRequestResponse request = providerService.reviewProviderProposal(
                 requestId, approve, confirmationDeadline, comments, userDetails.getUsername());
         return ResponseEntity.ok(request);
+    }
+    
+    // ----------------- Confirm Participation -----------------
+    @PostMapping("/confirm/{requestId}")
+    @PreAuthorize("hasAnyRole('ACTIVITY_PROVIDER', 'DEVELOPER')")
+    public ResponseEntity<ActivityProviderRequestResponse> confirmProvider(
+            @PathVariable Long requestId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+            
+        ActivityProviderRequestResponse confirmed = providerService.confirmProvider(requestId, userDetails.getUsername());
+        return ResponseEntity.ok(confirmed);
     }
     
     // ----------------- Finalize Participation -----------------

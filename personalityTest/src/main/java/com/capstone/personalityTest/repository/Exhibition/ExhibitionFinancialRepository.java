@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ExhibitionFinancialRepository extends JpaRepository<ExhibitionFinancial, Long> {
+    java.util.Optional<ExhibitionFinancial> findByExhibitionId(Long exhibitionId);
 }

@@ -15,6 +15,7 @@ import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.InvitationCapacit
 import com.capstone.personalityTest.dto.RequestDTO.Exhibition.BoothLimitsRequest;
 import com.capstone.personalityTest.model.Enum.Exhibition.ExhibitionStatus;
 import java.util.Map;
+import com.capstone.personalityTest.service.Exhibition.ExhibitionLifecycleService;
 
 @RestController
 @RequestMapping("/api/exhibitions")

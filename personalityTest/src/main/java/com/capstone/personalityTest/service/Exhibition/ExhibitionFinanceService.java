@@ -1,28 +1,17 @@
 package com.capstone.personalityTest.service.Exhibition;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFinancialResponse;
 import com.capstone.personalityTest.model.Enum.Exhibition.ActivityProviderRequestStatus;
-import com.capstone.personalityTest.model.Enum.Exhibition.ExhibitionStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus;
-import com.capstone.personalityTest.model.Enum.Exhibition.PaymentStatus;
-import com.capstone.personalityTest.model.Exhibition.ActivityProviderRequest;
-import com.capstone.personalityTest.model.Exhibition.Exhibition;
-import com.capstone.personalityTest.model.Exhibition.ExhibitionFinancial;
-import com.capstone.personalityTest.model.Exhibition.SchoolParticipation;
-import com.capstone.personalityTest.model.Exhibition.UniversityParticipation;
-import com.capstone.personalityTest.model.UserInfo;
+import com.capstone.personalityTest.model.Exhibition.*;
 import com.capstone.personalityTest.repository.Exhibition.*;
 import com.capstone.personalityTest.repository.UserInfoRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -34,125 +23,103 @@ public class ExhibitionFinanceService {
     private final ActivityProviderRequestRepository activityProviderRequestRepository;
     private final ExhibitionFinancialRepository exhibitionFinancialRepository;
     private final UserInfoRepository userInfoRepository;
+    private final VenueRequestRepository venueRequestRepository;
 
-    // ----------------- Calculate Payments & Generate Schedule -----------------
-    // ----------------- Confirm Exhibition (Finalize) -----------------
-    public ExhibitionResponse confirmExhibition(Long exhibitionId, LocalDateTime finalizationDeadline, String orgOwnerEmail) {
-        UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+    // ----------------- Calculate/Recalculate Financial Summary -----------------
+    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFinancialResponse calculateFinancials(Long exhibitionId) {
         Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
-        // Only owner of the organization, OR developer (for easier testing)
-        boolean isDev = orgOwner.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
-        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId()) && !isDev) {
-            throw new RuntimeException("Only ORG_OWNER can confirm the exhibition");
-        }
-
-        // Validate that all universities and schools are confirmed
+        // Get all universities for this exhibition
         List<UniversityParticipation> unis = universityParticipationRepository
                 .findByExhibitionId(exhibitionId);
 
-        List<SchoolParticipation> schools = schoolParticipationRepository
-                .findByExhibitionId(exhibitionId);
-
-        // Check Unis: Must be CONFIRMED and PAID (unless invited status ignored? usually we check active participants)
-        // If a uni is Cancelled/Invited/Registered but not finalized, should we block? 
-        // Logic: All "Accepted" participants must proceed to Confirmed. Any stuck in "Invited"/"Registered" might be ignored or block.
-        // Sticking to: All *universities that are not cancelled* must be CONFIRMED and PAID.
-        boolean allActiveUnisReady = unis.stream()
-                .filter(u -> u.getStatus() != ParticipationStatus.CANCELLED)
-                .allMatch(u -> u.getStatus() == ParticipationStatus.CONFIRMED && u.getPaymentStatus() == PaymentStatus.PAID);
-
-        boolean allActiveSchoolsReady = schools.stream()
-                .filter(s -> s.getStatus() != ParticipationStatus.CANCELLED && s.getStatus() != ParticipationStatus.REJECTED)
-                .allMatch(s -> s.getStatus() == ParticipationStatus.ACCEPTED); // Schools are ACCEPTED by Org (or REJECTED), not CONFIRMED status enum
-
-        if (!allActiveUnisReady || !allActiveSchoolsReady) {
-            throw new RuntimeException("All active universities must be PREPAYED & CONFIRMED, and schools ACCEPTED, before finalizing");
-        }
-
-        // ----------------- Calculate Financials -----------------
+        // ----------------- Calculate Revenue -----------------
         BigDecimal totalRevenue = unis.stream()
                 .filter(u -> u.getStatus() == ParticipationStatus.CONFIRMED)
                 .map(UniversityParticipation::getParticipationFee)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal totalExpenses = activityProviderRequestRepository
+        // ----------------- Calculate Expenses -----------------
+        // 1. Activity Provider Costs
+        BigDecimal providerCosts = activityProviderRequestRepository
                 .findByExhibitionIdAndStatus(exhibitionId, ActivityProviderRequestStatus.APPROVED)
                 .stream()
                 .map(ActivityProviderRequest::getTotalCost)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        ExhibitionFinancial financial = new ExhibitionFinancial();
+        // 2. Venue Rental Cost
+        BigDecimal venueRentalCost = calculateVenueRentalCost(exhibition);
+
+        // Total Expenses = Provider Costs + Venue Rental
+        BigDecimal totalExpenses = providerCosts.add(venueRentalCost);
+
+        // Check if financial record already exists (for recalculation)
+        ExhibitionFinancial financial = exhibitionFinancialRepository
+                .findByExhibitionId(exhibitionId)
+                .orElse(new ExhibitionFinancial());
+
         financial.setExhibition(exhibition);
         financial.setTotalRevenue(totalRevenue);
         financial.setTotalExpenses(totalExpenses);
         financial.setNetProfit(totalRevenue.subtract(totalExpenses));
         financial.setCalculatedAt(LocalDateTime.now());
 
-        exhibitionFinancialRepository.save(financial);
+        ExhibitionFinancial saved = exhibitionFinancialRepository.save(financial);
+        return mapToResponse(saved);
+    }
 
-        // ----------------- Generate Schedule JSON -----------------
-        Map<String, Object> schedule = new HashMap<>();
-        schedule.put("activities", activityProviderRequestRepository
-                .findByExhibitionIdAndStatus(exhibitionId, ActivityProviderRequestStatus.APPROVED));
-        schedule.put("universities", unis.stream()
-                .filter(u -> u.getStatus() == ParticipationStatus.CONFIRMED)
-                .toList());
-        schedule.put("schools", schools.stream()
-                .filter(s -> s.getStatus() == ParticipationStatus.ACCEPTED)
-                .toList());
+    // ----------------- Calculate Venue Rental Cost -----------------
+    private BigDecimal calculateVenueRentalCost(Exhibition exhibition) {
+        // Find the approved venue request for this exhibition
+        List<VenueRequest> venueRequests = venueRequestRepository.findByExhibitionId(exhibition.getId());
+        
+        VenueRequest approvedRequest = venueRequests.stream()
+                .filter(vr -> vr.getStatus() == com.capstone.personalityTest.model.Enum.Exhibition.VenueRequestStatus.APPROVED)
+                .findFirst()
+                .orElse(null);
 
-        // Convert to JSON string (can use ObjectMapper)
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            // Need to handle potential recursion or circular references if entities are directly serialized
-            // Registering JavaTimeModule might be needed for LocalDate/Time serialization if not configured globally
-            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-            
-            // Or better, map to simple DTOs to avoid full entity recursion issues in the JSON column
-            // For now, let's assume entities serialize okay or are simple enough. 
-            // Ideally we'd map to Light DTOs here.
-            
-            String scheduleJson = mapper.writeValueAsString(schedule);
-            exhibition.setScheduleJson(scheduleJson);
-        } catch (JsonProcessingException e) {
-             // Log error but maybe don't fail the whole confirmation if just JSON gen fails? 
-             // Or throw to ensure data integrity.
-            throw new RuntimeException("Failed to generate schedule JSON", e);
+        if (approvedRequest == null || approvedRequest.getVenue() == null) {
+            // No venue or venue not approved yet - return 0
+            return BigDecimal.ZERO;
         }
 
-        // State Transition
-        exhibition.setStatus(ExhibitionStatus.CONFIRMED);
-        exhibition.setFinalizationDeadline(finalizationDeadline);
-        exhibition.setUpdatedAt(LocalDateTime.now());
+        Venue venue = approvedRequest.getVenue();
+        BigDecimal rentalFeePerDay = venue.getRentalFeePerDay();
 
-        Exhibition savedExhibition = exhibitionRepository.save(exhibition);
+        if (rentalFeePerDay == null) {
+            // Venue has no rental fee set
+            return BigDecimal.ZERO;
+        }
+
+        // Calculate number of days
+        long numberOfDays = java.time.temporal.ChronoUnit.DAYS.between(
+                exhibition.getStartDate(), 
+                exhibition.getEndDate()
+        ) + 1; // +1 to include both start and end dates
+
+        // Total rental cost = rentalFeePerDay * numberOfDays
+        return rentalFeePerDay.multiply(BigDecimal.valueOf(numberOfDays));
+    }
+
+    // ----------------- Get Financial Report -----------------
+    public ExhibitionFinancialResponse getFinancialReport(Long exhibitionId) {
+        ExhibitionFinancial financial = exhibitionFinancialRepository
+                .findByExhibitionId(exhibitionId)
+                .orElseThrow(() -> new RuntimeException("Financial report not found. Please calculate financials first."));
         
-        // Map to DTO
-        return new ExhibitionResponse(
-            savedExhibition.getId(),
-            savedExhibition.getOrganization().getId(),
-            savedExhibition.getTitle(),
-            savedExhibition.getDescription(),
-            savedExhibition.getTheme(),
-            savedExhibition.getStatus(),
-            savedExhibition.getStartDate(),
-            savedExhibition.getEndDate(),
-            savedExhibition.getStartTime(),
-            savedExhibition.getEndTime(),
-            savedExhibition.getTotalAvailableBooths(),
-            savedExhibition.getStandardBoothSqm(),
-            savedExhibition.getMaxBoothsPerUniversity(),
-            savedExhibition.getMaxBoothsPerProvider(),
-            savedExhibition.getExpectedVisitors(),
-            savedExhibition.getActualVisitors(),
-            savedExhibition.getScheduleJson(),
-            savedExhibition.getCreatedAt(),
-            savedExhibition.getUpdatedAt(),
-            savedExhibition.getFinalizationDeadline()
+        return mapToResponse(financial);
+    }
+
+    // ----------------- Map to Response DTO -----------------
+    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFinancialResponse mapToResponse(ExhibitionFinancial financial) {
+        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFinancialResponse(
+            financial.getId(),
+            financial.getExhibition().getId(),
+            financial.getTotalRevenue(),
+            financial.getTotalExpenses(),
+            financial.getNetProfit(),
+            financial.getCalculatedAt()
         );
     }
 }
