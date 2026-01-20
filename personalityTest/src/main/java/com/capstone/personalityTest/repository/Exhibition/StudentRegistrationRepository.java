@@ -15,4 +15,6 @@ public interface StudentRegistrationRepository extends JpaRepository<StudentRegi
     int countByExhibitionIdAndApprovedTrue(Long exhibitionId);
     
     Optional<StudentRegistration> findByExhibitionIdAndStudentId(Long exhibitionId, Long studentId);
+    
+    int countByExhibitionIdAndAttendedAtIsNotNull(Long exhibitionId);
 }

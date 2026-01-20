@@ -34,6 +34,7 @@ public class ExhibitionService {
     private final UniversityParticipationRepository universityParticipationRepository;
     private final SchoolParticipationRepository schoolParticipationRepository;
     private final BoothRepository boothRepository;
+    private final StudentRegistrationRepository studentRegistrationRepository;
     
     // ----------------- Create Exhibition -----------------
     public ExhibitionResponse createExhibition(Long orgId, ExhibitionRequest request, String creatorEmail) {
@@ -247,6 +248,9 @@ public class ExhibitionService {
                 .filter(p -> p.getAttendedAt() != null)
                 .mapToInt(participation -> participation.getExpectedVisitors() != null ? participation.getExpectedVisitors() : 0)
                 .sum();
+
+        // Count actual students who attended (registered and attended)
+        int studentVisitors = studentRegistrationRepository.countByExhibitionIdAndAttendedAtIsNotNull(exhibitionId);
         
         // Sum from providers who attended (attendedAt is set)
         int providerVisitors = providerRequestRepository
@@ -256,7 +260,7 @@ public class ExhibitionService {
                 .mapToInt(request -> request.getExpectedVisitors() != null ? request.getExpectedVisitors() : 0)
                 .sum();
         
-        int totalVisitors = uniVisitors + schoolVisitors + providerVisitors;
+        int totalVisitors = uniVisitors + schoolVisitors + studentVisitors + providerVisitors;
         exhibition.setActualVisitors(totalVisitors);
         exhibition.setUpdatedAt(LocalDateTime.now());
         
