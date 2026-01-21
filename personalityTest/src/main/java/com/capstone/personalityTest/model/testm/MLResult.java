@@ -56,39 +56,63 @@ public class MLResult {
 
 
     /**
-     * Extract the first metric from predicted code
-     * Example: "R-I-A" → "R"
+     * Extract the first metric from predicted code.
+     * Handles both formats: "ISE" and "I-S-E"
+     * Example: "R-I-A" → "R" or "RIA" → "R"
      */
     public String getFirstMetric() {
         if (predictedCode == null || predictedCode.isEmpty()) {
             return null;
         }
-        String[] parts = predictedCode.split("-");
-        return parts.length > 0 ? parts[0] : null;
+        
+        // If has hyphens, split by hyphen
+        if (predictedCode.contains("-")) {
+            String[] parts = predictedCode.split("-");
+            return parts.length > 0 ? parts[0] : null;
+        }
+        
+        // If no hyphens (e.g., "ISE"), return first character
+        return String.valueOf(predictedCode.charAt(0));
     }
 
     /**
-     * Extract the second metric from predicted code
-     * Example: "R-I-A" → "I"
+     * Extract the second metric from predicted code.
+     * Handles both formats: "ISE" and "I-S-E"
+     * Example: "R-I-A" → "I" or "RIA" → "I"
      */
     public String getSecondMetric() {
         if (predictedCode == null || predictedCode.isEmpty()) {
             return null;
         }
-        String[] parts = predictedCode.split("-");
-        return parts.length > 1 ? parts[1] : null;
+        
+        // If has hyphens, split by hyphen
+        if (predictedCode.contains("-")) {
+            String[] parts = predictedCode.split("-");
+            return parts.length > 1 ? parts[1] : null;
+        }
+        
+        // If no hyphens (e.g., "ISE"), return second character
+        return predictedCode.length() > 1 ? String.valueOf(predictedCode.charAt(1)) : null;
     }
 
     /**
-     * Extract the third metric from predicted code
-     * Example: "R-I-A" → "A"
+     * Extract the third metric from predicted code.
+     * Handles both formats: "ISE" and "I-S-E"
+     * Example: "R-I-A" → "A" or "RIA" → "A"
      */
     public String getThirdMetric() {
         if (predictedCode == null || predictedCode.isEmpty()) {
             return null;
         }
-        String[] parts = predictedCode.split("-");
-        return parts.length > 2 ? parts[2] : null;
+        
+        // If has hyphens, split by hyphen
+        if (predictedCode.contains("-")) {
+            String[] parts = predictedCode.split("-");
+            return parts.length > 2 ? parts[2] : null;
+        }
+        
+        // If no hyphens (e.g., "ISE"), return third character
+        return predictedCode.length() > 2 ? String.valueOf(predictedCode.charAt(2)) : null;
     }
 
     @Override

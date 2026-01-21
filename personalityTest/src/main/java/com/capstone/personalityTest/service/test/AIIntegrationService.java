@@ -167,15 +167,24 @@ public class AIIntegrationService {
      * 1. ML-predicted code (if MLResult exists) - More accurate, data-driven
      * 2. Traditional calculated code (from EvaluationResult) - Fallback
      * 
+     * Note: ML model returns format like "ISE", but we need "I-S-E" format.
+     * This method automatically formats the code with hyphens.
+     * 
      * @param attempt Test attempt with evaluation result
-     * @return Personality code (e.g., "R-I-A")
+     * @return Personality code in format "X-Y-Z" (e.g., "I-S-E")
      */
     private String extractPersonalityCode(TestAttempt attempt) {
         // Check if ML prediction exists
         return mlResultRepo.findByTestAttemptId(attempt.getId())
                 .map(mlResult -> {
-                    log.info("   Using ML-predicted code: {}", mlResult.getPredictedCode());
-                    return mlResult.getPredictedCode();
+                    String rawCode = mlResult.getPredictedCode();
+                    log.info("   Using ML-predicted code (raw): {}", rawCode);
+                    
+                    // Format the code: "ISE" -> "I-S-E"
+                    String formattedCode = formatPersonalityCode(rawCode);
+                    log.info("   Formatted ML code: {}", formattedCode);
+                    
+                    return formattedCode;
                 })
                 .orElseGet(() -> {
                     // Fallback to traditional calculation
@@ -185,6 +194,34 @@ public class AIIntegrationService {
                     String third = attempt.getEvaluationResult().getThirdMetric();
                     return first + "-" + second + "-" + third;
                 });
+    }
+
+    /**
+     * Format personality code to ensure consistent hyphenated format.
+     * 
+     * Handles both formats:
+     * - "ISE" (ML model format) -> "I-S-E"
+     * - "I-S-E" (already formatted) -> "I-S-E"
+     * 
+     * @param code Raw personality code from ML model
+     * @return Formatted code with hyphens (e.g., "I-S-E")
+     */
+    private String formatPersonalityCode(String code) {
+        if (code == null || code.isEmpty()) {
+            return code;
+        }
+        
+        // If already has hyphens, return as is
+        if (code.contains("-")) {
+            return code;
+        }
+        
+        // Convert "ISE" to "I-S-E"
+        // Split into individual characters and join with hyphens
+        return code.chars()
+                .mapToObj(c -> String.valueOf((char) c))
+                .reduce((a, b) -> a + "-" + b)
+                .orElse(code);
     }
 
     /**
