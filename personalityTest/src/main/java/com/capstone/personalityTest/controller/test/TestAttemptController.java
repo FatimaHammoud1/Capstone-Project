@@ -5,6 +5,7 @@ import com.capstone.personalityTest.dto.ResponseDTO.test.TestAttemptResponse.Ans
 import com.capstone.personalityTest.dto.ResponseDTO.test.TestAttemptResponse.TestAttemptWithAnswersResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.test.TestAttemptResponse.TestAttemptResponse;
 import com.capstone.personalityTest.model.testm.EvaluationResult;
+import com.capstone.personalityTest.service.test.ModelServiceClient;
 import com.capstone.personalityTest.service.test.TestAttemptService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class TestAttemptController {
 
     private final TestAttemptService testAttemptService;
+    private final ModelServiceClient modelServiceClient;
 
     @GetMapping("/{testId}")
     public ResponseEntity<TestAttemptResponse> startTest(
@@ -45,6 +47,51 @@ public class TestAttemptController {
         EvaluationResult result = testAttemptService.finalizeAttempt(attemptId);
         return ResponseEntity.ok(result);
     }
+
+    
+   /**
+     * Get personality code from ML Model based on test attempt answers.
+     * This endpoint calls the model-service.py to predict the personality code.
+     * 
+     * Flow:
+     * 1. Student completes and submits all answers
+     * 2. Call POST /api/test-attempts/{attemptId}/predict-code
+     * 3. Returns predicted personality code (e.g., "R-I-A")
+     * 4. Code is saved to the test attempt's evaluation result
+     * 5. Can then trigger AI analysis with the predicted code
+     * 
+     * @param attemptId ID of the test attempt with answers
+     * @return Predicted personality code
+     */
+    @PostMapping("/{attemptId}/predict-code")
+    public ResponseEntity<?> predictPersonalityCode(@PathVariable Long attemptId) {
+        try {
+            String predictedCode = modelServiceClient.getPredictedPersonalityCode(attemptId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Personality code predicted successfully",
+                "predictedCode", predictedCode,
+                "attemptId", attemptId
+            ));
+            
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of(
+                    "success", false, 
+                    "error", e.getMessage()
+                ));
+                
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of(
+                    "success", false, 
+                    "error", "Failed to predict personality code: " + e.getMessage()
+                ));
+        }
+    }
+
+
 
     /**
      * Manually trigger AI analysis for a finalized test attempt.
@@ -118,6 +165,62 @@ public class TestAttemptController {
         return ResponseEntity.ok(answers);
     }
 
+
+    // ==================== ML Result Endpoints ====================
+
+    /**
+     * Get ML prediction result for a specific test attempt.
+     * Returns the ML-predicted personality code and metadata.
+     * 
+     * @param attemptId ID of the test attempt
+     * @return MLResult if exists, 404 if not found
+     */
+    @GetMapping("/{attemptId}/ml-result")
+    public ResponseEntity<?> getMLResultByAttemptId(@PathVariable Long attemptId) {
+        try {
+            var mlResult = modelServiceClient.getMLResultByAttemptId(attemptId);
+            
+            if (mlResult == null) {
+                return ResponseEntity.status(404)
+                    .body(Map.of(
+                        "success", false,
+                        "message", "No ML prediction found for this test attempt",
+                        "attemptId", attemptId
+                    ));
+            }
+            
+            return ResponseEntity.ok(mlResult);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of(
+                    "success", false,
+                    "error", "Failed to retrieve ML result: " + e.getMessage()
+                ));
+        }
+    }
+
+    /**
+     * Get all ML prediction results.
+     * Admin endpoint for analytics and monitoring.
+     * 
+     * @return List of all MLResult entities
+     */
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    @GetMapping("/ml-results")
+    public ResponseEntity<?> getAllMLResults() {
+        try {
+            var mlResults = modelServiceClient.getAllMLResults();
+            return ResponseEntity.ok(mlResults);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of(
+                    "success", false,
+                    "error", "Failed to retrieve ML results: " + e.getMessage()
+                ));
+        }
+    }
 
 
 }

@@ -4,8 +4,10 @@ import com.capstone.personalityTest.dto.RequestDTO.test.CompleteAIRequest;
 import com.capstone.personalityTest.dto.CompleteAIResponse;
 import com.capstone.personalityTest.dto.RequestDTO.test.StudentInfoDTO;
 import com.capstone.personalityTest.model.testm.AIResult;
+import com.capstone.personalityTest.model.testm.MLResult;
 import com.capstone.personalityTest.model.testm.TestAttempt.TestAttempt;
 import com.capstone.personalityTest.repository.test.AIResultRepository;
+import com.capstone.personalityTest.repository.test.MLResultRepository;
 import com.capstone.personalityTest.repository.test.TestAttemptRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -27,10 +29,14 @@ import java.time.LocalDateTime;
  * Handles communication between Spring Boot and Python AI for complete personality analysis.
  * 
  * Flow:
- * 1. Spring Boot calculates personality code
+ * 1. Spring Boot calculates personality code (traditional or ML-based)
  * 2. This service sends code + student info to Python AI
  * 3. Python AI runs: RAG → Learning Path → Job Matching → Email
  * 4. This service receives results and saves to database
+ * 
+ * Priority for personality code:
+ * 1. ML-predicted code (if available in MLResult)
+ * 2. Traditional calculated code (from EvaluationResult)
  */
 @Service
 @RequiredArgsConstructor
@@ -41,6 +47,7 @@ public class AIIntegrationService {
     private final RestTemplate restTemplate;
     private final AIResultRepository aiResultRepo;
     private final TestAttemptRepository testAttemptRepo;
+    private final MLResultRepository mlResultRepo;
 
     /**
      * URL of Python AI service
@@ -154,20 +161,67 @@ public class AIIntegrationService {
     }
 
     /**
-     * Extract personality code from evaluation result.
-     * Combines the top 3 metrics into a code like "R-I-A".
+     * Extract personality code for AI analysis.
+     * 
+     * Priority:
+     * 1. ML-predicted code (if MLResult exists) - More accurate, data-driven
+     * 2. Traditional calculated code (from EvaluationResult) - Fallback
+     * 
+     * Note: ML model returns format like "ISE", but we need "I-S-E" format.
+     * This method automatically formats the code with hyphens.
      * 
      * @param attempt Test attempt with evaluation result
-     * @return Personality code (e.g., "R-I-A")
+     * @return Personality code in format "X-Y-Z" (e.g., "I-S-E")
      */
     private String extractPersonalityCode(TestAttempt attempt) {
-        // Get top 3 metrics from evaluation result
-        String first = attempt.getEvaluationResult().getFirstMetric();
-        String second = attempt.getEvaluationResult().getSecondMetric();
-        String third = attempt.getEvaluationResult().getThirdMetric();
+        // Check if ML prediction exists
+        return mlResultRepo.findByTestAttemptId(attempt.getId())
+                .map(mlResult -> {
+                    String rawCode = mlResult.getPredictedCode();
+                    log.info("   Using ML-predicted code (raw): {}", rawCode);
+                    
+                    // Format the code: "ISE" -> "I-S-E"
+                    String formattedCode = formatPersonalityCode(rawCode);
+                    log.info("   Formatted ML code: {}", formattedCode);
+                    
+                    return formattedCode;
+                })
+                .orElseGet(() -> {
+                    // Fallback to traditional calculation
+                    log.info("   Using traditional calculated code (no ML prediction found)");
+                    String first = attempt.getEvaluationResult().getFirstMetric();
+                    String second = attempt.getEvaluationResult().getSecondMetric();
+                    String third = attempt.getEvaluationResult().getThirdMetric();
+                    return first + "-" + second + "-" + third;
+                });
+    }
 
-        // Combine into code
-        return first + "-" + second + "-" + third;
+    /**
+     * Format personality code to ensure consistent hyphenated format.
+     * 
+     * Handles both formats:
+     * - "ISE" (ML model format) -> "I-S-E"
+     * - "I-S-E" (already formatted) -> "I-S-E"
+     * 
+     * @param code Raw personality code from ML model
+     * @return Formatted code with hyphens (e.g., "I-S-E")
+     */
+    private String formatPersonalityCode(String code) {
+        if (code == null || code.isEmpty()) {
+            return code;
+        }
+        
+        // If already has hyphens, return as is
+        if (code.contains("-")) {
+            return code;
+        }
+        
+        // Convert "ISE" to "I-S-E"
+        // Split into individual characters and join with hyphens
+        return code.chars()
+                .mapToObj(c -> String.valueOf((char) c))
+                .reduce((a, b) -> a + "-" + b)
+                .orElse(code);
     }
 
     /**
