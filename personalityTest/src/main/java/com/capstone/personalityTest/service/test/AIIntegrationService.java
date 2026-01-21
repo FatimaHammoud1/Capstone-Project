@@ -4,8 +4,10 @@ import com.capstone.personalityTest.dto.RequestDTO.test.CompleteAIRequest;
 import com.capstone.personalityTest.dto.CompleteAIResponse;
 import com.capstone.personalityTest.dto.RequestDTO.test.StudentInfoDTO;
 import com.capstone.personalityTest.model.testm.AIResult;
+import com.capstone.personalityTest.model.testm.MLResult;
 import com.capstone.personalityTest.model.testm.TestAttempt.TestAttempt;
 import com.capstone.personalityTest.repository.test.AIResultRepository;
+import com.capstone.personalityTest.repository.test.MLResultRepository;
 import com.capstone.personalityTest.repository.test.TestAttemptRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -27,10 +29,14 @@ import java.time.LocalDateTime;
  * Handles communication between Spring Boot and Python AI for complete personality analysis.
  * 
  * Flow:
- * 1. Spring Boot calculates personality code
+ * 1. Spring Boot calculates personality code (traditional or ML-based)
  * 2. This service sends code + student info to Python AI
  * 3. Python AI runs: RAG → Learning Path → Job Matching → Email
  * 4. This service receives results and saves to database
+ * 
+ * Priority for personality code:
+ * 1. ML-predicted code (if available in MLResult)
+ * 2. Traditional calculated code (from EvaluationResult)
  */
 @Service
 @RequiredArgsConstructor
@@ -41,6 +47,7 @@ public class AIIntegrationService {
     private final RestTemplate restTemplate;
     private final AIResultRepository aiResultRepo;
     private final TestAttemptRepository testAttemptRepo;
+    private final MLResultRepository mlResultRepo;
 
     /**
      * URL of Python AI service
@@ -154,20 +161,30 @@ public class AIIntegrationService {
     }
 
     /**
-     * Extract personality code from evaluation result.
-     * Combines the top 3 metrics into a code like "R-I-A".
+     * Extract personality code for AI analysis.
+     * 
+     * Priority:
+     * 1. ML-predicted code (if MLResult exists) - More accurate, data-driven
+     * 2. Traditional calculated code (from EvaluationResult) - Fallback
      * 
      * @param attempt Test attempt with evaluation result
      * @return Personality code (e.g., "R-I-A")
      */
     private String extractPersonalityCode(TestAttempt attempt) {
-        // Get top 3 metrics from evaluation result
-        String first = attempt.getEvaluationResult().getFirstMetric();
-        String second = attempt.getEvaluationResult().getSecondMetric();
-        String third = attempt.getEvaluationResult().getThirdMetric();
-
-        // Combine into code
-        return first + "-" + second + "-" + third;
+        // Check if ML prediction exists
+        return mlResultRepo.findByTestAttemptId(attempt.getId())
+                .map(mlResult -> {
+                    log.info("   Using ML-predicted code: {}", mlResult.getPredictedCode());
+                    return mlResult.getPredictedCode();
+                })
+                .orElseGet(() -> {
+                    // Fallback to traditional calculation
+                    log.info("   Using traditional calculated code (no ML prediction found)");
+                    String first = attempt.getEvaluationResult().getFirstMetric();
+                    String second = attempt.getEvaluationResult().getSecondMetric();
+                    String third = attempt.getEvaluationResult().getThirdMetric();
+                    return first + "-" + second + "-" + third;
+                });
     }
 
     /**

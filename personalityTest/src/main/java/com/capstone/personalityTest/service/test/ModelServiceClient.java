@@ -2,13 +2,16 @@ package com.capstone.personalityTest.service.test;
 
 import com.capstone.personalityTest.dto.ModelRequest;
 import com.capstone.personalityTest.dto.ModelResponse;
+import com.capstone.personalityTest.model.testm.MLResult;
 import com.capstone.personalityTest.model.testm.TestAttempt.Answer.Answer;
 import com.capstone.personalityTest.model.testm.TestAttempt.Answer.CheckBoxAnswer;
 import com.capstone.personalityTest.model.testm.TestAttempt.Answer.ScaleAnswer;
 import com.capstone.personalityTest.model.testm.TestAttempt.TestAttempt;
 import com.capstone.personalityTest.repository.test.AnswerRepository;
+import com.capstone.personalityTest.repository.test.MLResultRepository;
 import com.capstone.personalityTest.repository.test.TestAttemptRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +35,8 @@ import java.util.Map;
  * 1. Retrieve all answers from a test attempt
  * 2. Transform them to model's expected format (Map<String, String>)
  * 3. Send to model service for personality code prediction
- * 4. Return predicted code
+ * 4. Save ML result to database
+ * 5. Return predicted code
  */
 @Service
 @RequiredArgsConstructor
@@ -41,6 +46,7 @@ public class ModelServiceClient {
     private final RestTemplate restTemplate;
     private final TestAttemptRepository testAttemptRepository;
     private final AnswerRepository answerRepository;
+    private final MLResultRepository mlResultRepository;
 
     /**
      * URL of Python ML Model Service
@@ -51,18 +57,20 @@ public class ModelServiceClient {
     private String modelServiceUrl;
 
     /**
-     * Get personality code from ML model for a test attempt
+     * Get personality code from ML model for a test attempt and save to database.
      * 
      * Process:
      * 1. Retrieve test attempt and its answers
      * 2. Transform answers to model format
      * 3. Call model-service.py prediction endpoint
-     * 4. Extract and return predicted code
+     * 4. Save ML result to database
+     * 5. Return predicted code
      * 
      * @param attemptId ID of the test attempt
      * @return Predicted personality code (e.g., "R-I-A")
      * @throws IllegalStateException if test attempt has no answers
      */
+    @Transactional
     public String getPredictedPersonalityCode(Long attemptId) {
         try {
             log.info("🤖 Getting personality code from ML Model for attempt: {}", attemptId);
@@ -106,6 +114,10 @@ public class ModelServiceClient {
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 String predictedCode = response.getBody().getPredictedCode();
                 log.info("✅ Predicted personality code: {}", predictedCode);
+                
+                // Save ML result to database
+                saveMLResult(attempt, predictedCode);
+                
                 return predictedCode;
             } else {
                 log.warn("⚠️  Model Service returned non-success status: {}", response.getStatusCode());
@@ -116,6 +128,36 @@ public class ModelServiceClient {
             log.error("❌ Error getting personality code from model: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to get personality code from model service", e);
         }
+    }
+
+    /**
+     * Save ML prediction result to database.
+     * Creates or updates MLResult entity for the test attempt.
+     * 
+     * @param attempt The test attempt
+     * @param predictedCode The predicted personality code from ML model
+     */
+    private void saveMLResult(TestAttempt attempt, String predictedCode) {
+        log.info("💾 Saving ML result to database...");
+        
+        // Check if ML result already exists for this attempt
+        MLResult mlResult = mlResultRepository.findByTestAttemptId(attempt.getId())
+                .orElse(new MLResult());
+        
+        // Set/update fields
+        mlResult.setTestAttempt(attempt);
+        mlResult.setPredictedCode(predictedCode);
+        mlResult.setPredictedAt(LocalDateTime.now());
+       
+        
+        // Save to database
+        mlResultRepository.save(mlResult);
+        
+        log.info("✅ ML result saved with ID: {}", mlResult.getId());
+        log.info("   Predicted Code: {}", predictedCode);
+        log.info("   First Metric: {}", mlResult.getFirstMetric());
+        log.info("   Second Metric: {}", mlResult.getSecondMetric());
+        log.info("   Third Metric: {}", mlResult.getThirdMetric());
     }
 
     /**
