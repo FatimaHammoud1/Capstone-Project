@@ -222,4 +222,27 @@ public class ModelServiceClient {
 
         return answersMap;
     }
+
+    /**
+     * Get ML prediction result for a specific test attempt.
+     * 
+     * @param attemptId ID of the test attempt
+     * @return MLResult if exists, null otherwise
+     */
+    public MLResult getMLResultByAttemptId(Long attemptId) {
+        log.info("📊 Retrieving ML result for attempt: {}", attemptId);
+        return mlResultRepository.findByTestAttemptId(attemptId)
+                .orElse(null);
+    }
+
+    /**
+     * Get all ML prediction results.
+     * Useful for admin/analytics purposes.
+     * 
+     * @return List of all MLResult entities
+     */
+    public List<MLResult> getAllMLResults() {
+        log.info("📊 Retrieving all ML results");
+        return mlResultRepository.findAll();
+    }
 }

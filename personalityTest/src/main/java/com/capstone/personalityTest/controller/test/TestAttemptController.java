@@ -166,5 +166,61 @@ public class TestAttemptController {
     }
 
 
+    // ==================== ML Result Endpoints ====================
+
+    /**
+     * Get ML prediction result for a specific test attempt.
+     * Returns the ML-predicted personality code and metadata.
+     * 
+     * @param attemptId ID of the test attempt
+     * @return MLResult if exists, 404 if not found
+     */
+    @GetMapping("/{attemptId}/ml-result")
+    public ResponseEntity<?> getMLResultByAttemptId(@PathVariable Long attemptId) {
+        try {
+            var mlResult = modelServiceClient.getMLResultByAttemptId(attemptId);
+            
+            if (mlResult == null) {
+                return ResponseEntity.status(404)
+                    .body(Map.of(
+                        "success", false,
+                        "message", "No ML prediction found for this test attempt",
+                        "attemptId", attemptId
+                    ));
+            }
+            
+            return ResponseEntity.ok(mlResult);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of(
+                    "success", false,
+                    "error", "Failed to retrieve ML result: " + e.getMessage()
+                ));
+        }
+    }
+
+    /**
+     * Get all ML prediction results.
+     * Admin endpoint for analytics and monitoring.
+     * 
+     * @return List of all MLResult entities
+     */
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    @GetMapping("/ml-results")
+    public ResponseEntity<?> getAllMLResults() {
+        try {
+            var mlResults = modelServiceClient.getAllMLResults();
+            return ResponseEntity.ok(mlResults);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of(
+                    "success", false,
+                    "error", "Failed to retrieve ML results: " + e.getMessage()
+                ));
+        }
+    }
+
 
 }
