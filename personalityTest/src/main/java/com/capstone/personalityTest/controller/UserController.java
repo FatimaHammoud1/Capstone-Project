@@ -88,14 +88,14 @@ public class UserController {
     }
 
 
-    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+   // @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     @GetMapping("/users")
     public ResponseEntity<Page<UserInfoResponse>> getAllUsers (Pageable pageable){
         Page<UserInfoResponse> usersPage = service.getAllUsers(pageable);
         return new ResponseEntity<>(usersPage, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('ORG_OWNER','USER', 'DEVELOPER')")
+   // @PreAuthorize("hasAnyRole('ORG_OWNER','USER', 'DEVELOPER')")
     @GetMapping("/users/{id}")
     public ResponseEntity<UserInfoResponse> getUserById (@PathVariable Long id){
         UserInfoResponse userById = service.getUserById(id);

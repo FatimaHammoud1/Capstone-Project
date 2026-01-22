@@ -18,7 +18,7 @@ public class VenueController {
 
     // ----------------- GET VENUES BY MUNICIPALITY ID -----------------
     @GetMapping("/municipality/{municipalityId}")
-    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER' , 'MUNICIPALITY_ADMIN')")
     public ResponseEntity<List<Venue>> getVenuesByMunicipality(@PathVariable Long municipalityId) {
         List<Venue> venues = venueRepository.findByMunicipalityId(municipalityId);
         return ResponseEntity.ok(venues);
@@ -26,7 +26,7 @@ public class VenueController {
 
     // ----------------- GET VENUE BY ID -----------------
     @GetMapping("/{venueId}")
-    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER' , 'MUNICIPALITY_ADMIN')")
     public ResponseEntity<Venue> getVenueById(@PathVariable Long venueId) {
         Venue venue = venueRepository.findById(venueId)
                 .orElseThrow(() -> new RuntimeException("Venue not found"));
