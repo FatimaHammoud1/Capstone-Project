@@ -50,7 +50,7 @@ public class VenueRequestController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('DEVELOPER', 'MUNICIPALITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('DEVELOPER', 'MUNICIPALITY_ADMIN' , 'ORG_OWNER')")
     public ResponseEntity<List<VenueRequestResponse>> getAllRequests() {
         return ResponseEntity.ok(venueRequestService.getAllRequests());
     }
