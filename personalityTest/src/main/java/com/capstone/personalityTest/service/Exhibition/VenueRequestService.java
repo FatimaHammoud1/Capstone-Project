@@ -80,6 +80,12 @@ public class VenueRequestService {
                 .collect(Collectors.toList());
     }
 
+    public List<VenueRequestResponse> getAllRequests() {
+        return venueRequestRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private VenueRequestResponse mapToResponse(VenueRequest request) {
         return new VenueRequestResponse(
                 request.getId(),

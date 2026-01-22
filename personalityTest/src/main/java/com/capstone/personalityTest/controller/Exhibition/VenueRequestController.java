@@ -48,4 +48,11 @@ public class VenueRequestController {
     public ResponseEntity<List<VenueRequestResponse>> getRequests(@PathVariable Long exhibitionId) {
         return ResponseEntity.ok(venueRequestService.getRequestsForExhibition(exhibitionId));
     }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('DEVELOPER', 'MUNICIPALITY_ADMIN')")
+    public ResponseEntity<List<VenueRequestResponse>> getAllRequests() {
+        return ResponseEntity.ok(venueRequestService.getAllRequests());
+    }
 }
+
