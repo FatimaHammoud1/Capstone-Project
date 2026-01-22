@@ -1,4 +1,4 @@
-package com.capstone.personalityTest.dto.RequestDTO;
+package com.capstone.personalityTest.dto.RequestDTO.financial_aid;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;

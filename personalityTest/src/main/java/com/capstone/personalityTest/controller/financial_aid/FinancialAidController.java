@@ -2,7 +2,7 @@ package com.capstone.personalityTest.controller.financial_aid;
 
 
 
-import com.capstone.personalityTest.dto.RequestDTO.FinancialAidApplyRequest;
+import com.capstone.personalityTest.dto.RequestDTO.financial_aid.FinancialAidApplyRequest;
 import com.capstone.personalityTest.dto.RequestDTO.financial_aid.FinancialAidReviewRequest;
 import com.capstone.personalityTest.dto.ResponseDTO.financial_aid.DonorResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.financial_aid.FinancialAidResponse;
