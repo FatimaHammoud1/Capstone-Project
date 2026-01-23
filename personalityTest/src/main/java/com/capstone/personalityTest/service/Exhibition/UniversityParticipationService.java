@@ -327,6 +327,16 @@ public class UniversityParticipationService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
+    public List<UniversityParticipationResponse> getParticipationsByUniversityId(Long universityId) {
+        University university = universityRepository.findById(universityId)
+                .orElseThrow(() -> new RuntimeException("University not found"));
+
+        return participationRepository.findAll().stream()
+                .filter(p -> p.getUniversity().getId().equals(universityId))
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private UniversityParticipationResponse mapToResponse(UniversityParticipation participation) {
         // Safe null handling for booth details
         String boothDetailsJson = null;

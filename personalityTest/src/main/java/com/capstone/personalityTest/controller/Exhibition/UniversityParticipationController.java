@@ -117,6 +117,12 @@ public class UniversityParticipationController {
     public ResponseEntity<List<UniversityParticipationResponse>> getParticipationsByExhibition(@PathVariable Long exhibitionId) {
         return ResponseEntity.ok(participationService.getParticipationsByExhibition(exhibitionId));
     }
+
+    @GetMapping("/university/{universityId}/participations")
+    @PreAuthorize("hasAnyRole('UNIVERSITY_ADMIN', 'DEVELOPER')")
+    public ResponseEntity<List<UniversityParticipationResponse>> getAllParticipationsByUniversityId(@PathVariable Long universityId) {
+        return ResponseEntity.ok(participationService.getParticipationsByUniversityId(universityId));
+    }
     
     // ----------------- Get All Active Universities -----------------
     @GetMapping("/all-universities")
