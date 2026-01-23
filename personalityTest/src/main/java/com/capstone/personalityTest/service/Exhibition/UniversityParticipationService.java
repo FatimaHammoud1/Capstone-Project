@@ -369,17 +369,11 @@ public class UniversityParticipationService {
     
 
     // ----------------- Get All Active Universities -----------------
+    // ----------------- Get All Active Universities -----------------
     public List<UniversityResponse> getAllActiveUniversities() {
         return universityRepository.findAll().stream()
                 .filter(university -> Boolean.TRUE.equals(university.getActive()))
-                .map(university -> new UniversityResponse(
-                    university.getId(),
-                    university.getName(),
-                    university.getContactEmail(),
-                    university.getContactPhone(),
-                    university.getActive(),
-                    university.getOwner() != null ? university.getOwner().getId() : null
-                ))
+                .map(this::mapToUniversityResponse)
                 .collect(Collectors.toList());
     }
 
@@ -387,6 +381,17 @@ public class UniversityParticipationService {
     public UniversityResponse getUniversityById(Long universityId) {
         University university = universityRepository.findById(universityId)
                 .orElseThrow(() -> new RuntimeException("University not found"));
+        return mapToUniversityResponse(university);
+    }
+    
+    // ----------------- Get Universities By Owner ID -----------------
+    public List<UniversityResponse> getUniversitiesByOwnerId(Long ownerId) {
+        return universityRepository.findAllByOwnerId(ownerId).stream()
+                .map(this::mapToUniversityResponse)
+                .collect(Collectors.toList());
+    }
+
+    private UniversityResponse mapToUniversityResponse(University university) {
         return new UniversityResponse(
                 university.getId(),
                 university.getName(),

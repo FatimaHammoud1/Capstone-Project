@@ -137,4 +137,11 @@ public class UniversityParticipationController {
     public ResponseEntity<UniversityResponse> getUniversityById(@PathVariable Long universityId) {
         return ResponseEntity.ok(participationService.getUniversityById(universityId));
     }
+
+    // ----------------- Get Universities By Owner ID -----------------
+    @GetMapping("/owner/{ownerId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER', 'UNIVERSITY_ADMIN')")
+    public ResponseEntity<List<UniversityResponse>> getAllUniversitiesByOwnerId(@PathVariable Long ownerId) {
+        return ResponseEntity.ok(participationService.getUniversitiesByOwnerId(ownerId));
+    }
 }
