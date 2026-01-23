@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ActivityProviderRepository extends JpaRepository<ActivityProvider, Long> {
+    java.util.List<ActivityProvider> findAllByOwnerId(Long ownerId);
 }

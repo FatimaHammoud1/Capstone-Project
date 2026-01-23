@@ -339,6 +339,16 @@ public class ActivityProviderService {
                 .collect(Collectors.toList());
     }
 
+    public List<ActivityProviderRequestResponse> getRequestsByProvider(Long providerId) {
+        // Ensure provider exists
+        activityProviderRepository.findById(providerId)
+            .orElseThrow(() -> new RuntimeException("Provider not found"));
+
+        return providerRequestRepository.findByProviderId(providerId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private ActivityProviderRequestResponse mapToResponse(ActivityProviderRequest request) {
         return new ActivityProviderRequestResponse(
                 request.getId(),
@@ -364,14 +374,7 @@ public class ActivityProviderService {
     public List<ActivityProviderResponse> getAllActiveProviders() {
         return activityProviderRepository.findAll().stream()
                 .filter(provider -> Boolean.TRUE.equals(provider.getActive()))
-                .map(provider -> new ActivityProviderResponse(
-                    provider.getId(),
-                    provider.getName(),
-                    provider.getContactEmail(),
-                    provider.getContactPhone(),
-                    provider.getActive(),
-                    provider.getOwner() != null ? provider.getOwner().getId() : null
-                ))
+                .map(this::mapToProviderResponse)
                 .collect(Collectors.toList());
     }
 
@@ -379,6 +382,17 @@ public class ActivityProviderService {
     public ActivityProviderResponse getProviderById(Long providerId) {
         ActivityProvider provider = activityProviderRepository.findById(providerId)
                 .orElseThrow(() -> new RuntimeException("Provider not found"));
+        return mapToProviderResponse(provider);
+    }
+
+    // ----------------- Get Providers By Owner ID -----------------
+    public List<ActivityProviderResponse> getActivityProvidersByOwnerId(Long ownerId) {
+        return activityProviderRepository.findAllByOwnerId(ownerId).stream()
+                .map(this::mapToProviderResponse)
+                .collect(Collectors.toList());
+    }
+
+    private ActivityProviderResponse mapToProviderResponse(ActivityProvider provider) {
         return new ActivityProviderResponse(
                 provider.getId(),
                 provider.getName(),

@@ -22,4 +22,5 @@ public interface ActivityProviderRequestRepository extends JpaRepository<Activit
 
 
     List<ActivityProviderRequest> findByExhibitionId(Long exhibitionId);
+    List<ActivityProviderRequest> findByProviderId(Long providerId);
 }

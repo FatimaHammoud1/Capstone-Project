@@ -141,6 +141,13 @@ public class ActivityProviderController {
             @PathVariable Long exhibitionId) {
         return ResponseEntity.ok(providerService.getRequestsByExhibition(exhibitionId));
     }
+
+    @GetMapping("/provider/{providerId}/requests")
+    @PreAuthorize("hasAnyRole('ACTIVITY_PROVIDER', 'DEVELOPER', 'ORG_OWNER')")
+    public ResponseEntity<List<ActivityProviderRequestResponse>> getRequestsByProvider(
+            @PathVariable Long providerId) {
+        return ResponseEntity.ok(providerService.getRequestsByProvider(providerId));
+    }
     
     // ----------------- Get All Active Providers -----------------
     @GetMapping("/all-providers")
@@ -154,5 +161,12 @@ public class ActivityProviderController {
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<ActivityProviderResponse> getProviderById(@PathVariable Long providerId) {
         return ResponseEntity.ok(providerService.getProviderById(providerId));
+    }
+
+    // ----------------- Get Activity Providers By Owner ID -----------------
+    @GetMapping("/owner/{ownerId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER', 'ACTIVITY_PROVIDER')")
+    public ResponseEntity<List<ActivityProviderResponse>> getAllActivityProvidersByOwnerId(@PathVariable Long ownerId) {
+        return ResponseEntity.ok(providerService.getActivityProvidersByOwnerId(ownerId));
     }
 }
