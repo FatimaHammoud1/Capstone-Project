@@ -27,4 +27,10 @@ public class SchoolController {
     public ResponseEntity<SchoolResponse> getSchoolById(@PathVariable Long schoolId) {
         return ResponseEntity.ok(schoolService.getSchoolById(schoolId));
     }
+
+    @GetMapping("/owner/{ownerId}")
+    // @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER', 'SCHOOL_ADMIN')") // Uncomment if security is needed
+    public ResponseEntity<List<SchoolResponse>> getAllSchoolsByOwnerId(@PathVariable Long ownerId) {
+        return ResponseEntity.ok(schoolService.getSchoolsByOwnerId(ownerId));
+    }
 }

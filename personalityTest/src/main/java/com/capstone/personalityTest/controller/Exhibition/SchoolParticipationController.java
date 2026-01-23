@@ -110,4 +110,10 @@ public class SchoolParticipationController {
     public ResponseEntity<List<SchoolParticipationResponse>> getParticipationsByExhibition(@PathVariable Long exhibitionId) {
         return ResponseEntity.ok(participationService.getParticipationsByExhibition(exhibitionId));
     }
+
+    @GetMapping("/school/{schoolId}/participations")
+    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'DEVELOPER')")
+    public ResponseEntity<List<SchoolParticipationResponse>> getAllParticipationsBySchoolId(@PathVariable Long schoolId) {
+        return ResponseEntity.ok(participationService.getParticipationsBySchoolId(schoolId));
+    }
 }

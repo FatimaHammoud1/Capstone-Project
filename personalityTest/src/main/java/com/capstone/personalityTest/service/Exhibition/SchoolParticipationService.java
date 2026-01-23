@@ -281,6 +281,16 @@ public class SchoolParticipationService {
                 .collect(Collectors.toList());
     }
 
+    public List<SchoolParticipationResponse> getParticipationsBySchoolId(Long schoolId) {
+        // Ensure school exists
+        schoolRepository.findById(schoolId)
+            .orElseThrow(() -> new RuntimeException("School not found"));
+
+        return participationRepository.findBySchoolId(schoolId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private SchoolParticipationResponse mapToResponse(SchoolParticipation participation) {
         return new SchoolParticipationResponse(
             participation.getId(),

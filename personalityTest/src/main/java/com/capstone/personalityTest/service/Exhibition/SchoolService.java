@@ -36,4 +36,10 @@ public class SchoolService {
                 .orElseThrow(() -> new RuntimeException("School not found"));
         return mapToResponse(school);
     }
+    
+    public List<SchoolResponse> getSchoolsByOwnerId(Long ownerId) {
+        return schoolRepository.findAllByOwnerId(ownerId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
 }

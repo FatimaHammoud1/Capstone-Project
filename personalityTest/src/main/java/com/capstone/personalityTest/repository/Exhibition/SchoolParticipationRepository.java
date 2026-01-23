@@ -14,4 +14,5 @@ public interface SchoolParticipationRepository extends JpaRepository<SchoolParti
     List<SchoolParticipation> findByExhibitionId(Long exhibitionId);
     boolean existsByExhibitionIdAndStatus(Long exhibitionId, ParticipationStatus status);
     List<SchoolParticipation> findByExhibitionAndStatus(Exhibition exhibition, ParticipationStatus status);
+    List<SchoolParticipation> findBySchoolId(Long schoolId);
 }
