@@ -98,7 +98,8 @@ public class VenueRequestService {
                 request.getMunicipalityResponse(),
                 request.getResponseDeadline(),
                 request.getRequestedAt(),
-                request.getReviewedAt()
+                request.getReviewedAt(),
+                request.getVenue().getMunicipalityId()
         );
     }
 }

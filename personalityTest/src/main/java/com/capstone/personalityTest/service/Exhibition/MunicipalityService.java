@@ -127,7 +127,8 @@ public class MunicipalityService {
                 savedRequest.getMunicipalityResponse(),
                 savedRequest.getResponseDeadline(),
                 savedRequest.getRequestedAt(),
-                savedRequest.getReviewedAt()
+                savedRequest.getReviewedAt(),
+                savedRequest.getVenue().getMunicipalityId()
         );
     }
 

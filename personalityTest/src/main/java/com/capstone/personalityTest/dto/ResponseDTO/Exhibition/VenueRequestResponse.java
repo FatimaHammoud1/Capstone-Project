@@ -22,4 +22,5 @@ public class VenueRequestResponse {
     private LocalDateTime responseDeadline;
     private LocalDateTime requestedAt;
     private LocalDateTime reviewedAt;
+    private Long municipalityId;
 }
