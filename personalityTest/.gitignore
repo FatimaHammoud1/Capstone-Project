@@ -36,3 +36,5 @@ build/
 application.properties
 src/main/resources/application.properties
 src/main/resources/application-*.properties
+# But allow test properties (no secrets)
+!src/test/resources/application-test.properties
