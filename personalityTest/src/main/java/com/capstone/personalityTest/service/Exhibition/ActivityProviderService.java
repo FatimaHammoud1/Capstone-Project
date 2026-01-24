@@ -109,6 +109,26 @@ public class ActivityProviderService {
             throw new RuntimeException("Submission deadline has passed. Your invitation has been automatically cancelled.");
         }
 
+        Exhibition exhibition = request.getExhibition();
+        
+        // Validate proposed booths is positive
+        if (boothsCount == null || boothsCount <= 0) {
+            throw new RuntimeException("Proposed booths count must be positive");
+        }
+        
+        // Validate per-provider booth limit (if set)
+        if (exhibition.getMaxBoothsPerProvider() != null && boothsCount > exhibition.getMaxBoothsPerProvider()) {
+            throw new RuntimeException("Proposed booths (" + boothsCount + ") exceeds max per provider (" + exhibition.getMaxBoothsPerProvider() + ")");
+        }
+        
+        // Validate total available booths
+        int totalBooths = boothRepository.countByExhibition(exhibition);
+        int remainingBooths = exhibition.getTotalAvailableBooths() - totalBooths;
+        
+        if (boothsCount > remainingBooths) {
+            throw new RuntimeException("Proposed booths (" + boothsCount + ") exceeds remaining capacity (" + remainingBooths + ")");
+        }
+
         request.setProviderProposal(proposalText);
         request.setProposedBoothsCount(boothsCount);
         request.setTotalCost(totalCost);
@@ -158,26 +178,6 @@ public class ActivityProviderService {
         }
 
         if (approve) {
-            Integer proposedBooths = request.getProposedBoothsCount();
-            
-            // Validate proposed booths is positive
-            if (proposedBooths == null || proposedBooths <= 0) {
-                throw new RuntimeException("Proposed booths count is invalid");
-            }
-            
-            // Validate per-provider booth limit (if set)
-            if (exhibition.getMaxBoothsPerProvider() != null && proposedBooths > exhibition.getMaxBoothsPerProvider()) {
-                throw new RuntimeException("Proposed booths (" + proposedBooths + ") exceeds max per provider (" + exhibition.getMaxBoothsPerProvider() + ")");
-            }
-            
-            // Validate total available booths
-            int totalBooths = boothRepository.countByExhibition(exhibition);
-            int remainingBooths = exhibition.getTotalAvailableBooths() - totalBooths;
-            
-            if (proposedBooths > remainingBooths) {
-                throw new RuntimeException("Proposed booths (" + proposedBooths + ") exceeds remaining capacity (" + remainingBooths + ")");
-            }
-            
             request.setStatus(ActivityProviderRequestStatus.APPROVED);
             request.setConfirmationDeadline(confirmationDeadline);
             request.setApprovedAt(LocalDateTime.now());
