@@ -18,7 +18,7 @@ import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityPartici
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.UniversityResponse;
 
 @RestController
-@RequestMapping("/api/universities")
+@RequestMapping("/api/universities-participations")
 @RequiredArgsConstructor
 public class UniversityParticipationController {
 
@@ -118,7 +118,7 @@ public class UniversityParticipationController {
         return ResponseEntity.ok(participationService.getParticipationsByExhibition(exhibitionId));
     }
 
-    @GetMapping("/university/{universityId}/participations")
+    @GetMapping("/{universityId}/participations")
     @PreAuthorize("hasAnyRole('UNIVERSITY_ADMIN', 'DEVELOPER')")
     public ResponseEntity<List<UniversityParticipationResponse>> getAllParticipationsByUniversityId(@PathVariable Long universityId) {
         return ResponseEntity.ok(participationService.getParticipationsByUniversityId(universityId));
@@ -131,8 +131,8 @@ public class UniversityParticipationController {
         return ResponseEntity.ok(participationService.getAllActiveUniversities());
     }
 
-    // ----------------- Get Bank University By ID -----------------
-    @GetMapping("/university/{universityId}")
+    // ----------------- Get University By ID -----------------
+    @GetMapping("/{universityId}")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<UniversityResponse> getUniversityById(@PathVariable Long universityId) {
         return ResponseEntity.ok(participationService.getUniversityById(universityId));

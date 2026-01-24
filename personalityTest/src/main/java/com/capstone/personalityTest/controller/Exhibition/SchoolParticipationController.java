@@ -15,7 +15,7 @@ import java.util.List;
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse;
 
 @RestController
-@RequestMapping("/api/schools")
+@RequestMapping("/api/schools-participations")
 @RequiredArgsConstructor
 public class SchoolParticipationController {
 
