@@ -74,7 +74,7 @@ public class ExhibitionLifecycleService {
 
         boolean allActiveSchoolsReady = schools.stream()
                 .filter(s -> s.getStatus() != ParticipationStatus.CANCELLED && s.getStatus() != ParticipationStatus.REJECTED)
-                .allMatch(s -> s.getStatus() == ParticipationStatus.ACCEPTED);
+                .allMatch(s -> s.getStatus() == ParticipationStatus.CONFIRMED);
 
         if (!allActiveUnisReady || !allActiveSchoolsReady || !allActiveActivitiesReady) {
             throw new RuntimeException("All active universities/activities must be CONFIRMED (and unis prepaid), and schools ACCEPTED, before finalizing");

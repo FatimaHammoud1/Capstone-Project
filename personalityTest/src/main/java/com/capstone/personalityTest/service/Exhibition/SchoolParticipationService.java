@@ -128,7 +128,7 @@ public class SchoolParticipationService {
         return mapToResponse(saved);
     }
 
-    // ----------------- Confirm Participation (By Org - Approval/Rejection) -----------------
+  
     // ----------------- Accept School (Org Reviews Registration) -----------------
     public SchoolParticipationResponse acceptSchool(Long participationId, boolean approved, LocalDateTime confirmationDeadline, String confirmerEmail) {
         UserInfo inviter = userInfoRepository.findByEmail(confirmerEmail)
@@ -165,8 +165,8 @@ public class SchoolParticipationService {
     }
 
     // ----------------- Confirm School Commitment -----------------
-    public SchoolParticipationResponse confirmSchool(Long participationId, String schoolEmail) {
-        UserInfo schoolUser = userInfoRepository.findByEmail(schoolEmail)
+    public SchoolParticipationResponse confirmSchool(Long participationId, String schoolAdminEmail) {
+        UserInfo schoolUser = userInfoRepository.findByEmail(schoolAdminEmail)
                 .orElseThrow(() -> new RuntimeException("School user not found"));
 
         SchoolParticipation participation = participationRepository.findById(participationId)
