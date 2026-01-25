@@ -28,6 +28,8 @@ public interface BoothRepository extends JpaRepository<Booth, Long> {
     );
 
     List<Booth> findByUniversityParticipationId(Long universityParticipationId);
+    
+    List<Booth> findByExhibitionId(Long exhibitionId);
 
     List<Booth> findByActivityProviderRequestId(Long activityProviderRequestId);
 
