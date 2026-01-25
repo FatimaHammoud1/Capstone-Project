@@ -51,7 +51,7 @@ public class StudentRegistrationService {
         StudentRegistration registration = new StudentRegistration();
         registration.setExhibition(exhibition);
         registration.setStudent(student);
-        registration.setStatus(StudentRegistrationStatus.REGISTERED);
+        registration.setStatus(StudentRegistrationStatus.PENDING);
         registration.setRegisteredAt(LocalDateTime.now());
         registration.setApproved(false); // Default false
 
@@ -99,16 +99,15 @@ public class StudentRegistrationService {
             }
         }
 
-        // Only REGISTERED students can be approved
-        if (registration.getStatus() != StudentRegistrationStatus.REGISTERED) {
-            throw new RuntimeException("Only registered students can be approved");
+        // Only PENDING students can be approved
+        if (registration.getStatus() != StudentRegistrationStatus.PENDING) {
+            throw new RuntimeException("Only PENDING registrations can be approved");
         }
 
         // Approve registration
         registration.setApproved(true);
         registration.setApprovedAt(LocalDateTime.now()); 
-        // Optionally update status if needed, but keeping it REGISTERED with approved flag for now as per logic, 
-        // or could act as a secondary confirmation.
+        registration.setStatus(StudentRegistrationStatus.REGISTERED);
 
         StudentRegistration saved = registrationRepository.save(registration);
         return mapToResponse(saved);
@@ -147,8 +146,8 @@ public class StudentRegistrationService {
             throw new RuntimeException("Not authorized to cancel this registration");
         }
 
-        if (registration.getStatus() != StudentRegistrationStatus.REGISTERED) {
-            throw new RuntimeException("Only REGISTERED registrations can be cancelled");
+        if (registration.getStatus() != StudentRegistrationStatus.REGISTERED && registration.getStatus() != StudentRegistrationStatus.PENDING) {
+            throw new RuntimeException("Only REGISTERED or PENDING registrations can be cancelled");
         }
 
         registration.setStatus(StudentRegistrationStatus.CANCELLED);
