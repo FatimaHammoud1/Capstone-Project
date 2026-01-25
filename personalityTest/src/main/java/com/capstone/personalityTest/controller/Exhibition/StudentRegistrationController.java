@@ -33,11 +33,29 @@ public class StudentRegistrationController {
 
     // ----------------- LIST STUDENT REGISTRATIONS -----------------
     @GetMapping("/registrations")
-    @PreAuthorize("hasAnyRole('STUDENT', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'DEVELOPER' ,'ORG_OWNER')")
     public ResponseEntity<List<StudentRegistrationResponse>> getRegistrations(
             @AuthenticationPrincipal UserDetails userDetails) {
 
         return ResponseEntity.ok(registrationService.getStudentRegistrations(userDetails.getUsername()));
+    }
+
+    // ----------------- LIST STUDENT REGISTRATIONS BY STUDENT ID -----------------
+    @GetMapping("/registrations/{studentId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER' ,'STUDENT')")
+    public ResponseEntity<List<StudentRegistrationResponse>> getRegistrationsByStudentId(
+            @PathVariable Long studentId) {
+        
+        return ResponseEntity.ok(registrationService.getRegistrationsByStudentId(studentId));
+    }
+
+    // ----------------- LIST STUDENT REGISTRATIONS BY EXHIBITION -----------------
+    @GetMapping("/exhibition/{exhibitionId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER' ,'STUDENT')")
+    public ResponseEntity<List<StudentRegistrationResponse>> getRegistrationsByExhibitionId(
+            @PathVariable Long exhibitionId) {
+        
+        return ResponseEntity.ok(registrationService.getRegistrationsByExhibitionId(exhibitionId));
     }
 
     // ----------------- Approve Single Student -----------------

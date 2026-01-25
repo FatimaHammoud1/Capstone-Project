@@ -68,6 +68,19 @@ public class StudentRegistrationService {
                 .toList();
     }
 
+    public List<StudentRegistrationResponse> getRegistrationsByStudentId(Long studentId) {
+        return registrationRepository.findByStudentId(studentId).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // ----------------- List Registrations by Exhibition -----------------
+    public List<StudentRegistrationResponse> getRegistrationsByExhibitionId(Long exhibitionId) {
+        return registrationRepository.findByExhibitionId(exhibitionId).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
     // ----------------- Approve Student -----------------
     public StudentRegistrationResponse approveStudent(Long registrationId, String orgOwnerEmail) {
         StudentRegistration registration = registrationRepository.findById(registrationId)

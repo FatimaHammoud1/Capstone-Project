@@ -11,6 +11,7 @@ public interface StudentRegistrationRepository extends JpaRepository<StudentRegi
     boolean existsByExhibitionIdAndStudentId(Long exhibitionId, Long studentId);
     int countByExhibitionId(Long exhibitionId);
     List<StudentRegistration> findByStudentId(Long studentId);
+    List<StudentRegistration> findByExhibitionId(Long exhibitionId);
 
     int countByExhibitionIdAndApprovedTrue(Long exhibitionId);
     
