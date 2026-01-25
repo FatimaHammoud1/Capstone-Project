@@ -51,9 +51,11 @@ public class StudentRegistrationService {
         StudentRegistration registration = new StudentRegistration();
         registration.setExhibition(exhibition);
         registration.setStudent(student);
-        registration.setStatus(StudentRegistrationStatus.PENDING);
+       // registration.setStatus(StudentRegistrationStatus.PENDING);
+       registration.setStatus(StudentRegistrationStatus.REGISTERED);
         registration.setRegisteredAt(LocalDateTime.now());
-        registration.setApproved(false); // Default false
+       // registration.setApproved(false); // Default false
+       registration.setApproved(true);
 
         StudentRegistration saved = registrationRepository.save(registration);
         return mapToResponse(saved);
