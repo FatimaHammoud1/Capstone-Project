@@ -139,15 +139,15 @@ class FinancialAidServiceTest {
 
         // Assert
         assertNotNull(response, "Response should not be null");
-        
-        // Verify repository interactions
+        // Verify repository interactions (Check method was called with exact args)
         verify(userInfoRepository).findByEmail("student@test.com");
         verify(organizationRepository).findById(1L);
+        //Check method was called with any object of type
         verify(financialAidRepository).save(any(FinancialAidRequest.class));
 
-        // Verify that the saved request has correct status
-        ArgumentCaptor<FinancialAidRequest> requestCaptor = ArgumentCaptor.forClass(FinancialAidRequest.class);
-        verify(financialAidRepository).save(requestCaptor.capture());
+        // Verify that the saved request has correct status 
+        ArgumentCaptor<FinancialAidRequest> requestCaptor = ArgumentCaptor.forClass(FinancialAidRequest.class); //Capture argument to inspect its values
+        verify(financialAidRepository).save(requestCaptor.capture()); //Verify call AND capture argument
         FinancialAidRequest savedRequest = requestCaptor.getValue();
         
         assertEquals(FinancialAidRequest.Status.PENDING, savedRequest.getStatus());
