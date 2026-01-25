@@ -124,6 +124,7 @@ public class AttendanceService {
 
         // Set attendance
         participation.setAttendedAt(LocalDateTime.now());
+        participation.setStatus(ParticipationStatus.ATTENDED);
         universityParticipationRepository.save(participation);
 
         // Update actual visitors
@@ -153,6 +154,7 @@ public class AttendanceService {
 
         // Set attendance
         participation.setAttendedAt(LocalDateTime.now());
+        participation.setStatus(ParticipationStatus.ATTENDED);
         schoolParticipationRepository.save(participation);
 
         // Update actual visitors
@@ -182,6 +184,7 @@ public class AttendanceService {
 
         // Set attendance
         request.setAttendedAt(LocalDateTime.now());
+        request.setStatus(ActivityProviderRequestStatus.ATTENDED);
         activityProviderRequestRepository.save(request);
 
         // Update actual visitors

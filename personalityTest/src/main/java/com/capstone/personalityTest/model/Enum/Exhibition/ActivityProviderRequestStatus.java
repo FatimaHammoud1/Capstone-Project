@@ -7,5 +7,6 @@ public enum ActivityProviderRequestStatus {
     REJECTED,
     CONFIRMED,
     CANCELLED,
-    FINALIZED
+    FINALIZED,
+    ATTENDED
 }
