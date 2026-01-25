@@ -22,4 +22,9 @@ public class ActivityController {
     public ResponseEntity<List<Activity>> getAllActivities() {
         return ResponseEntity.ok(activityService.getAllActivities());
     }
+
+    @GetMapping("/provider/{providerId}")
+    public ResponseEntity<List<Activity>> getActivitiesByProviderId(@org.springframework.web.bind.annotation.PathVariable Long providerId) {
+        return ResponseEntity.ok(activityService.getActivitiesByProviderId(providerId));
+    }
 }
