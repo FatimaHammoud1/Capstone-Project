@@ -41,6 +41,18 @@ public class BoothService {
         return mapToResponse(booth);
     }
 
+    public List<BoothResponse> getBoothsByUniversityParticipationId(Long universityParticipationId) {
+        return boothRepository.findByUniversityParticipationId(universityParticipationId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<BoothResponse> getBoothsByActivityProviderRequest(Long activityProviderRequestId) {
+        return boothRepository.findByActivityProviderRequestId(activityProviderRequestId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     // ----------------- Update Booth Assignments (Zone/Number) -----------------
     public void updateBoothAllocation(Long exhibitionId, BoothAllocationUpdateRequest request, String orgOwnerEmail) {
         UserInfo orgOwner = userInfoRepository.findByEmail(orgOwnerEmail)

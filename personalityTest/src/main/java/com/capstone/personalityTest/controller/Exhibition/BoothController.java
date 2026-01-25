@@ -30,6 +30,18 @@ public class BoothController {
         return ResponseEntity.ok(boothService.getBoothById(boothId));
     }
 
+    @GetMapping("/booths/university/{universityParticipationId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER', 'UNIVERSITY_ADMIN')")
+    public ResponseEntity<List<BoothResponse>> getBoothsByUniversityParticipationId(@PathVariable Long universityParticipationId) {
+        return ResponseEntity.ok(boothService.getBoothsByUniversityParticipationId(universityParticipationId));
+    }
+
+    @GetMapping("/booths/activity-provider/{activityProviderRequestId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER', 'ACTIVITY_PROVIDER')")
+    public ResponseEntity<List<BoothResponse>> getBoothsByActivityProviderRequest(@PathVariable Long activityProviderRequestId) {
+        return ResponseEntity.ok(boothService.getBoothsByActivityProviderRequest(activityProviderRequestId));
+    }
+
     // ----------------- UPDATE BOOTHS (Allocations) -----------------
     @PostMapping("/{exhibitionId}/booth-allocation")
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
