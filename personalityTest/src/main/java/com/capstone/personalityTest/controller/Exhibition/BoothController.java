@@ -21,13 +21,11 @@ public class BoothController {
 
     // ----------------- GET BOOTHS -----------------
     @GetMapping("/{exhibitionId}/booths")
-    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
     public ResponseEntity<List<BoothResponse>> getBooths(@PathVariable Long exhibitionId) {
         return ResponseEntity.ok(boothService.getBoothsByExhibition(exhibitionId));
     }
 
     @GetMapping("/booths/{boothId}")
-    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER', 'UNIVERSITY_ADMIN', 'ACTIVITY_PROVIDER')")
     public ResponseEntity<BoothResponse> getBoothById(@PathVariable Long boothId) {
         return ResponseEntity.ok(boothService.getBoothById(boothId));
     }

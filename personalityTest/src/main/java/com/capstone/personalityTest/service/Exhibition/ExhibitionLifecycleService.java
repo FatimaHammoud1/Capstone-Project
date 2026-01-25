@@ -4,6 +4,7 @@ import com.capstone.personalityTest.model.Enum.Exhibition.ActivityProviderReques
 import com.capstone.personalityTest.model.Enum.Exhibition.ExhibitionStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.PaymentStatus;
+import com.capstone.personalityTest.model.Exhibition.ActivityProviderRequest;
 import com.capstone.personalityTest.model.Exhibition.Exhibition;
 import com.capstone.personalityTest.model.Exhibition.SchoolParticipation;
 import com.capstone.personalityTest.model.Exhibition.UniversityParticipation;
@@ -58,17 +59,25 @@ public class ExhibitionLifecycleService {
         List<SchoolParticipation> schools = schoolParticipationRepository
                 .findByExhibitionId(exhibitionId);
 
+        List<ActivityProviderRequest> activities = activityProviderRequestRepository
+                .findByExhibitionId(exhibitionId);
+
         // Check Unis: Must be CONFIRMED and PAID
         boolean allActiveUnisReady = unis.stream()
                 .filter(u -> u.getStatus() != ParticipationStatus.CANCELLED)
                 .allMatch(u -> u.getStatus() == ParticipationStatus.CONFIRMED && u.getPaymentStatus() == PaymentStatus.PAID);
 
+        // Check Activities: Must be CONFIRMED
+        boolean allActiveActivitiesReady = activities.stream()
+                .filter(a -> a.getStatus() != ActivityProviderRequestStatus.CANCELLED && a.getStatus() != ActivityProviderRequestStatus.REJECTED)
+                .allMatch(a -> a.getStatus() == ActivityProviderRequestStatus.CONFIRMED);
+
         boolean allActiveSchoolsReady = schools.stream()
                 .filter(s -> s.getStatus() != ParticipationStatus.CANCELLED && s.getStatus() != ParticipationStatus.REJECTED)
                 .allMatch(s -> s.getStatus() == ParticipationStatus.ACCEPTED);
 
-        if (!allActiveUnisReady || !allActiveSchoolsReady) {
-            throw new RuntimeException("All active universities must be PREPAYED & CONFIRMED, and schools ACCEPTED, before finalizing");
+        if (!allActiveUnisReady || !allActiveSchoolsReady || !allActiveActivitiesReady) {
+            throw new RuntimeException("All active universities/activities must be CONFIRMED (and unis prepaid), and schools ACCEPTED, before finalizing");
         }
 
         // ----------------- Generate Schedule JSON -----------------
