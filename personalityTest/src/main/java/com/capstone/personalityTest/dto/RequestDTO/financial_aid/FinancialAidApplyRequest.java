@@ -42,14 +42,14 @@ public class FinancialAidApplyRequest {
     @NotNull(message = "Family income is required")
     private BigDecimal familyIncome;
 
-    @NotBlank(message = "ID card URL is required")
-    private String idCardUrl;
+//    @NotBlank(message = "ID card file is required")
+    private String idCardFileName;
 
-    @NotBlank(message = "University fees URL is required")
-    private String universityFeesUrl;
+   // @NotBlank(message = "University fees file is required")
+    private String universityFeesFileName;
 
-    @NotBlank(message = "Grade proof URL is required")
-    private String gradeProofUrl;
+  //  @NotBlank(message = "Grade proof file is required")
+    private String gradeProofFileName;
 
     @NotBlank(message = "Reason is required")
     private String reason;
