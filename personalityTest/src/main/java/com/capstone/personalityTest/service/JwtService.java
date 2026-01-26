@@ -26,7 +26,10 @@ public class JwtService {
     // Secret key used to sign and verify JWTs. Should be kept safe.
     public String generateToken(UserInfo user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", user.getRoles());  // 👈 add roles to JWT
+        List<String> roles = user.getRoles().stream()
+                .map(role -> role.getCode())
+                .toList();
+        claims.put("roles", roles);  // 👈 add roles to JWT
         claims.put("userId", user.getId());
         return createToken(claims, user.getEmail());
     }

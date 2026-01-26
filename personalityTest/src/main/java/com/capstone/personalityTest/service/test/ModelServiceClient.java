@@ -1,7 +1,7 @@
 package com.capstone.personalityTest.service.test;
 
-import com.capstone.personalityTest.dto.ModelRequest;
-import com.capstone.personalityTest.dto.ModelResponse;
+import com.capstone.personalityTest.dto.RequestDTO.test.ModelRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.test.ModelResponse;
 import com.capstone.personalityTest.model.testm.MLResult;
 import com.capstone.personalityTest.model.testm.TestAttempt.Answer.Answer;
 import com.capstone.personalityTest.model.testm.TestAttempt.Answer.CheckBoxAnswer;

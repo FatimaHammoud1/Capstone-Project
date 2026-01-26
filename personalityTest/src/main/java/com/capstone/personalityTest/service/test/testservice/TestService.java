@@ -78,7 +78,7 @@ public class TestService {
     public List<TestResponse> getAllTests(String role) {
         List<Test> tests;
 
-        if (role.equals("ROLE_ADMIN")) {
+        if (role.equals("ORG_OWNER") || role.equals("DEVELOPER")) {
             // Admin sees all tests
             tests = testRepository.findAll();
         } else {

@@ -1,5 +1,7 @@
 package com.capstone.personalityTest.service.Exhibition;
 
+import com.capstone.personalityTest.model.Enum.Exhibition.ActivityProviderRequestStatus;
+import com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.StudentRegistrationStatus;
 import com.capstone.personalityTest.model.Exhibition.Exhibition;
 import com.capstone.personalityTest.model.Exhibition.StudentRegistration;

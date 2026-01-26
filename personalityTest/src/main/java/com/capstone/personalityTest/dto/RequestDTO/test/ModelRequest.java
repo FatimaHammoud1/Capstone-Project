@@ -1,4 +1,4 @@
-package com.capstone.personalityTest.dto;
+package com.capstone.personalityTest.dto.RequestDTO.test;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

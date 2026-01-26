@@ -3,7 +3,7 @@ package com.capstone.personalityTest.controller.test.testcontroller;
 import com.capstone.personalityTest.dto.RequestDTO.test.TestRequest.CreateVersionRequest;
 import com.capstone.personalityTest.dto.RequestDTO.test.TestRequest.TestRequest;
 import com.capstone.personalityTest.dto.ResponseDTO.test.TestResponse.TestResponse;
-import com.capstone.personalityTest.service.JwtService;
+
 import com.capstone.personalityTest.service.test.testservice.TestService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +13,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 
 @RestController
 @CrossOrigin
@@ -21,7 +23,7 @@ import java.util.List;
 public class TestController {
 
     private final TestService testService;
-    private final JwtService jwtService;
+
 
     // 1. Create a test (title + description only)
     @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
@@ -58,9 +60,14 @@ public class TestController {
     }
 
     @GetMapping
-    public List<TestResponse> getAllTests(@RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.substring(7); // remove "Bearer "
-        String role = jwtService.extractRoles(token).get(0); // get the first role
+
+    public List<TestResponse> getAllTests(Authentication authentication) {
+        String role = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .map(r -> r.replace("ROLE_", ""))
+                .filter(r -> r.equals("ORG_OWNER") || r.equals("DEVELOPER"))
+                .findFirst()
+                .orElse("STUDENT");
 
         return testService.getAllTests(role);
     }
