@@ -213,42 +213,42 @@ public class ActivityProviderService {
     }
     
     // ----------------- Confirm Provider Commitment -----------------
-    public ActivityProviderRequestResponse confirmProvider(Long requestId, String providerEmail) {
-        UserInfo providerUser = userInfoRepository.findByEmail(providerEmail)
-                .orElseThrow(() -> new RuntimeException("Provider user not found"));
+    // public ActivityProviderRequestResponse confirmProvider(Long requestId, String providerEmail) {
+    //     UserInfo providerUser = userInfoRepository.findByEmail(providerEmail)
+    //             .orElseThrow(() -> new RuntimeException("Provider user not found"));
 
-        ActivityProviderRequest request = providerRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
+    //     ActivityProviderRequest request = providerRequestRepository.findById(requestId)
+    //             .orElseThrow(() -> new RuntimeException("Request not found"));
         
-        Exhibition exhibition = request.getExhibition();
+    //     Exhibition exhibition = request.getExhibition();
 
-        boolean isDev = providerUser.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
-        if (!request.getProvider().getOwner().getId().equals(providerUser.getId()) && !isDev) {
-            throw new RuntimeException("Only the provider owner can confirm commitment");
-        }
+    //     boolean isDev = providerUser.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+    //     if (!request.getProvider().getOwner().getId().equals(providerUser.getId()) && !isDev) {
+    //         throw new RuntimeException("Only the provider owner can confirm commitment");
+    //     }
 
-        // Validate exhibition status
-        if (exhibition.getStatus() != ExhibitionStatus.PLANNING) {
-            throw new RuntimeException("Can only confirm during PLANNING phase");
-        }
+    //     // Validate exhibition status
+    //     if (exhibition.getStatus() != ExhibitionStatus.PLANNING) {
+    //         throw new RuntimeException("Can only confirm during PLANNING phase");
+    //     }
 
-        if (request.getStatus() != ActivityProviderRequestStatus.APPROVED) {
-            throw new RuntimeException("Only APPROVED requests can be confirmed");
-        }
+    //     if (request.getStatus() != ActivityProviderRequestStatus.APPROVED) {
+    //         throw new RuntimeException("Only APPROVED requests can be confirmed");
+    //     }
 
-        // Validate confirmation deadline - auto-cancel if passed
-        if (request.getConfirmationDeadline() != null && LocalDateTime.now().isAfter(request.getConfirmationDeadline())) {
-            request.setStatus(ActivityProviderRequestStatus.CANCELLED);
-            providerRequestRepository.save(request);
-            throw new RuntimeException("Confirmation deadline has passed. Your request has been automatically cancelled.");
-        }
+    //     // Validate confirmation deadline - auto-cancel if passed
+    //     if (request.getConfirmationDeadline() != null && LocalDateTime.now().isAfter(request.getConfirmationDeadline())) {
+    //         request.setStatus(ActivityProviderRequestStatus.CANCELLED);
+    //         providerRequestRepository.save(request);
+    //         throw new RuntimeException("Confirmation deadline has passed. Your request has been automatically cancelled.");
+    //     }
 
-        request.setStatus(ActivityProviderRequestStatus.CONFIRMED);
-        // Can add confirmedAt timestamp if needed
+    //     request.setStatus(ActivityProviderRequestStatus.CONFIRMED);
+    //     // Can add confirmedAt timestamp if needed
         
-        ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
-        return mapToResponse(savedRequest);
-    }
+    //     ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
+    //     return mapToResponse(savedRequest);
+    // }
     
     // ----------------- Finalize Participation (After Schedule) -----------------
     public ActivityProviderRequestResponse finalizeParticipation(Long requestId, String providerEmail) {
@@ -269,8 +269,8 @@ public class ActivityProviderService {
             throw new RuntimeException("Cannot finalize participation before exhibition is CONFIRMED (schedule ready)");
         }
 
-        if (request.getStatus() != ActivityProviderRequestStatus.CONFIRMED) {
-            throw new RuntimeException("Only CONFIRMED requests can be finalized");
+        if (request.getStatus() != ActivityProviderRequestStatus.APPROVED ) {
+            throw new RuntimeException("Only APPROVED requests can be finalized");
         }
         
         // Validate finalization deadline - auto-cancel if passed

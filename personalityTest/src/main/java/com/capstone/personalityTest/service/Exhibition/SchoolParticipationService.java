@@ -138,9 +138,9 @@ public class SchoolParticipationService {
                 .orElseThrow(() -> new RuntimeException("Participation not found"));
 
         Exhibition exhibition = participation.getExhibition();
-        // Guard: Locked if CONFIRMED or later
-        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
-             throw new RuntimeException("Exhibition is locked");
+        // Validate exhibition status
+        if (exhibition.getStatus() != ExhibitionStatus.PLANNING) {
+            throw new RuntimeException("Can only review school participation during PLANNING phase");
         }
 
         boolean isDev = inviter.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
@@ -165,42 +165,42 @@ public class SchoolParticipationService {
     }
 
     // ----------------- Confirm School Commitment -----------------
-    public SchoolParticipationResponse confirmSchool(Long participationId, String schoolAdminEmail) {
-        UserInfo schoolUser = userInfoRepository.findByEmail(schoolAdminEmail)
-                .orElseThrow(() -> new RuntimeException("School user not found"));
+    // public SchoolParticipationResponse confirmSchool(Long participationId, String schoolAdminEmail) {
+    //     UserInfo schoolUser = userInfoRepository.findByEmail(schoolAdminEmail)
+    //             .orElseThrow(() -> new RuntimeException("School user not found"));
 
-        SchoolParticipation participation = participationRepository.findById(participationId)
-                .orElseThrow(() -> new RuntimeException("Participation not found"));
+    //     SchoolParticipation participation = participationRepository.findById(participationId)
+    //             .orElseThrow(() -> new RuntimeException("Participation not found"));
         
-        Exhibition exhibition = participation.getExhibition();
+    //     Exhibition exhibition = participation.getExhibition();
 
-        boolean isDev = schoolUser.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
-        if (!participation.getSchool().getOwner().getId().equals(schoolUser.getId()) && !isDev) {
-            throw new RuntimeException("Only the school owner can confirm commitment");
-        }
+    //     boolean isDev = schoolUser.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
+    //     if (!participation.getSchool().getOwner().getId().equals(schoolUser.getId()) && !isDev) {
+    //         throw new RuntimeException("Only the school owner can confirm commitment");
+    //     }
 
-        // Validate exhibition status
-        if (exhibition.getStatus() != ExhibitionStatus.PLANNING) {
-            throw new RuntimeException("Can only confirm during PLANNING phase");
-        }
+    //     // Validate exhibition status
+    //     if (exhibition.getStatus() != ExhibitionStatus.PLANNING) {
+    //         throw new RuntimeException("Can only confirm during PLANNING phase");
+    //     }
 
-        if (participation.getStatus() != ParticipationStatus.ACCEPTED) {
-            throw new RuntimeException("Only ACCEPTED schools can be confirmed");
-        }
+    //     if (participation.getStatus() != ParticipationStatus.ACCEPTED) {
+    //         throw new RuntimeException("Only ACCEPTED schools can be confirmed");
+    //     }
 
-        // Validate confirmation deadline - auto-cancel if passed
-        if (participation.getConfirmationDeadline() != null && LocalDateTime.now().isAfter(participation.getConfirmationDeadline())) {
-            participation.setStatus(ParticipationStatus.CANCELLED);
-            participationRepository.save(participation);
-            throw new RuntimeException("Confirmation deadline has passed. Your participation has been automatically cancelled.");
-        }
+    //     // Validate confirmation deadline - auto-cancel if passed
+    //     if (participation.getConfirmationDeadline() != null && LocalDateTime.now().isAfter(participation.getConfirmationDeadline())) {
+    //         participation.setStatus(ParticipationStatus.CANCELLED);
+    //         participationRepository.save(participation);
+    //         throw new RuntimeException("Confirmation deadline has passed. Your participation has been automatically cancelled.");
+    //     }
 
-        participation.setStatus(ParticipationStatus.CONFIRMED);
-        participation.setConfirmedAt(LocalDateTime.now());
+    //     participation.setStatus(ParticipationStatus.CONFIRMED);
+    //     participation.setConfirmedAt(LocalDateTime.now());
         
-        SchoolParticipation saved = participationRepository.save(participation);
-        return mapToResponse(saved);
-    }
+    //     SchoolParticipation saved = participationRepository.save(participation);
+    //     return mapToResponse(saved);
+    // }
 
     // ----------------- Finalize Participation (After Schedule) -----------------
     public SchoolParticipationResponse finalizeParticipation(Long participationId, String schoolEmail) {
@@ -221,8 +221,8 @@ public class SchoolParticipationService {
             throw new RuntimeException("Cannot finalize participation before exhibition is CONFIRMED (schedule ready)");
         }
 
-        if (participation.getStatus() != ParticipationStatus.CONFIRMED) {
-            throw new RuntimeException("Only CONFIRMED schools can be finalized");
+        if (participation.getStatus() != ParticipationStatus.ACCEPTED) {
+            throw new RuntimeException("Only ACCEPTED schools can be finalized");
         }
 
         participation.setStatus(ParticipationStatus.FINALIZED);

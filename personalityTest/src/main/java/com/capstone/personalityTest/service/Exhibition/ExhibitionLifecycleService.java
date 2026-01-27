@@ -37,6 +37,9 @@ public class ExhibitionLifecycleService {
     private final UserInfoRepository userInfoRepository;
     private final ActivityProviderRequestRepository activityProviderRequestRepository;
     private final ExhibitionFinanceService financeService;
+    private final UniversityParticipationService universityParticipationService;
+    private final SchoolParticipationService schoolParticipationService;
+    private final ActivityProviderService activityProviderService;
 
     // ----------------- Confirm Exhibition (Status Change + Schedule Generation) -----------------
     public ExhibitionResponse confirmExhibition(Long exhibitionId, LocalDateTime finalizationDeadline, String orgOwnerEmail) {
@@ -52,33 +55,47 @@ public class ExhibitionLifecycleService {
             throw new RuntimeException("Only ORG_OWNER can confirm the exhibition");
         }
 
-        // Validate that all universities and schools are confirmed
-        List<UniversityParticipation> unis = universityParticipationRepository
-                .findByExhibitionId(exhibitionId);
+        // ----------------- Prune Incomplete Participants -----------------
 
-        List<SchoolParticipation> schools = schoolParticipationRepository
-                .findByExhibitionId(exhibitionId);
+        // 1. Process Universities: Auto-cancel if not CONFIRMED & PAID
+        List<UniversityParticipation> unis = universityParticipationRepository.findByExhibitionId(exhibitionId);
+        for (UniversityParticipation uni : unis) {
+            boolean isDead = uni.getStatus() == ParticipationStatus.CANCELLED || uni.getStatus() == ParticipationStatus.REJECTED;
+            if (isDead) continue;
 
-        List<ActivityProviderRequest> activities = activityProviderRequestRepository
-                .findByExhibitionId(exhibitionId);
-
-        // Check Unis: Must be CONFIRMED and PAID
-        boolean allActiveUnisReady = unis.stream()
-                .filter(u -> u.getStatus() != ParticipationStatus.CANCELLED)
-                .allMatch(u -> u.getStatus() == ParticipationStatus.CONFIRMED && u.getPaymentStatus() == PaymentStatus.PAID);
-
-        // Check Activities: Must be CONFIRMED
-        boolean allActiveActivitiesReady = activities.stream()
-                .filter(a -> a.getStatus() != ActivityProviderRequestStatus.CANCELLED && a.getStatus() != ActivityProviderRequestStatus.REJECTED)
-                .allMatch(a -> a.getStatus() == ActivityProviderRequestStatus.CONFIRMED);
-
-        boolean allActiveSchoolsReady = schools.stream()
-                .filter(s -> s.getStatus() != ParticipationStatus.CANCELLED && s.getStatus() != ParticipationStatus.REJECTED)
-                .allMatch(s -> s.getStatus() == ParticipationStatus.CONFIRMED);
-
-        if (!allActiveUnisReady || !allActiveSchoolsReady || !allActiveActivitiesReady) {
-            throw new RuntimeException("All active universities/activities must be CONFIRMED (and unis prepaid), and schools ACCEPTED, before finalizing");
+            boolean isReady = uni.getStatus() == ParticipationStatus.CONFIRMED && uni.getPaymentStatus() == PaymentStatus.PAID;
+            if (!isReady) {
+                universityParticipationService.cancelParticipation(uni.getId(), orgOwnerEmail);
+            }
         }
+
+        // 2. Process Schools: Auto-cancel if not ACCEPTED
+        List<SchoolParticipation> schools = schoolParticipationRepository.findByExhibitionId(exhibitionId);
+        for (SchoolParticipation school : schools) {
+            boolean isDead = school.getStatus() == ParticipationStatus.CANCELLED || school.getStatus() == ParticipationStatus.REJECTED;
+            if (isDead) continue;
+            
+            boolean isReady = school.getStatus() == ParticipationStatus.ACCEPTED;
+            if (!isReady) {
+                schoolParticipationService.cancelParticipation(school.getId(), orgOwnerEmail);
+            }
+        }
+
+        // 3. Process Activity Providers: Auto-cancel if not APPROVED
+        List<ActivityProviderRequest> activities = activityProviderRequestRepository.findByExhibitionId(exhibitionId);
+        for (ActivityProviderRequest activity : activities) {
+            boolean isDead = activity.getStatus() == ActivityProviderRequestStatus.CANCELLED || activity.getStatus() == ActivityProviderRequestStatus.REJECTED;
+            if (isDead) continue;
+
+            boolean isReady = activity.getStatus() == ActivityProviderRequestStatus.APPROVED;
+            if (!isReady) {
+                activityProviderService.cancelRequest(activity.getId(), "Auto-cancelled: Not APPROVED by finalization deadline", orgOwnerEmail);
+            }
+        }
+
+        // Refresh lists for schedule generation
+        unis = universityParticipationRepository.findByExhibitionId(exhibitionId);
+        schools = schoolParticipationRepository.findByExhibitionId(exhibitionId);
 
         // ----------------- Generate Schedule JSON -----------------
         Map<String, Object> schedule = new HashMap<>();

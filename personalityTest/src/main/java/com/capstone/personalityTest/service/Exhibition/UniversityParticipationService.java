@@ -155,9 +155,11 @@ public class UniversityParticipationService {
 
         Exhibition exhibition = participation.getExhibition();
         // Guard: Locked if CONFIRMED or later
-        if (exhibition.getStatus().ordinal() >= ExhibitionStatus.CONFIRMED.ordinal()) {
-            throw new RuntimeException("Exhibition is locked");
+        // Validate exhibition status
+        if (exhibition.getStatus() != ExhibitionStatus.PLANNING) {
+            throw new RuntimeException("Can only review university participation during PLANNING phase");
         }
+
 
         boolean isDev = reviewer.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
         if (!exhibition.getOrganization().getOwner().getId().equals(reviewer.getId()) && !isDev) {
