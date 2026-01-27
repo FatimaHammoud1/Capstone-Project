@@ -15,6 +15,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -149,7 +151,10 @@ public class TestService {
 
         Test newTest = new Test();
         newTest.setBaseTest(baseTest);
-        newTest.setVersionName(request.getVersionName());
+
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        newTest.setVersionName(request.getVersionName() + "-" + timestamp);
+
         newTest.setTitle(source.getTitle());
         newTest.setDescription(source.getDescription());
         newTest.setStatus(TestStatus.DRAFT);
