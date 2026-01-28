@@ -203,7 +203,12 @@ public class FinancialAidService {
             donorRepository.save(donor);
         }
 
-        // 6. Cancel request
+        // 6. Delete associated files from storage
+        fileStorageService.deleteFile(request.getIdCardFileName());
+        fileStorageService.deleteFile(request.getUniversityFeesFileName());
+        fileStorageService.deleteFile(request.getGradeProofFileName());
+
+        // 7. Cancel request
         request.setStatus(FinancialAidRequest.Status.CANCELLED);
         FinancialAidRequest savedRequest = financialAidRepository.save(request);
 
@@ -519,10 +524,11 @@ public class FinancialAidService {
         response.setFamilyIncome(request.getFamilyIncome());
 
         // Generate file URLs
+        // Note: Since migrating to Firebase, the 'FileName' fields now contain full secure URLs.
         FinancialAidResponse.Documents docs = new FinancialAidResponse.Documents();
-        docs.setIdCard("/api/financial-aid/files/" + request.getIdCardFileName());
-        docs.setFees("/api/financial-aid/files/" + request.getUniversityFeesFileName());
-        docs.setGrades("/api/financial-aid/files/" + request.getGradeProofFileName());
+        docs.setIdCard(request.getIdCardFileName());
+        docs.setFees(request.getUniversityFeesFileName());
+        docs.setGrades(request.getGradeProofFileName());
         response.setDocuments(docs);
 
         response.setReason(request.getReason());

@@ -92,15 +92,15 @@ public class ActivityProviderController {
     }
     
     // ----------------- Confirm Participation -----------------
-    @PostMapping("/confirm/{requestId}")
-    @PreAuthorize("hasAnyRole('ACTIVITY_PROVIDER', 'DEVELOPER')")
-    public ResponseEntity<ActivityProviderRequestResponse> confirmProvider(
-            @PathVariable Long requestId,
-            @AuthenticationPrincipal UserDetails userDetails) {
-            
-        ActivityProviderRequestResponse confirmed = providerService.confirmProvider(requestId, userDetails.getUsername());
-        return ResponseEntity.ok(confirmed);
-    }
+//    @PostMapping("/confirm/{requestId}")
+//    @PreAuthorize("hasAnyRole('ACTIVITY_PROVIDER', 'DEVELOPER')")
+//    public ResponseEntity<ActivityProviderRequestResponse> confirmProvider(
+//            @PathVariable Long requestId,
+//            @AuthenticationPrincipal UserDetails userDetails) {
+//
+//        ActivityProviderRequestResponse confirmed = providerService.confirmProvider(requestId, userDetails.getUsername());
+//        return ResponseEntity.ok(confirmed);
+//    }
     
     // ----------------- Finalize Participation -----------------
     @PostMapping("/finalize/{requestId}")

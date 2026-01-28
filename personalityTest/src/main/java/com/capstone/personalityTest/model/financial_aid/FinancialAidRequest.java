@@ -66,12 +66,15 @@ public class FinancialAidRequest {
     private BigDecimal familyIncome;
 
     @NotBlank(message = "ID card file is required")
+    @Column(columnDefinition = "TEXT")
     private String idCardFileName;
 
     @NotBlank(message = "University fees file is required")
+    @Column(columnDefinition = "TEXT")
     private String universityFeesFileName;
 
     @NotBlank(message = "Grade proof file is required")
+    @Column(columnDefinition = "TEXT")
     private String gradeProofFileName;
 
     @Column(columnDefinition = "TEXT")

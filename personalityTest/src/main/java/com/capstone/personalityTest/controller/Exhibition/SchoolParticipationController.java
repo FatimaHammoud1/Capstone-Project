@@ -66,15 +66,15 @@ public class SchoolParticipationController {
     }
 
     // ----------------- CONFIRM SCHOOL (SCHOOL CONFIRMS COMMITMENT) -----------------
-    @PostMapping("/confirm/{participationId}")
-    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'DEVELOPER')")
-    public ResponseEntity<SchoolParticipationResponse> confirmSchool(
-            @PathVariable Long participationId,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        SchoolParticipationResponse confirmed = participationService.confirmSchool(participationId, userDetails.getUsername());
-        return ResponseEntity.ok(confirmed);
-    }
+//    @PostMapping("/confirm/{participationId}")
+//    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'DEVELOPER')")
+//    public ResponseEntity<SchoolParticipationResponse> confirmSchool(
+//            @PathVariable Long participationId,
+//            @AuthenticationPrincipal UserDetails userDetails) {
+//
+//        SchoolParticipationResponse confirmed = participationService.confirmSchool(participationId, userDetails.getUsername());
+//        return ResponseEntity.ok(confirmed);
+//    }
     
     // ----------------- FINALIZE PARTICIPATION -----------------
     @PostMapping("/finalize/{participationId}")

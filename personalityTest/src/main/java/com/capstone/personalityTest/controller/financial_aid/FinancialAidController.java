@@ -84,25 +84,6 @@ public class FinancialAidController {
             return ResponseEntity.ok(response);
     }
 
-    /**
-     * Download/view uploaded document
-     */
-    @GetMapping("/files/{fileName}")
-    @PreAuthorize("hasAnyRole('STUDENT', 'ORG_OWNER', 'DEVELOPER')")
-    public ResponseEntity<Resource> downloadFile(
-            @PathVariable String fileName,
-            Principal principal
-    ) {
-        Resource resource = fileStorageService.loadFileAsResource(fileName);
-
-        String contentType = determineContentType(fileName);
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=\"" + resource.getFilename() + "\"")
-                .body(resource);
-    }
     @GetMapping("/my-requests")
     @PreAuthorize("hasAnyRole('STUDENT', 'DEVELOPER')")
     public ResponseEntity<Map<String, List<FinancialAidResponse>>>  getMyRequests(Principal principal) {
@@ -178,18 +159,5 @@ public class FinancialAidController {
         return ResponseEntity.ok(financialAidService.getFinancialAidStatistics(principal.getName()));
     }
 
-    /**
-     * Determine content type from filename
-     */
-    private String determineContentType(String fileName) {
-        String lowerFileName = fileName.toLowerCase();
-        if (lowerFileName.endsWith(".pdf")) {
-            return "application/pdf";
-        } else if (lowerFileName.endsWith(".jpg") || lowerFileName.endsWith(".jpeg")) {
-            return "image/jpeg";
-        } else if (lowerFileName.endsWith(".png")) {
-            return "image/png";
-        }
-        return "application/octet-stream";
-    }
+
 }
