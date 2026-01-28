@@ -60,8 +60,8 @@ public class AttendanceService {
         }
 
         // Only approved students can be marked
-        if (!Boolean.TRUE.equals(registration.getApproved())) {
-            throw new RuntimeException("Cannot mark attendance for unapproved registration");
+        if (!Boolean.TRUE.equals(registration.getApproved()) || registration.getStatus() != StudentRegistrationStatus.REGISTERED) {
+            throw new RuntimeException("Cannot mark attendance for unapproved registration or non-registered status");
         }
 
         // Update status
@@ -124,6 +124,11 @@ public class AttendanceService {
             throw new RuntimeException("Can only mark attendance during ACTIVE exhibition");
         }
 
+        // CHECK IF FINALIZED
+        if (participation.getStatus() != ParticipationStatus.FINALIZED) {
+            throw new RuntimeException("University participation must be FINALIZED before marking attendance");
+        }
+
         // Set attendance
         participation.setAttendedAt(LocalDateTime.now());
         participation.setStatus(ParticipationStatus.ATTENDED);
@@ -154,6 +159,11 @@ public class AttendanceService {
             throw new RuntimeException("Can only mark attendance during ACTIVE exhibition");
         }
 
+        // CHECK IF FINALIZED
+        if (participation.getStatus() != ParticipationStatus.FINALIZED) {
+            throw new RuntimeException("School participation must be FINALIZED before marking attendance");
+        }
+
         // Set attendance
         participation.setAttendedAt(LocalDateTime.now());
         participation.setStatus(ParticipationStatus.ATTENDED);
@@ -182,6 +192,11 @@ public class AttendanceService {
         // Validate exhibition is ACTIVE
         if (exhibition.getStatus() != ExhibitionStatus.ACTIVE) {
             throw new RuntimeException("Can only mark attendance during ACTIVE exhibition");
+        }
+
+        // CHECK IF FINALIZED
+        if (request.getStatus() != ActivityProviderRequestStatus.FINALIZED) {
+            throw new RuntimeException("Activity provider request must be FINALIZED before marking attendance");
         }
 
         // Set attendance

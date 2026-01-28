@@ -39,4 +39,14 @@ public class ExhibitionFeedbackController {
         List<ExhibitionFeedbackResponse> feedbackList = feedbackService.getFeedbackForExhibition(exhibitionId);
         return ResponseEntity.ok(feedbackList);
     }
+
+    // ----------------- Get Feedback by Student -----------------
+    @GetMapping("/exhibition/{exhibitionId}/my-feedback")
+    @PreAuthorize("hasAnyRole('STUDENT', 'DEVELOPER')")
+    public ResponseEntity<ExhibitionFeedbackResponse> getMyFeedback(
+            @PathVariable Long exhibitionId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        ExhibitionFeedbackResponse feedback = feedbackService.getFeedbackByExhibitionAndStudent(exhibitionId, userDetails.getUsername());
+        return ResponseEntity.ok(feedback);
+    }
 }

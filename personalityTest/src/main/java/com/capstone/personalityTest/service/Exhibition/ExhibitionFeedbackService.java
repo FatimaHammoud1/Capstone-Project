@@ -79,6 +79,17 @@ public class ExhibitionFeedbackService {
                 .toList();
     }
 
+    // ----------------- Fetch Feedback by Exhibition and Student -----------------
+    public ExhibitionFeedbackResponse getFeedbackByExhibitionAndStudent(Long exhibitionId, String studentEmail) {
+        UserInfo studentUser = userInfoRepository.findByEmail(studentEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        ExhibitionFeedback feedback = feedbackRepository.findByExhibitionIdAndStudentId(exhibitionId, studentUser.getId())
+                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+
+        return mapToResponse(feedback);
+    }
+
     private ExhibitionFeedbackResponse mapToResponse(ExhibitionFeedback feedback) {
         return new ExhibitionFeedbackResponse(
             feedback.getId(),

@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface ExhibitionFeedbackRepository extends JpaRepository<ExhibitionFeedback, Long> {
     List<ExhibitionFeedback> findByExhibitionId(Long exhibitionId);
+    java.util.Optional<ExhibitionFeedback> findByExhibitionIdAndStudentId(Long exhibitionId, Long studentId);
 }

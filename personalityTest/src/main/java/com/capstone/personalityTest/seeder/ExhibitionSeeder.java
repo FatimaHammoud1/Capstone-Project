@@ -128,11 +128,35 @@ public class ExhibitionSeeder implements CommandLineRunner {
                         Set.of(roleRepository.findByCode("ACTIVITY_PROVIDER").orElseThrow())),
 
                 // 7. STUDENT
-                new UserInfo(null, "Student User", "student@user.com", passwordEncoder.encode("password"), TargetGender.MALE,
+                new UserInfo(null, "Student User 1", "student1@user.com", passwordEncoder.encode("password"), TargetGender.MALE,
+                        Set.of(roleRepository.findByCode("STUDENT").orElseThrow())),
+
+                new UserInfo(null, "Student User 2", "student2@user.com", passwordEncoder.encode("password"), TargetGender.MALE,
+                        Set.of(roleRepository.findByCode("STUDENT").orElseThrow())),
+
+                new UserInfo(null, "Student User 3", "student3@user.com", passwordEncoder.encode("password"), TargetGender.MALE,
+                        Set.of(roleRepository.findByCode("STUDENT").orElseThrow())),
+
+                new UserInfo(null, "Student User 4", "student4@user.com", passwordEncoder.encode("password"), TargetGender.MALE,
+                        Set.of(roleRepository.findByCode("STUDENT").orElseThrow())),
+
+                new UserInfo(null, "Student User 5", "student5@user.com", passwordEncoder.encode("password"), TargetGender.MALE,
                         Set.of(roleRepository.findByCode("STUDENT").orElseThrow())),
 
                 // 8. DONOR
-                new UserInfo(null, "Donor User", "donor@user.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
+                new UserInfo(null, "Donor User 1", "donor1@user.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
+                        Set.of(roleRepository.findByCode("DONOR").orElseThrow())),
+
+                new UserInfo(null, "Donor User 2", "donor2@user.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
+                        Set.of(roleRepository.findByCode("DONOR").orElseThrow())),
+
+                new UserInfo(null, "Donor User 3", "donor3@user.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
+                        Set.of(roleRepository.findByCode("DONOR").orElseThrow())),
+
+                new UserInfo(null, "Donor User 4", "donor4@user.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
+                        Set.of(roleRepository.findByCode("DONOR").orElseThrow())),
+
+                new UserInfo(null, "Donor User 5", "donor5@user.com", passwordEncoder.encode("password"), TargetGender.FEMALE,
                         Set.of(roleRepository.findByCode("DONOR").orElseThrow()))
         ));
 
@@ -149,24 +173,6 @@ public class ExhibitionSeeder implements CommandLineRunner {
                         null,
                         "Career Guidance Organization",
                         "Supports students in career exploration",
-                        owner,
-                        OrganizationType.CAREER_GUIDANCE,
-                        true,
-                        LocalDateTime.now()
-                ),
-                new Organization(
-                        null,
-                        "Tech Education Hub",
-                        "Promotes technology education and innovation",
-                        owner,
-                        OrganizationType.CAREER_GUIDANCE,
-                        true,
-                        LocalDateTime.now()
-                ),
-                new Organization(
-                        null,
-                        "Future Skills Foundation",
-                        "Prepares students for future careers",
                         owner,
                         OrganizationType.CAREER_GUIDANCE,
                         true,
@@ -457,16 +463,23 @@ public class ExhibitionSeeder implements CommandLineRunner {
     private void seedDonors() {
         if (donorRepository.count() > 0) return;
 
-        UserInfo donorUser = userInfoRepository.findByEmail("donor@user.com").orElseThrow();
+        UserInfo donorUser1 = userInfoRepository.findByEmail("donor1@user.com").orElseThrow();
+        UserInfo donorUser2 = userInfoRepository.findByEmail("donor2@user.com").orElseThrow();
+        UserInfo donorUser3 = userInfoRepository.findByEmail("donor3@user.com").orElseThrow();
+        UserInfo donorUser4 = userInfoRepository.findByEmail("donor4@user.com").orElseThrow();
+        UserInfo donorUser5 = userInfoRepository.findByEmail("donor5@user.com").orElseThrow();
+
         Organization org = organizationRepository.findAll().stream()
                 .filter(o -> "Career Guidance Organization".equals(o.getName()))
                 .findFirst()
                 .orElseThrow();
 
         donorRepository.saveAll(List.of(
-                new Donor(null, org, donorUser, "Tech Future Fund", new BigDecimal("50000"), new BigDecimal("50000"), true),
-                new Donor(null, org, donorUser, "Education For All", new BigDecimal("75000"), new BigDecimal("75000"), true),
-                new Donor(null, org, donorUser, "Community Grant", new BigDecimal("25000"), new BigDecimal("25000"), true)
+                new Donor(null, org, donorUser1, "Tech Future Fund", new BigDecimal("50000"), new BigDecimal("50000"), true),
+                new Donor(null, org, donorUser2, "Education For All", new BigDecimal("75000"), new BigDecimal("75000"), true),
+                new Donor(null, org, donorUser3, "Community Grant", new BigDecimal("25000"), new BigDecimal("25000"), true),
+                new Donor(null, org, donorUser4, "Innovation Grant", new BigDecimal("30000"), new BigDecimal("30000"), true),
+                new Donor(null, org, donorUser5, "Scholarship Fund", new BigDecimal("40000"), new BigDecimal("40000"), true)
         ));
     }
 }
