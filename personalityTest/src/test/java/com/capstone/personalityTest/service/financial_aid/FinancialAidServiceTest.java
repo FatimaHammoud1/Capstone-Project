@@ -31,6 +31,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -54,6 +55,9 @@ class FinancialAidServiceTest {
 
     @Mock
     private DonorRepository donorRepository;
+
+    @Mock
+    private FileStorageStrategy fileStorageService;
 
     @InjectMocks
     private FinancialAidService financialAidService;
@@ -247,6 +251,7 @@ class FinancialAidServiceTest {
         when(userInfoRepository.findByEmail("student@test.com")).thenReturn(Optional.of(testStudent));
         when(donorRepository.save(any(Donor.class))).thenReturn(testDonor);
         when(financialAidRepository.save(any(FinancialAidRequest.class))).thenReturn(testRequest);
+        doNothing().when(fileStorageService).deleteFile(anyString());
 
         // Act
         FinancialAidResponse response = financialAidService.cancelRequest(1L, "student@test.com");
@@ -282,8 +287,9 @@ class FinancialAidServiceTest {
         RuntimeException exception = assertThrows(RuntimeException.class, 
             () -> financialAidService.cancelRequest(1L, "student@test.com"));
         
-        assertTrue(exception.getMessage().contains("Cannot cancel request with status"));
+        assertEquals("Cannot cancel a disbursed request.", exception.getMessage());
         verify(financialAidRepository, never()).save(any());
+        verify(fileStorageService, never()).deleteFile(any());
     }
 
     @Test
