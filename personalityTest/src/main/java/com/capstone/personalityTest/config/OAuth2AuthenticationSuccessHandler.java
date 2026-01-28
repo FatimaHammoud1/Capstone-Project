@@ -19,6 +19,9 @@ import java.util.Optional;
 @Component
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
     private final JwtService jwtService;
     private final UserInfoRepository userInfoRepository;
 
@@ -65,7 +68,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String token = jwtService.generateToken(user);
         
         // Pass isNewUser flag to frontend
-        String targetUrl = "http://localhost:5173/oauth2/callback?token=" + token + "&isNewUser=" + isNewUser;
+        String targetUrl = frontendUrl + "/oauth2/callback?token=" + token + "&isNewUser=" + isNewUser;
         
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }

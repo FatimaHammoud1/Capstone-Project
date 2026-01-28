@@ -17,8 +17,8 @@ import java.util.function.Function;
 @Component
 public class JwtService {
 
-    // Secret key used to sign and verify JWTs. Should be kept safe.
-    public static final String SECRET = "5367566859703373367639792F423F452848284D6251655468576D5A71347437";
+    @Value("${app.jwtSecret}")
+    private String secret;
 
     @Value("${app.jwtExpirationMs:3600000}")
     private long jwtExpirationMs;
@@ -51,7 +51,7 @@ public class JwtService {
 
     // Convert the secret string into a cryptographic key
     private Key getSignKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET); // Decode from Base64
+        byte[] keyBytes = Decoders.BASE64.decode(secret); // Decode from Base64
         return Keys.hmacShaKeyFor(keyBytes); // Create HMAC-SHA key
     }
 
