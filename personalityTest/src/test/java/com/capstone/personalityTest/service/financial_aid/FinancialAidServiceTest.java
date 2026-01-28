@@ -104,9 +104,9 @@ class FinancialAidServiceTest {
         testRequest.setFieldOfStudy("Computer Science");
         testRequest.setUniversityName("Test University");
         testRequest.setFamilyIncome(new BigDecimal("2000.00"));
-        testRequest.setIdCardUrl("http://example.com/id.jpg");
-        testRequest.setUniversityFeesUrl("http://example.com/fees.pdf");
-        testRequest.setGradeProofUrl("http://example.com/grades.pdf");
+        testRequest.setIdCardFileName("http://example.com/id.jpg");
+        testRequest.setUniversityFeesFileName("http://example.com/fees.pdf");
+        testRequest.setGradeProofFileName("http://example.com/grades.pdf");
         testRequest.setReason("Need financial assistance for tuition");
         testRequest.setStatus(FinancialAidRequest.Status.PENDING);
         testRequest.setRequestedAt(LocalDateTime.now());
@@ -125,9 +125,9 @@ class FinancialAidServiceTest {
         applyRequest.setFieldOfStudy("Computer Science");
         applyRequest.setUniversityName("Test University");
         applyRequest.setFamilyIncome(new BigDecimal("2000.00"));
-        applyRequest.setIdCardUrl("http://example.com/id.jpg");
-        applyRequest.setUniversityFeesUrl("http://example.com/fees.pdf");
-        applyRequest.setGradeProofUrl("http://example.com/grades.pdf");
+        applyRequest.setIdCardFileName("http://example.com/id.jpg");
+        applyRequest.setUniversityFeesFileName("http://example.com/fees.pdf");
+        applyRequest.setGradeProofFileName("http://example.com/grades.pdf");
         applyRequest.setReason("Need financial assistance");
 
         when(userInfoRepository.findByEmail("student@test.com")).thenReturn(Optional.of(testStudent));
