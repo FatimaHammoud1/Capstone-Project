@@ -5,7 +5,7 @@ import com.capstone.personalityTest.dto.RequestDTO.financial_aid.FinancialAidRev
 import com.capstone.personalityTest.dto.ResponseDTO.financial_aid.DonorResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.financial_aid.FinancialAidResponse;
 import com.capstone.personalityTest.model.financial_aid.FinancialAidRequest;
-import com.capstone.personalityTest.service.financial_aid.FileStorageService;
+import com.capstone.personalityTest.service.financial_aid.FileStorageStrategy;
 import com.capstone.personalityTest.service.financial_aid.FinancialAidService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,7 +32,7 @@ public class FinancialAidController {
 
     private final FinancialAidService financialAidService;
 
-    private final FileStorageService fileStorageService;
+    private final FileStorageStrategy fileStorageService;
 
     /**
      * Submit financial aid request with file uploads
@@ -97,6 +97,29 @@ public class FinancialAidController {
             @PathVariable Long requestId,
             Principal principal) {
         return ResponseEntity.ok(financialAidService.getRequestDetails(requestId, principal.getName()));
+    }
+
+
+
+    /**
+     * Download/view uploaded document
+     * Needed for Local Development (serving files from disk)
+     */
+    @GetMapping("/files/{fileName}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName) {
+        
+        Resource resource = fileStorageService.loadFileAsResource(fileName);
+        
+        String contentType = "application/octet-stream";
+        String lowerName = fileName.toLowerCase();
+        if (lowerName.endsWith(".pdf")) contentType = "application/pdf";
+        else if (lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg")) contentType = "image/jpeg";
+        else if (lowerName.endsWith(".png")) contentType = "image/png";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
     }
 
     @PostMapping("/{requestId}/cancel")

@@ -32,7 +32,7 @@ public class FinancialAidService {
     private final UserInfoRepository userInfoRepository;
     private final OrganizationRepository organizationRepository;
     private final DonorRepository donorRepository;
-    private final FileStorageService fileStorageService;
+    private final FileStorageStrategy fileStorageService;
 
     /**
      * Request financial aid with file uploads (ALL VALIDATION HERE)
