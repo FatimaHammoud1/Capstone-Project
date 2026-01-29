@@ -8,8 +8,9 @@ WORKDIR /app
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
 
-# Give execution rights to the Maven wrapper
-RUN chmod +x mvnw
+# Give execution rights to the Maven wrapper and fix Windows line endings
+RUN chmod +x mvnw && \
+    sed -i 's/\r$//' mvnw
 
 # Download dependencies (this layer will be cached unless pom.xml changes)
 RUN ./mvnw dependency:go-offline
