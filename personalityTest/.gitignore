@@ -38,6 +38,8 @@ src/main/resources/application.properties
 src/main/resources/application-*.properties
 # But allow test properties (no secrets)
 !src/test/resources/application-test.properties
+# Allow prod properties (template only, no secrets)
+!src/main/resources/application-prod.properties
 
 ### Firebase Secrets ###
 src/main/resources/firebase-config.json
