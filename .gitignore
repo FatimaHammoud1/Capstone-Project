@@ -49,3 +49,12 @@ Thumbs.db
 *.wmv
 *.env
 
+# Secrets
+firebase-config.json
+**/firebase-config.json
+**/*.properties
+
+# Uploads
+uploads/
+**/uploads/
+

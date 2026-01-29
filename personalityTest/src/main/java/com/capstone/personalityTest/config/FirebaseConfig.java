@@ -20,10 +20,19 @@ public class FirebaseConfig {
     public FirebaseApp firebaseApp() throws IOException {
         // Only initialize if not already initialized
         if (FirebaseApp.getApps().isEmpty()) {
-            InputStream serviceAccount = getClass().getResourceAsStream("/firebase-config.json");
             
-            if (serviceAccount == null) {
-                throw new RuntimeException("Could not find firebase-config.json in resources folder!");
+            InputStream serviceAccount;
+            String envCredentials = System.getenv("FIREBASE_CREDENTIALS");
+
+            if (envCredentials != null && !envCredentials.isEmpty()) {
+                // Production: Use environment variable
+                serviceAccount = new java.io.ByteArrayInputStream(envCredentials.getBytes());
+            } else {
+                // Development: Use local file
+                serviceAccount = getClass().getResourceAsStream("/firebase-config.json");
+                if (serviceAccount == null) {
+                    throw new RuntimeException("Could not find firebase-config.json or FIREBASE_CREDENTIALS!");
+                }
             }
 
             FirebaseOptions options = FirebaseOptions.builder()

@@ -32,3 +32,8 @@ httpx==0.26.0
 
 # Utilities
 pydantic==2.5.3
+
+# ML Service Dependencies
+scikit-learn==1.3.2
+joblib==1.3.2
+numpy==1.26.3

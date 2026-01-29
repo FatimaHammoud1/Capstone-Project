@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: personality-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: personalityTest
+      MYSQL_USER: capstone
+      MYSQL_PASSWORD: admin
+      MYSQL_ROOT_PASSWORD: admin
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  # Java Backend
+  backend:
+    build: ./personalityTest
+    container_name: personality-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - ai-service
+      - ml-service
+    environment:
+      # Connect to the 'db' service container
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/personalityTest?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: capstone
+      SPRING_DATASOURCE_PASSWORD: admin
+      # Point to the AI service container
+      AI_SERVICE_URL: http://ai-service:5000
+      # Use dev profile for local docker testing (saves files to associated volume)
+      SPRING_PROFILES_ACTIVE: dev
+      FILE_UPLOAD_DIR: uploads/financial-aid
+    volumes:
+      - ./uploads:/app/uploads
+
+  # AI Service (LangGraph/Chatbot)
+  ai-service:
+    build: ./ai-service
+    container_name: ai-service
+    ports:
+      - "5000:5000"
+    # Command to run the LangGraph service
+    command: uvicorn langgraph_service:app --host 0.0.0.0 --port 5000
+    env_file:
+      - ./ai-service/.env
+
+  # ML Service (Prediction)
+  ml-service:
+    build: ./ai-service
+    container_name: ml-service
+    ports:
+      - "5001:5001"
+    # Overriding command to run the ML service specifically
+    command: uvicorn ml_service:app --host 0.0.0.0 --port 5001
+    env_file:
+      - ./ai-service/.env
+
+volumes:
+  db_data:
