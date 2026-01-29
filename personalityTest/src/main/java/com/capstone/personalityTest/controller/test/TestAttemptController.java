@@ -1,0 +1,226 @@
+package com.capstone.personalityTest.controller.test;
+
+import com.capstone.personalityTest.dto.RequestDTO.test.TestAttemptRequest.AnswerRequest;
+import com.capstone.personalityTest.dto.ResponseDTO.test.TestAttemptResponse.AnswerResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.test.TestAttemptResponse.TestAttemptWithAnswersResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.test.TestAttemptResponse.TestAttemptResponse;
+import com.capstone.personalityTest.model.testm.EvaluationResult;
+import com.capstone.personalityTest.service.test.ModelServiceClient;
+import com.capstone.personalityTest.service.test.TestAttemptService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@CrossOrigin
+@RequestMapping("/api/test-attempts")
+@RequiredArgsConstructor
+public class TestAttemptController {
+
+    private final TestAttemptService testAttemptService;
+    private final ModelServiceClient modelServiceClient;
+
+    @GetMapping("/{testId}")
+    public ResponseEntity<TestAttemptResponse> startTest(
+            @PathVariable Long testId,
+            @RequestParam Long studentId) {
+        TestAttemptResponse response = testAttemptService.startTest(testId, studentId);
+        return ResponseEntity.ok(response);
+    }
+
+    //    Endpoint to submit answers
+    @PatchMapping("/{attemptId}/answers")
+    public ResponseEntity<String> submitAnswers(
+            @PathVariable Long attemptId,
+            @RequestBody AnswerRequest answer) {
+        testAttemptService.submitAnswers(attemptId, answer);
+        return ResponseEntity.ok("Answers submitted successfully");
+    }
+
+
+    @PatchMapping("/{attemptId}/finalize")
+    public ResponseEntity<EvaluationResult> finalizeAttempt(@PathVariable Long attemptId) {
+        EvaluationResult result = testAttemptService.finalizeAttempt(attemptId);
+        return ResponseEntity.ok(result);
+    }
+
+    
+   /**
+     * Get personality code from ML Model based on test attempt answers.
+     * This endpoint calls the model-service.py to predict the personality code.
+     * 
+     * Flow:
+     * 1. Student completes and submits all answers
+     * 2. Call POST /api/test-attempts/{attemptId}/predict-code
+     * 3. Returns predicted personality code (e.g., "R-I-A")
+     * 4. Code is saved to the test attempt's evaluation result
+     * 5. Can then trigger AI analysis with the predicted code
+     * 
+     * @param attemptId ID of the test attempt with answers
+     * @return Predicted personality code
+     */
+    @PostMapping("/{attemptId}/predict-code")
+    public ResponseEntity<?> predictPersonalityCode(@PathVariable Long attemptId) {
+        try {
+            String predictedCode = modelServiceClient.getPredictedPersonalityCode(attemptId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Personality code predicted successfully",
+                "predictedCode", predictedCode,
+                "attemptId", attemptId
+            ));
+            
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of(
+                    "success", false, 
+                    "error", e.getMessage()
+                ));
+                
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of(
+                    "success", false, 
+                    "error", "Failed to predict personality code: " + e.getMessage()
+                ));
+        }
+    }
+
+
+
+    /**
+     * Manually trigger AI analysis for a finalized test attempt.
+     * This endpoint should be called AFTER finalizing the test.
+     * 
+     * Flow:
+     * 1. Student completes test
+     * 2. Call PATCH /api/test-attempts/{attemptId}/finalize (calculates personality code)
+     * 3. Call POST /api/test-attempts/{attemptId}/analyze (triggers AI analysis)
+     * 4. Poll GET /api/ai-results/attempt/{attemptId} to check if results are ready
+     * 
+     * @param attemptId ID of the finalized test attempt
+     * @return Success message
+     */
+    @PostMapping("/{attemptId}/analyze")
+    public ResponseEntity<?> triggerAIAnalysis(@PathVariable Long attemptId) {
+        try {
+            testAttemptService.triggerAIAnalysis(attemptId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "AI analysis triggered successfully. Results will be available shortly.",
+                "attemptId", attemptId
+            ));
+            
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "error", e.getMessage()));
+                
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of("success", false, "error", "Failed to trigger AI analysis: " + e.getMessage()));
+        }
+    }
+
+
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    // Get all test attempts (for admin)
+    @GetMapping
+    public ResponseEntity<List<TestAttemptWithAnswersResponse>> getAllTestAttempts() {
+        List<TestAttemptWithAnswersResponse> attempts = testAttemptService.getAllTestAttempts();
+        return ResponseEntity.ok(attempts);
+    }
+
+    @GetMapping("/students/{studentId}")
+    public ResponseEntity<List<TestAttemptWithAnswersResponse>> getAttemptsByStudent(@PathVariable Long studentId) {
+        return ResponseEntity.ok(testAttemptService.getAttemptsByStudent(studentId));
+    }
+
+    @GetMapping("/{attemptId}/answers")
+    public ResponseEntity<List<AnswerResponse>> getAnswersByTestAttempt(@PathVariable Long attemptId) {
+        List<AnswerResponse> answers = testAttemptService.getAnswersByTestAttempt(attemptId);
+        return ResponseEntity.ok(answers);
+    }
+
+    @GetMapping("/fullAttempt/{attemptId}")
+    public ResponseEntity<TestAttemptWithAnswersResponse> getTestAttemptWithAnswersById(@PathVariable Long attemptId) {
+        TestAttemptWithAnswersResponse response = testAttemptService.getTestAttemptWithAnswersById(attemptId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/attempts/{attemptId}")
+    public ResponseEntity<TestAttemptResponse> getTestAttemptById(@PathVariable Long attemptId) {
+        TestAttemptResponse response = testAttemptService.getTestAttemptById(attemptId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/answers/{attemptId}")
+    public ResponseEntity<List<AnswerResponse>> getAllAnswersByTestAttemptId(@PathVariable Long attemptId){
+        List<AnswerResponse> answers = testAttemptService.getAllAnswersByTestAttemptId(attemptId);
+        return ResponseEntity.ok(answers);
+    }
+
+
+    // ==================== ML Result Endpoints ====================
+
+    /**
+     * Get ML prediction result for a specific test attempt.
+     * Returns the ML-predicted personality code and metadata.
+     * 
+     * @param attemptId ID of the test attempt
+     * @return MLResult if exists, 404 if not found
+     */
+    @GetMapping("/{attemptId}/ml-result")
+    public ResponseEntity<?> getMLResultByAttemptId(@PathVariable Long attemptId) {
+        try {
+            var mlResult = modelServiceClient.getMLResultByAttemptId(attemptId);
+            
+            if (mlResult == null) {
+                return ResponseEntity.status(404)
+                    .body(Map.of(
+                        "success", false,
+                        "message", "No ML prediction found for this test attempt",
+                        "attemptId", attemptId
+                    ));
+            }
+            
+            return ResponseEntity.ok(mlResult);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of(
+                    "success", false,
+                    "error", "Failed to retrieve ML result: " + e.getMessage()
+                ));
+        }
+    }
+
+    /**
+     * Get all ML prediction results.
+     * Admin endpoint for analytics and monitoring.
+     * 
+     * @return List of all MLResult entities
+     */
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    @GetMapping("/ml-results")
+    public ResponseEntity<?> getAllMLResults() {
+        try {
+            var mlResults = modelServiceClient.getAllMLResults();
+            return ResponseEntity.ok(mlResults);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of(
+                    "success", false,
+                    "error", "Failed to retrieve ML results: " + e.getMessage()
+                ));
+        }
+    }
+
+
+}

@@ -1,0 +1,119 @@
+package com.capstone.personalityTest.controller.Exhibition;
+
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse;
+import com.capstone.personalityTest.service.Exhibition.SchoolParticipationService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.SchoolParticipationResponse;
+
+@RestController
+@RequestMapping("/api/schools-participations")
+@RequiredArgsConstructor
+public class SchoolParticipationController {
+
+    private final SchoolParticipationService participationService;
+
+    // ----------------- INVITE SCHOOL -----------------
+    @PostMapping("/invite/{exhibitionId}/{schoolId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<SchoolParticipationResponse> inviteSchool(
+            @PathVariable Long exhibitionId,
+            @PathVariable Long schoolId,
+            @RequestParam LocalDateTime responseDeadline,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        SchoolParticipationResponse participation = participationService.inviteSchool(
+                exhibitionId, schoolId, responseDeadline, userDetails.getUsername()
+        );
+        return ResponseEntity.ok(participation);
+    }
+
+    // ----------------- SCHOOL RESPOND (ACCEPT/REJECT) -----------------
+    @PostMapping("/respond/{participationId}")
+    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'DEVELOPER')")
+    public ResponseEntity<SchoolParticipationResponse> respondToInvitation(
+            @PathVariable Long participationId,
+            @RequestParam boolean accept,
+            @RequestParam(required = false) String rejectionReason,
+            @RequestParam(required = false) Integer expectedStudents,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        SchoolParticipationResponse participation = participationService.respondToInvitation(
+                participationId, accept, rejectionReason, expectedStudents, userDetails.getUsername()
+        );
+        return ResponseEntity.ok(participation);
+    }
+
+    // ----------------- ACCEPT SCHOOL (ORG REVIEWS) -----------------
+    @PostMapping("/accept/{participationId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<SchoolParticipationResponse> acceptSchool(
+            @PathVariable Long participationId,
+            @RequestParam boolean approved,
+            @RequestParam(required = false) LocalDateTime confirmationDeadline,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        SchoolParticipationResponse accepted = participationService.acceptSchool(participationId, approved, confirmationDeadline, userDetails.getUsername());
+        return ResponseEntity.ok(accepted);
+    }
+
+    // ----------------- CONFIRM SCHOOL (SCHOOL CONFIRMS COMMITMENT) -----------------
+//    @PostMapping("/confirm/{participationId}")
+//    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'DEVELOPER')")
+//    public ResponseEntity<SchoolParticipationResponse> confirmSchool(
+//            @PathVariable Long participationId,
+//            @AuthenticationPrincipal UserDetails userDetails) {
+//
+//        SchoolParticipationResponse confirmed = participationService.confirmSchool(participationId, userDetails.getUsername());
+//        return ResponseEntity.ok(confirmed);
+//    }
+    
+    // ----------------- FINALIZE PARTICIPATION -----------------
+    @PostMapping("/finalize/{participationId}")
+    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'DEVELOPER')")
+    public ResponseEntity<SchoolParticipationResponse> finalizeParticipation(
+            @PathVariable Long participationId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+            
+        SchoolParticipationResponse finalized = participationService.finalizeParticipation(participationId, userDetails.getUsername());
+        return ResponseEntity.ok(finalized);
+    }
+    
+    // ----------------- CANCEL SCHOOL PARTICIPATION -----------------
+    @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<SchoolParticipationResponse> cancelParticipation(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+            
+        SchoolParticipationResponse cancelled = participationService.cancelParticipation(id, userDetails.getUsername());
+        return ResponseEntity.ok(cancelled);
+    }
+
+    // ----------------- GET PARTICIPATIONS -----------------
+    @GetMapping("/{participationId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'SCHOOL_ADMIN', 'DEVELOPER')")
+    public ResponseEntity<SchoolParticipationResponse> getParticipationById(@PathVariable Long participationId) {
+        return ResponseEntity.ok(participationService.getParticipationById(participationId));
+    }
+
+    @GetMapping("/exhibition/{exhibitionId}")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<List<SchoolParticipationResponse>> getParticipationsByExhibition(@PathVariable Long exhibitionId) {
+        return ResponseEntity.ok(participationService.getParticipationsByExhibition(exhibitionId));
+    }
+
+    @GetMapping("/school/{schoolId}/participations")
+    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'DEVELOPER')")
+    public ResponseEntity<List<SchoolParticipationResponse>> getAllParticipationsBySchoolId(@PathVariable Long schoolId) {
+        return ResponseEntity.ok(participationService.getParticipationsBySchoolId(schoolId));
+    }
+}
