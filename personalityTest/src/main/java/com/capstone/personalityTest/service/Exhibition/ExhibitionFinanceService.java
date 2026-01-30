@@ -26,7 +26,7 @@ public class ExhibitionFinanceService {
     private final VenueRequestRepository venueRequestRepository;
 
     // ----------------- Calculate/Recalculate Financial Summary -----------------
-    public com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFinancialResponse calculateFinancials(Long exhibitionId) {
+    public ExhibitionFinancialResponse calculateFinancials(Long exhibitionId) {
         Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
@@ -112,7 +112,7 @@ public class ExhibitionFinanceService {
     }
 
     // ----------------- Map to Response DTO -----------------
-    private com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFinancialResponse mapToResponse(ExhibitionFinancial financial) {
+    private ExhibitionFinancialResponse mapToResponse(ExhibitionFinancial financial) {
         return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFinancialResponse(
             financial.getId(),
             financial.getExhibition().getId(),
