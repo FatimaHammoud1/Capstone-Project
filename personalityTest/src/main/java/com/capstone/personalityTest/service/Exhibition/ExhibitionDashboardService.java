@@ -146,10 +146,10 @@ public class ExhibitionDashboardService {
             .filter(booth -> booth.getUniversityParticipationId() != null)
             .count();
 
-        // Calculate university attendance rate (attended / invited)
-        double uniAttendanceRate = uniInvited > 0
+        // Calculate university attendance rate (attended / finalized)
+        double uniAttendanceRate = uniFinalized > 0
             ? BigDecimal.valueOf(uniAttended)
-                .divide(BigDecimal.valueOf(uniInvited), 2, RoundingMode.HALF_UP)
+                .divide(BigDecimal.valueOf(uniFinalized), 2, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100))
                 .doubleValue()
             : 0.0;
@@ -184,10 +184,10 @@ public class ExhibitionDashboardService {
 
        
 
-        // Calculate school attendance rate (attended / invited)
-        double schoolAttendanceRate = schoolInvited > 0
+        // Calculate school attendance rate (attended / finalized)
+        double schoolAttendanceRate = schoolFinalized > 0
             ? BigDecimal.valueOf(schoolAttended)
-                .divide(BigDecimal.valueOf(schoolInvited), 2, RoundingMode.HALF_UP)
+                .divide(BigDecimal.valueOf(schoolFinalized), 2, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100))
                 .doubleValue()
             : 0.0;
@@ -253,10 +253,10 @@ public class ExhibitionDashboardService {
             .filter(booth -> booth.getActivityProviderRequestId() != null)
             .count();
 
-        // Calculate activity provider attendance rate (attended / invited)
-        double providerAttendanceRate = providersInvited > 0
+        // Calculate activity provider attendance rate (attended / finalized)
+        double providerAttendanceRate = providersFinalized > 0
             ? BigDecimal.valueOf(providersAttended)
-                .divide(BigDecimal.valueOf(providersInvited), 2, RoundingMode.HALF_UP)
+                .divide(BigDecimal.valueOf(providersFinalized), 2, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100))
                 .doubleValue()
             : 0.0;
