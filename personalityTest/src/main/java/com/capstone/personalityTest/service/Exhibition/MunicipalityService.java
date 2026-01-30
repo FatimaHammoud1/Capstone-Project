@@ -49,6 +49,11 @@ public class MunicipalityService {
         Exhibition exhibition = request.getExhibition();
         Venue venue = request.getVenue();
 
+        // Validate venue is not manually closed/unavailable
+        if (Boolean.FALSE.equals(venue.getAvailable())) {
+             throw new RuntimeException("Venue is currently marked as unavailable/closed");
+        }
+
         // Validate request is pending
         if (request.getStatus() != VenueRequestStatus.PENDING) {
             throw new RuntimeException("Venue request has already been reviewed");

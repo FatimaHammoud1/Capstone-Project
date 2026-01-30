@@ -4,8 +4,11 @@ import com.capstone.personalityTest.model.Enum.Exhibition.ExhibitionStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.ActivityProviderRequestStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.StudentRegistrationStatus;
+import com.capstone.personalityTest.model.Enum.Exhibition.VenueRequestStatus;
 import com.capstone.personalityTest.model.Exhibition.Exhibition;
 import com.capstone.personalityTest.model.Exhibition.Organization;
+import com.capstone.personalityTest.model.Exhibition.Venue;
+import com.capstone.personalityTest.model.Exhibition.VenueRequest;
 import com.capstone.personalityTest.model.UserInfo;
 import com.capstone.personalityTest.repository.Exhibition.*;
 import com.capstone.personalityTest.repository.UserInfoRepository;
@@ -35,6 +38,8 @@ public class ExhibitionService {
     private final SchoolParticipationRepository schoolParticipationRepository;
     private final BoothRepository boothRepository;
     private final StudentRegistrationRepository studentRegistrationRepository;
+    private final VenueRepository venueRepository;
+    private final VenueRequestRepository venueRequestRepository;
     
     // ----------------- Create Exhibition -----------------
     public ExhibitionResponse createExhibition(Long orgId, ExhibitionRequest request, String creatorEmail) {
@@ -342,10 +347,24 @@ public class ExhibitionService {
         // Deleting booths associated with this exhibition clears them.
         boothRepository.deleteByExhibition(exhibition);
         
+        // 5. Release Venue
+        releaseVenueIfExists(exhibitionId);
+        
         exhibition.setUpdatedAt(LocalDateTime.now());
         // Could store cancel reason in a new field or log it. Requirements say "Cancellation reason is REQUIRED", assuming passed to log or stored.
         // If entity doesn't have cancelReason field, we can't save it. Assuming logging it or sending notification (out of scope).
         
         return exhibitionRepository.save(exhibition);
+    }
+
+    private void releaseVenueIfExists(Long exhibitionId) {
+        venueRequestRepository.findByExhibitionId(exhibitionId).stream()
+             .filter(req -> req.getStatus() == VenueRequestStatus.APPROVED)
+             .findFirst()
+             .ifPresent(req -> {
+                 Venue venue = req.getVenue();
+                 venue.setAvailable(true);
+                 venueRepository.save(venue);
+             });
     }
 }
