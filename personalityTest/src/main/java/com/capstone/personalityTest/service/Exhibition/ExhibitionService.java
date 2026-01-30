@@ -301,12 +301,10 @@ public class ExhibitionService {
 
         if (!isOrgOwner && !isDev) {
             // Check if municipality admin
-             // This would require fetching venue request -> venue -> municipality -> admin
-             // if not org owner and not relevant municipality admin -> throw exception
-             // For strictness, if not org owner, we just fail for now as per "Caller must be authorized".
-             // We can check role and if MUNICIPALITY_ADMIN, we assume they are valid (or rely on controller to have filtered or simple check).
-             // Ideally: valid logic.
-             // Let's allow if user has role ROLE_MUNICIPALITY_ADMIN for now as a "Super" cancel for their region (mocked).
+            boolean isMunAdmin = canceller.getRoles().stream().anyMatch(r -> r.getCode().equals("MUNICIPALITY_ADMIN"));
+            if (!isMunAdmin) {
+                 throw new RuntimeException("You are not authorized to cancel this exhibition");
+            }
         }
 
         // Determine status

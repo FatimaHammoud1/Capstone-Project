@@ -188,8 +188,10 @@ public class ExhibitionLifecycleService {
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
         boolean isDev = orgOwner.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
-        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId()) && !isDev) {
-            throw new RuntimeException("Only the organization owner can complete the exhibition");
+        boolean isMunAdmin = orgOwner.getRoles().stream().anyMatch(r -> r.getCode().equals("MUNICIPALITY_ADMIN"));
+        
+        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId()) && !isDev && !isMunAdmin) {
+            throw new RuntimeException("Only the organization owner or municipality admin can complete the exhibition");
         }
 
         if (exhibition.getStatus() != ExhibitionStatus.ACTIVE) {
