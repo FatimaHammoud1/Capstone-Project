@@ -157,6 +157,16 @@ public class ExhibitionService {
         // Count currently used booths
         int usedBooths = boothRepository.countByExhibition(exhibition);
         
+        // Count booths used by universities
+        int usedUniBoothNb = (int) boothRepository.findByExhibitionId(exhibitionId).stream()
+                .filter(booth -> booth.getUniversityParticipationId() != null)
+                .count();
+        
+        // Count booths used by activity providers
+        int usedActivityProvidersNb = (int) boothRepository.findByExhibitionId(exhibitionId).stream()
+                .filter(booth -> booth.getActivityProviderRequestId() != null)
+                .count();
+        
         // Calculate remaining
         int remainingBooths = totalBooths - usedBooths;
         
@@ -164,6 +174,8 @@ public class ExhibitionService {
         Map<String, Integer> boothInfo = new HashMap<>();
         boothInfo.put("totalAvailableBooths", totalBooths);
         boothInfo.put("usedBooths", usedBooths);
+        boothInfo.put("usedUniBoothNb", usedUniBoothNb);
+        boothInfo.put("usedActivityProvidersNb", usedActivityProvidersNb);
         boothInfo.put("remainingBooths", remainingBooths);
         
         return boothInfo;
