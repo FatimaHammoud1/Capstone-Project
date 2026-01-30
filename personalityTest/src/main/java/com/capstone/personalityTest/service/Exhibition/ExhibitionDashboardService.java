@@ -1,15 +1,18 @@
 package com.capstone.personalityTest.service.Exhibition;
 
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.ExhibitionOverviewResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.ParticipationStatsResponse;
+import com.capstone.personalityTest.model.Enum.Exhibition.ActivityProviderRequestStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.ExhibitionStatus;
-import com.capstone.personalityTest.model.Exhibition.Exhibition;
-import com.capstone.personalityTest.model.Exhibition.ExhibitionFinancial;
-import com.capstone.personalityTest.repository.Exhibition.ExhibitionFinancialRepository;
-import com.capstone.personalityTest.repository.Exhibition.ExhibitionRepository;
+import com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus;
+import com.capstone.personalityTest.model.Enum.Exhibition.StudentRegistrationStatus;
+import com.capstone.personalityTest.model.Exhibition.*;
+import com.capstone.personalityTest.repository.Exhibition.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +24,11 @@ public class ExhibitionDashboardService {
 
     private final ExhibitionRepository exhibitionRepository;
     private final ExhibitionFinancialRepository exhibitionFinancialRepository;
+    private final UniversityParticipationRepository universityParticipationRepository;
+    private final SchoolParticipationRepository schoolParticipationRepository;
+    private final StudentRegistrationRepository studentRegistrationRepository;
+    private final ActivityProviderRequestRepository activityProviderRequestRepository;
+    private final BoothRepository boothRepository;
 
     /**
      * Get exhibition overview dashboard statistics
@@ -94,6 +102,206 @@ public class ExhibitionDashboardService {
             totalRevenue,
             totalExpenses,
             netProfit
+        );
+    }
+
+    /**
+     * Get participation statistics for a specific exhibition
+     * @param exhibitionId Exhibition ID
+     * @return ParticipationStatsResponse with detailed participation metrics
+     */
+    public ParticipationStatsResponse getParticipationStats(Long exhibitionId) {
+        // Fetch exhibition
+        Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
+            .orElseThrow(() -> new RuntimeException("Exhibition not found"));
+
+        // ============ UNIVERSITY PARTICIPATION ============
+        List<UniversityParticipation> uniParticipations = universityParticipationRepository
+            .findByExhibitionId(exhibitionId);
+
+        long uniInvited = uniParticipations.stream()
+            .filter(p -> p.getStatus() == ParticipationStatus.INVITED)
+            .count();
+
+        long uniRegistered = uniParticipations.stream()
+            .filter(p -> p.getStatus() == ParticipationStatus.REGISTERED)
+            .count();
+
+        long uniConfirmed = uniParticipations.stream()
+            .filter(p -> p.getStatus() == ParticipationStatus.CONFIRMED)
+            .count();
+
+        long uniFinalized = uniParticipations.stream()
+            .filter(p -> p.getStatus() == ParticipationStatus.FINALIZED)
+            .count();
+
+        long uniAttended = uniParticipations.stream()
+            .filter(p -> p.getStatus() == ParticipationStatus.ATTENDED)
+            .count();
+
+        
+
+        // Count booths allocated to universities
+        int uniTotalBooths = (int) boothRepository.findByExhibitionId(exhibitionId).stream()
+            .filter(booth -> booth.getUniversityParticipationId() != null)
+            .count();
+
+        // Calculate university attendance rate (attended / invited)
+        double uniAttendanceRate = uniInvited > 0
+            ? BigDecimal.valueOf(uniAttended)
+                .divide(BigDecimal.valueOf(uniInvited), 2, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .doubleValue()
+            : 0.0;
+
+        ParticipationStatsResponse.UniversityStats universityStats = 
+            new ParticipationStatsResponse.UniversityStats(
+                uniInvited, uniRegistered, uniConfirmed, uniFinalized, uniAttended,
+                uniTotalBooths, uniAttendanceRate
+            );
+
+        // ============ SCHOOL PARTICIPATION ============
+        List<SchoolParticipation> schoolParticipations = schoolParticipationRepository
+            .findByExhibitionId(exhibitionId);
+
+        long schoolInvited = schoolParticipations.stream()
+            .filter(p -> p.getStatus() == ParticipationStatus.INVITED)
+            .count();
+
+        long schoolRegistered = schoolParticipations.stream()
+            .filter(p -> p.getStatus() == ParticipationStatus.REGISTERED)
+            .count();
+
+       
+
+        long schoolFinalized = schoolParticipations.stream()
+            .filter(p -> p.getStatus() == ParticipationStatus.FINALIZED)
+            .count();
+
+        long schoolAttended = schoolParticipations.stream()
+            .filter(p -> p.getStatus() == ParticipationStatus.ATTENDED)
+            .count();
+
+       
+
+        // Calculate school attendance rate (attended / invited)
+        double schoolAttendanceRate = schoolInvited > 0
+            ? BigDecimal.valueOf(schoolAttended)
+                .divide(BigDecimal.valueOf(schoolInvited), 2, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .doubleValue()
+            : 0.0;
+
+        ParticipationStatsResponse.SchoolStats schoolStats = 
+            new ParticipationStatsResponse.SchoolStats(
+                schoolInvited, schoolRegistered, schoolFinalized, schoolAttended,
+                 schoolAttendanceRate
+            );
+
+        // ============ STUDENT REGISTRATION ============
+        List<StudentRegistration> studentRegistrations = studentRegistrationRepository
+            .findByExhibitionId(exhibitionId);
+
+        long studentsRegistered = studentRegistrations.stream()
+            .filter(r -> r.getStatus() == StudentRegistrationStatus.REGISTERED )
+            .count();
+
+        long studentsAttended = studentRegistrations.stream()
+            .filter(r -> r.getStatus() == StudentRegistrationStatus.ATTENDED)
+            .count();
+
+        long studentsNoShow = studentRegistrations.stream()
+            .filter(r -> r.getStatus() == StudentRegistrationStatus.NO_SHOW)
+            .count();
+
+        // Calculate student attendance rate (attended / registered)
+        double studentAttendanceRate = studentsRegistered > 0 
+            ? BigDecimal.valueOf(studentsAttended)
+                .divide(BigDecimal.valueOf(studentsRegistered), 2, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .doubleValue()
+            : 0.0;
+
+        ParticipationStatsResponse.StudentStats studentStats = 
+            new ParticipationStatsResponse.StudentStats(
+                studentsRegistered, studentsAttended, studentsNoShow,
+                studentAttendanceRate
+            );
+
+        // ============ ACTIVITY PROVIDER PARTICIPATION ============
+        List<ActivityProviderRequest> providerRequests = activityProviderRequestRepository
+            .findByExhibitionId(exhibitionId);
+
+        long providersInvited = providerRequests.stream()
+            .filter(r -> r.getStatus() == ActivityProviderRequestStatus.INVITED)
+            .count();
+
+        long providersProposed = providerRequests.stream()
+            .filter(r -> r.getStatus() == ActivityProviderRequestStatus.PROPOSED)
+            .count();
+
+        long providersFinalized = providerRequests.stream()
+            .filter(r -> r.getStatus() == ActivityProviderRequestStatus.FINALIZED)
+            .count();
+
+        long providersAttended = providerRequests.stream()
+            .filter(r -> r.getStatus() == ActivityProviderRequestStatus.ATTENDED)
+            .count();
+
+        // Count booths allocated to activity providers
+        int providerTotalBooths = (int) boothRepository.findByExhibitionId(exhibitionId).stream()
+            .filter(booth -> booth.getActivityProviderRequestId() != null)
+            .count();
+
+        // Calculate activity provider attendance rate (attended / invited)
+        double providerAttendanceRate = providersInvited > 0
+            ? BigDecimal.valueOf(providersAttended)
+                .divide(BigDecimal.valueOf(providersInvited), 2, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .doubleValue()
+            : 0.0;
+
+        ParticipationStatsResponse.ActivityProviderStats providerStats = 
+            new ParticipationStatsResponse.ActivityProviderStats(
+                providersInvited, providersProposed, providersFinalized,
+                providersAttended, providerTotalBooths, providerAttendanceRate
+            );
+
+        // ============ OVERALL STATISTICS ============
+        int totalExpectedVisitors = exhibition.getExpectedVisitors();
+        
+        // Calculate actual visitor count (people, not entities)
+        // Sum visitor counts from attended universities + schools + individual students
+        int actualVisitorsFromUniversities = uniParticipations.stream()
+            .filter(p -> p.getStatus() == ParticipationStatus.ATTENDED && p.getExpectedVisitors() != null)
+            .mapToInt(UniversityParticipation::getExpectedVisitors)
+            .sum();
+            
+        int actualVisitorsFromSchools = schoolParticipations.stream()
+            .filter(p -> p.getStatus() == ParticipationStatus.ATTENDED && p.getExpectedVisitors() != null)
+            .mapToInt(SchoolParticipation::getExpectedVisitors)
+            .sum();
+        
+        // Total actual attendees = visitors from universities + schools + individual students
+        int actualAttendees = actualVisitorsFromUniversities + actualVisitorsFromSchools + (int) studentsAttended;
+
+        double overallAttendanceRate = totalExpectedVisitors > 0
+            ? BigDecimal.valueOf(actualAttendees)
+                .divide(BigDecimal.valueOf(totalExpectedVisitors), 2, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .doubleValue()
+            : 0.0;
+
+        return new ParticipationStatsResponse(
+            exhibition.getId(),
+            exhibition.getTitle(),
+            universityStats,
+            schoolStats,
+            studentStats,
+            providerStats,
+            totalExpectedVisitors,
+            actualAttendees,
+            overallAttendanceRate
         );
     }
 }

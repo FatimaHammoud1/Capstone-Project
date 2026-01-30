@@ -1,6 +1,7 @@
 package com.capstone.personalityTest.controller.Dashboard;
 
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.ExhibitionOverviewResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.ParticipationStatsResponse;
 import com.capstone.personalityTest.service.Exhibition.ExhibitionDashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -27,5 +28,20 @@ public class DashboardController {
         
         ExhibitionOverviewResponse overview = exhibitionDashboardService.getExhibitionsOverview(orgId);
         return ResponseEntity.ok(overview);
+    }
+
+    /**
+     * Get participation statistics for a specific exhibition
+     * 
+     * @param exhibitionId Exhibition ID
+     * @return Detailed participation stats for universities, schools, students, and activity providers
+     */
+    @GetMapping("/exhibitions/{exhibitionId}/participation-stats")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<ParticipationStatsResponse> getParticipationStats(
+            @PathVariable Long exhibitionId) {
+        
+        ParticipationStatsResponse stats = exhibitionDashboardService.getParticipationStats(exhibitionId);
+        return ResponseEntity.ok(stats);
     }
 }
