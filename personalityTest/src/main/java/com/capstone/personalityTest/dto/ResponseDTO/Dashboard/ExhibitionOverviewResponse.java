@@ -13,6 +13,7 @@ import java.util.Map;
 public class ExhibitionOverviewResponse {
     private Long totalExhibitions;
     private Long activeExhibitions;
+    private Long planingExhibtion;
     private Long completedExhibitions;
     private Long cancelledExhibitions;
     private Map<String, Long> statusBreakdown; // Status name -> count

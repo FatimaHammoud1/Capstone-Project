@@ -49,6 +49,10 @@ public class ExhibitionDashboardService {
             .filter(e -> e.getStatus() == ExhibitionStatus.ACTIVE)
             .count();
 
+        long planingExhibtion = exhibitions.stream()
+            .filter(e -> e.getStatus() == ExhibitionStatus.PLANNING)
+            .count();
+
         long completedExhibitions = exhibitions.stream()
             .filter(e -> e.getStatus() == ExhibitionStatus.COMPLETED)
             .count();
@@ -96,6 +100,7 @@ public class ExhibitionDashboardService {
         return new ExhibitionOverviewResponse(
             totalExhibitions,
             activeExhibitions,
+            planingExhibtion,
             completedExhibitions,
             cancelledExhibitions,
             statusBreakdown,
