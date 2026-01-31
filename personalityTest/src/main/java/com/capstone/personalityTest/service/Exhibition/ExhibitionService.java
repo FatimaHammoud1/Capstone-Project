@@ -4,8 +4,11 @@ import com.capstone.personalityTest.model.Enum.Exhibition.ExhibitionStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.ActivityProviderRequestStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.StudentRegistrationStatus;
+import com.capstone.personalityTest.model.Enum.Exhibition.VenueRequestStatus;
 import com.capstone.personalityTest.model.Exhibition.Exhibition;
 import com.capstone.personalityTest.model.Exhibition.Organization;
+import com.capstone.personalityTest.model.Exhibition.Venue;
+import com.capstone.personalityTest.model.Exhibition.VenueRequest;
 import com.capstone.personalityTest.model.UserInfo;
 import com.capstone.personalityTest.repository.Exhibition.*;
 import com.capstone.personalityTest.repository.UserInfoRepository;
@@ -35,6 +38,8 @@ public class ExhibitionService {
     private final SchoolParticipationRepository schoolParticipationRepository;
     private final BoothRepository boothRepository;
     private final StudentRegistrationRepository studentRegistrationRepository;
+    private final VenueRepository venueRepository;
+    private final VenueRequestRepository venueRequestRepository;
     
     // ----------------- Create Exhibition -----------------
     public ExhibitionResponse createExhibition(Long orgId, ExhibitionRequest request, String creatorEmail) {
@@ -152,6 +157,16 @@ public class ExhibitionService {
         // Count currently used booths
         int usedBooths = boothRepository.countByExhibition(exhibition);
         
+        // Count booths used by universities
+        int usedUniBoothNb = (int) boothRepository.findByExhibitionId(exhibitionId).stream()
+                .filter(booth -> booth.getUniversityParticipationId() != null)
+                .count();
+        
+        // Count booths used by activity providers
+        int usedActivityProvidersNb = (int) boothRepository.findByExhibitionId(exhibitionId).stream()
+                .filter(booth -> booth.getActivityProviderRequestId() != null)
+                .count();
+        
         // Calculate remaining
         int remainingBooths = totalBooths - usedBooths;
         
@@ -159,6 +174,8 @@ public class ExhibitionService {
         Map<String, Integer> boothInfo = new HashMap<>();
         boothInfo.put("totalAvailableBooths", totalBooths);
         boothInfo.put("usedBooths", usedBooths);
+        boothInfo.put("usedUniBoothNb", usedUniBoothNb);
+        boothInfo.put("usedActivityProvidersNb", usedActivityProvidersNb);
         boothInfo.put("remainingBooths", remainingBooths);
         
         return boothInfo;
@@ -296,12 +313,10 @@ public class ExhibitionService {
 
         if (!isOrgOwner && !isDev) {
             // Check if municipality admin
-             // This would require fetching venue request -> venue -> municipality -> admin
-             // if not org owner and not relevant municipality admin -> throw exception
-             // For strictness, if not org owner, we just fail for now as per "Caller must be authorized".
-             // We can check role and if MUNICIPALITY_ADMIN, we assume they are valid (or rely on controller to have filtered or simple check).
-             // Ideally: valid logic.
-             // Let's allow if user has role ROLE_MUNICIPALITY_ADMIN for now as a "Super" cancel for their region (mocked).
+            boolean isMunAdmin = canceller.getRoles().stream().anyMatch(r -> r.getCode().equals("MUNICIPALITY_ADMIN"));
+            if (!isMunAdmin) {
+                 throw new RuntimeException("You are not authorized to cancel this exhibition");
+            }
         }
 
         // Determine status
@@ -341,6 +356,7 @@ public class ExhibitionService {
         // 4. Release booths (logic usually implies just deleting or unlinking, but requirements say "Release venue capacity")
         // Deleting booths associated with this exhibition clears them.
         boothRepository.deleteByExhibition(exhibition);
+        
         
         exhibition.setUpdatedAt(LocalDateTime.now());
         // Could store cancel reason in a new field or log it. Requirements say "Cancellation reason is REQUIRED", assuming passed to log or stored.

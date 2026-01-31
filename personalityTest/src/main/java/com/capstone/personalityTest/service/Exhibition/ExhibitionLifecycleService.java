@@ -4,15 +4,20 @@ import com.capstone.personalityTest.model.Enum.Exhibition.ActivityProviderReques
 import com.capstone.personalityTest.model.Enum.Exhibition.ExhibitionStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.PaymentStatus;
+import com.capstone.personalityTest.model.Enum.Exhibition.VenueRequestStatus;
 import com.capstone.personalityTest.model.Exhibition.ActivityProviderRequest;
 import com.capstone.personalityTest.model.Exhibition.Exhibition;
 import com.capstone.personalityTest.model.Exhibition.SchoolParticipation;
 import com.capstone.personalityTest.model.Exhibition.UniversityParticipation;
+import com.capstone.personalityTest.model.Exhibition.Venue;
+import com.capstone.personalityTest.model.Exhibition.VenueRequest;
 import com.capstone.personalityTest.model.UserInfo;
 import com.capstone.personalityTest.repository.Exhibition.ExhibitionRepository;
 import com.capstone.personalityTest.repository.Exhibition.SchoolParticipationRepository;
 import com.capstone.personalityTest.repository.Exhibition.UniversityParticipationRepository;
 import com.capstone.personalityTest.repository.Exhibition.ActivityProviderRequestRepository;
+import com.capstone.personalityTest.repository.Exhibition.VenueRepository;
+import com.capstone.personalityTest.repository.Exhibition.VenueRequestRepository;
 import com.capstone.personalityTest.repository.UserInfoRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,6 +45,8 @@ public class ExhibitionLifecycleService {
     private final UniversityParticipationService universityParticipationService;
     private final SchoolParticipationService schoolParticipationService;
     private final ActivityProviderService activityProviderService;
+    private final VenueRepository venueRepository;
+    private final VenueRequestRepository venueRequestRepository;
 
     // ----------------- Confirm Exhibition (Status Change + Schedule Generation) -----------------
     public ExhibitionResponse confirmExhibition(Long exhibitionId, LocalDateTime finalizationDeadline, String orgOwnerEmail) {
@@ -125,9 +132,7 @@ public class ExhibitionLifecycleService {
         exhibition.setUpdatedAt(LocalDateTime.now());
 
         Exhibition savedExhibition = exhibitionRepository.save(exhibition);
-        
-        // Automatically calculate financials after confirmation
-        financeService.calculateFinancials(exhibitionId);
+
         
         return mapToResponse(savedExhibition);
     }
@@ -181,8 +186,10 @@ public class ExhibitionLifecycleService {
                 .orElseThrow(() -> new RuntimeException("Exhibition not found"));
 
         boolean isDev = orgOwner.getRoles().stream().anyMatch(r -> r.getCode().equals("DEVELOPER"));
-        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId()) && !isDev) {
-            throw new RuntimeException("Only the organization owner can complete the exhibition");
+        boolean isMunAdmin = orgOwner.getRoles().stream().anyMatch(r -> r.getCode().equals("MUNICIPALITY_ADMIN"));
+        
+        if (!exhibition.getOrganization().getOwner().getId().equals(orgOwner.getId()) && !isDev && !isMunAdmin) {
+            throw new RuntimeException("Only the organization owner or municipality admin can complete the exhibition");
         }
 
         if (exhibition.getStatus() != ExhibitionStatus.ACTIVE) {
@@ -193,6 +200,8 @@ public class ExhibitionLifecycleService {
         exhibition.setUpdatedAt(LocalDateTime.now());
 
         Exhibition savedExhibition = exhibitionRepository.save(exhibition);
+        
+        
         return mapToResponse(savedExhibition);
     }
 

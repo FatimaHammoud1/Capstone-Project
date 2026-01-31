@@ -1,6 +1,7 @@
 package com.capstone.personalityTest.controller.Exhibition;
 
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFinancialResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.RecommendedFeeResponse;
 import com.capstone.personalityTest.model.Exhibition.Exhibition;
 import com.capstone.personalityTest.service.Exhibition.ExhibitionFinanceService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionResponse;
 import com.capstone.personalityTest.model.Exhibition.ExhibitionFinancial;
 import org.springframework.format.annotation.DateTimeFormat;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @RestController
@@ -40,5 +42,18 @@ public class ExhibitionFinanceController {
 
         ExhibitionFinancialResponse financial = financeService.getFinancialReport(exhibitionId);
         return ResponseEntity.ok(financial);
+    }
+
+    // ----------------- GET RECOMMENDED UNIVERSITY FEE -----------------
+    @GetMapping("/{exhibitionId}/recommended-fee")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<RecommendedFeeResponse> getRecommendedFee(
+            @PathVariable Long exhibitionId,
+            @RequestParam int expectedUniversityCount,
+            @RequestParam(defaultValue = "0.15") BigDecimal profitMarginPercentage) {
+
+        RecommendedFeeResponse response = 
+                financeService.calculateRecommendedFee(exhibitionId, expectedUniversityCount, profitMarginPercentage);
+        return ResponseEntity.ok(response);
     }
 }

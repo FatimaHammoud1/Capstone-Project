@@ -44,7 +44,7 @@ public class ExhibitionLifecycleController {
     
     // ----------------- COMPLETE EXHIBITION -----------------
     @PostMapping("/complete/{exhibitionId}")
-    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'MUNICIPALITY_ADMIN', 'DEVELOPER')")
     public ResponseEntity<ExhibitionResponse> completeExhibition(
             @PathVariable Long exhibitionId,
             @AuthenticationPrincipal UserDetails userDetails) {

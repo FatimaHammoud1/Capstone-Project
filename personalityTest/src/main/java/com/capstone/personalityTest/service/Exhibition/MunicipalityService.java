@@ -49,6 +49,11 @@ public class MunicipalityService {
         Exhibition exhibition = request.getExhibition();
         Venue venue = request.getVenue();
 
+        // Validate venue is not manually closed/unavailable
+        if (Boolean.FALSE.equals(venue.getAvailable())) {
+             throw new RuntimeException("Venue is currently marked as unavailable/closed");
+        }
+
         // Validate request is pending
         if (request.getStatus() != VenueRequestStatus.PENDING) {
             throw new RuntimeException("Venue request has already been reviewed");
@@ -98,9 +103,9 @@ public class MunicipalityService {
             
             exhibitionRepository.save(exhibition);
 
-            // Mark venue as unavailable (reserved)
-            venue.setAvailable(false);
-            venueRepository.save(venue);
+            // We do NOT set venue.available = false here.
+            // We rely on the date overlap check (above) to prevent double bookings.
+            // venue.available is reserved for manual closures (e.g. maintenance).
 
         } else {
             request.setStatus(VenueRequestStatus.REJECTED);
