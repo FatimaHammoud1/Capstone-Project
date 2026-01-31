@@ -5,6 +5,7 @@ import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.FeedbackAnalyticsR
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.FinancialAidAnalyticsResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.ParticipationStatsResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.TestAnalyticsResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.MonthlyFinancialAnalyticsResponse;
 import com.capstone.personalityTest.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -87,5 +88,19 @@ public class DashboardController {
     @PreAuthorize("hasAnyRole('DEVELOPER', 'MUNICIPALITY_ADMIN')")
     public ResponseEntity<TestAnalyticsResponse> getTestAnalytics() {
         return ResponseEntity.ok(dashboardService.getTestAnalytics());
+    }
+
+    /**
+     * Get monthly financial analytics for completed exhibitions
+     * 
+     * @param orgId Optional organization ID filter
+     * @return Monthly financial stats
+     */
+    @GetMapping("/financials/monthly")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<MonthlyFinancialAnalyticsResponse> getMonthlyFinancialAnalytics(
+            @RequestParam(required = false) Long orgId) {
+        
+        return ResponseEntity.ok(dashboardService.getMonthlyFinancialAnalytics(orgId));
     }
 }

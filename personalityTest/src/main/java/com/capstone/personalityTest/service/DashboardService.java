@@ -24,6 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.MonthlyFinancialAnalyticsResponse;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
@@ -414,5 +421,61 @@ public class DashboardService {
             ));
 
         return new TestAnalyticsResponse(totalAttempts, attemptsByType);
+    }
+
+    /**
+     * Get monthly financial analytics for completed exhibitions
+     * @param orgId Optional organization ID filter
+     * @return MonthlyFinancialAnalyticsResponse with stats grouped by month
+     */
+    public MonthlyFinancialAnalyticsResponse getMonthlyFinancialAnalytics(Long orgId) {
+        // 1. Fetch all financials
+        List<ExhibitionFinancial> allFinancials = exhibitionFinancialRepository.findAll();
+
+        // 2. Filter: Completed Status + OrgId (if present)
+        List<ExhibitionFinancial> filtered = allFinancials.stream()
+            .filter(fin -> {
+                Exhibition ex = fin.getExhibition();
+                if (ex == null) return false;
+                if (ex.getStatus() != ExhibitionStatus.COMPLETED) return false;
+                if (orgId != null && !ex.getOrganization().getId().equals(orgId)) return false;
+                return ex.getStartDate() != null;
+            })
+            .collect(Collectors.toList());
+
+        // 3. Group by Month (YYYY-MM)
+        Map<YearMonth, List<ExhibitionFinancial>> groupedByMonth = filtered.stream()
+            .collect(Collectors.groupingBy(fin -> {
+                return YearMonth.from(fin.getExhibition().getStartDate());
+            }));
+
+        // 4. Aggregate
+        List<MonthlyFinancialAnalyticsResponse.MonthlyStat> stats = new ArrayList<>();
+        
+        groupedByMonth.forEach((month, financials) -> {
+            BigDecimal revenue = financials.stream()
+                .map(ExhibitionFinancial::getTotalRevenue)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal expense = financials.stream()
+                .map(ExhibitionFinancial::getTotalExpenses)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal profit = revenue.subtract(expense);
+
+            stats.add(new MonthlyFinancialAnalyticsResponse.MonthlyStat(
+                month.toString(), // YYYY-MM
+                revenue,
+                expense,
+                profit
+            ));
+        });
+
+        // 5. Sort by Date
+        stats.sort(Comparator.comparing(MonthlyFinancialAnalyticsResponse.MonthlyStat::getMonth));
+
+        return new MonthlyFinancialAnalyticsResponse(stats);
     }
 }
