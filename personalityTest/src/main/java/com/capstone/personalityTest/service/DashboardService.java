@@ -1,6 +1,7 @@
 package com.capstone.personalityTest.service;
 
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.ExhibitionOverviewResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.FeedbackAnalyticsResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.FinancialAidAnalyticsResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.ParticipationStatsResponse;
 import com.capstone.personalityTest.model.Enum.Exhibition.ActivityProviderRequestStatus;
@@ -33,6 +34,7 @@ public class DashboardService {
     private final ActivityProviderRequestRepository activityProviderRequestRepository;
     private final BoothRepository boothRepository;
     private final FinancialAidRepository financialAidRepository;
+    private final ExhibitionFeedbackRepository exhibitionFeedbackRepository;
 
     /**
      * Get exhibition overview dashboard statistics
@@ -354,6 +356,43 @@ public class DashboardService {
             requestsByUniversity,
             requestsByMajor,
             requestsByStatus
+        );
+    }
+
+    /**
+     * Get feedback analytics for an exhibition
+     * @param exhibitionId Exhibition ID
+     * @return FeedbackAnalyticsResponse with feedback distribution by rating
+     */
+    public FeedbackAnalyticsResponse getFeedbackAnalytics(Long exhibitionId) {
+        // Fetch all feedback for the exhibition
+        List<ExhibitionFeedback> feedbacks = exhibitionFeedbackRepository.findByExhibitionId(exhibitionId);
+
+        // Total feedback count
+        long totalFeedbacks = feedbacks.size();
+
+        // Calculate average rating
+        double averageRating = feedbacks.isEmpty() ? 0.0 : feedbacks.stream()
+            .mapToInt(ExhibitionFeedback::getRating)
+            .average()
+            .orElse(0.0);
+
+        // Round to 2 decimal places
+        averageRating = BigDecimal.valueOf(averageRating)
+            .setScale(2, RoundingMode.HALF_UP)
+            .doubleValue();
+
+        // Group by rating (1-5)
+        Map<Integer, Long> feedbacksByRating = feedbacks.stream()
+            .collect(Collectors.groupingBy(
+                ExhibitionFeedback::getRating,
+                Collectors.counting()
+            ));
+
+        return new FeedbackAnalyticsResponse(
+            totalFeedbacks,
+            averageRating,
+            feedbacksByRating
         );
     }
 }

@@ -1,6 +1,7 @@
 package com.capstone.personalityTest.controller.Dashboard;
 
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.ExhibitionOverviewResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.FeedbackAnalyticsResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.FinancialAidAnalyticsResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.ParticipationStatsResponse;
 import com.capstone.personalityTest.service.DashboardService;
@@ -58,6 +59,21 @@ public class DashboardController {
             @RequestParam(required = false) Long orgId) {
         
         FinancialAidAnalyticsResponse analytics = dashboardService.getFinancialAidAnalytics(orgId);
+        return ResponseEntity.ok(analytics);
+    }
+
+    /**
+     * Get feedback analytics for a specific exhibition
+     * 
+     * @param exhibitionId Exhibition ID
+     * @return Feedback analytics with distribution by rating
+     */
+    @GetMapping("/exhibitions/{exhibitionId}/feedback-analytics")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    public ResponseEntity<FeedbackAnalyticsResponse> getFeedbackAnalytics(
+            @PathVariable Long exhibitionId) {
+        
+        FeedbackAnalyticsResponse analytics = dashboardService.getFeedbackAnalytics(exhibitionId);
         return ResponseEntity.ok(analytics);
     }
 }
