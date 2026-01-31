@@ -203,15 +203,6 @@ public class ExhibitionLifecycleService {
 
         Exhibition savedExhibition = exhibitionRepository.save(exhibition);
 
-        // Release Venue
-        venueRequestRepository.findByExhibitionId(exhibitionId).stream()
-             .filter(req -> req.getStatus() == VenueRequestStatus.APPROVED)
-             .findFirst()
-             .ifPresent(req -> {
-                 Venue venue = req.getVenue();
-                 venue.setAvailable(true);
-                 venueRepository.save(venue);
-             });
 
         return mapToResponse(savedExhibition);
     }

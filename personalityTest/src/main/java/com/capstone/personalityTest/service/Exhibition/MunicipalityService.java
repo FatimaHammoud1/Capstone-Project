@@ -103,9 +103,9 @@ public class MunicipalityService {
             
             exhibitionRepository.save(exhibition);
 
-            // Mark venue as unavailable (reserved)
-            venue.setAvailable(false);
-            venueRepository.save(venue);
+            // We do NOT set venue.available = false here.
+            // We rely on the date overlap check (above) to prevent double bookings.
+            // venue.available is reserved for manual closures (e.g. maintenance).
 
         } else {
             request.setStatus(VenueRequestStatus.REJECTED);

@@ -357,24 +357,11 @@ public class ExhibitionService {
         // Deleting booths associated with this exhibition clears them.
         boothRepository.deleteByExhibition(exhibition);
         
-        // 5. Release Venue
-        releaseVenueIfExists(exhibitionId);
         
         exhibition.setUpdatedAt(LocalDateTime.now());
         // Could store cancel reason in a new field or log it. Requirements say "Cancellation reason is REQUIRED", assuming passed to log or stored.
         // If entity doesn't have cancelReason field, we can't save it. Assuming logging it or sending notification (out of scope).
         
         return exhibitionRepository.save(exhibition);
-    }
-
-    private void releaseVenueIfExists(Long exhibitionId) {
-        venueRequestRepository.findByExhibitionId(exhibitionId).stream()
-             .filter(req -> req.getStatus() == VenueRequestStatus.APPROVED)
-             .findFirst()
-             .ifPresent(req -> {
-                 Venue venue = req.getVenue();
-                 venue.setAvailable(true);
-                 venueRepository.save(venue);
-             });
     }
 }
