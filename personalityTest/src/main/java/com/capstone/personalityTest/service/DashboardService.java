@@ -12,6 +12,8 @@ import com.capstone.personalityTest.model.Exhibition.*;
 import com.capstone.personalityTest.model.financial_aid.FinancialAidRequest;
 import com.capstone.personalityTest.repository.Exhibition.*;
 import com.capstone.personalityTest.repository.financial_aid.FinancialAidRepository;
+import com.capstone.personalityTest.repository.test.TestAttemptRepository;
+import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.TestAnalyticsResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +37,7 @@ public class DashboardService {
     private final BoothRepository boothRepository;
     private final FinancialAidRepository financialAidRepository;
     private final ExhibitionFeedbackRepository exhibitionFeedbackRepository;
+    private final TestAttemptRepository testAttemptRepository;
 
     /**
      * Get exhibition overview dashboard statistics
@@ -394,5 +397,22 @@ public class DashboardService {
             averageRating,
             feedbacksByRating
         );
+    }
+
+    /**
+     * Get test analytics
+     * @return TestAnalyticsResponse with attempts grouped by base test type
+     */
+    public TestAnalyticsResponse getTestAnalytics() {
+        long totalAttempts = testAttemptRepository.count();
+        List<Object[]> results = testAttemptRepository.countAttemptsByBaseTestType();
+        
+        Map<String, Long> attemptsByType = results.stream()
+            .collect(Collectors.toMap(
+                row -> (String) row[0],
+                row -> ((Number) row[1]).longValue()
+            ));
+
+        return new TestAnalyticsResponse(totalAttempts, attemptsByType);
     }
 }

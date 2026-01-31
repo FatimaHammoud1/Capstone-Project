@@ -4,6 +4,7 @@ import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.ExhibitionOverview
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.FeedbackAnalyticsResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.FinancialAidAnalyticsResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.ParticipationStatsResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.TestAnalyticsResponse;
 import com.capstone.personalityTest.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -75,5 +76,16 @@ public class DashboardController {
         
         FeedbackAnalyticsResponse analytics = dashboardService.getFeedbackAnalytics(exhibitionId);
         return ResponseEntity.ok(analytics);
+    }
+
+    /**
+     * Get test analytics (Global)
+     * 
+     * @return Test analytics grouped by base test type
+     */
+    @GetMapping("/test/analytics")
+    @PreAuthorize("hasAnyRole('DEVELOPER', 'MUNICIPALITY_ADMIN')")
+    public ResponseEntity<TestAnalyticsResponse> getTestAnalytics() {
+        return ResponseEntity.ok(dashboardService.getTestAnalytics());
     }
 }
