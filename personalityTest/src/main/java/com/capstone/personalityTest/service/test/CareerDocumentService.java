@@ -36,7 +36,7 @@ public class CareerDocumentService {
     private final RestTemplate restTemplate;
     private final CareerDocumentMapper documentMapper;  // 🆕 MapStruct mapper
 
-    @Value("${ai.documents.path:../ai-service/rag/uploaded_files}")
+    @Value("${ai.documents.path}")
     private String documentsPath;
 
     @Value("${ai.service.url:http://localhost:5000}")

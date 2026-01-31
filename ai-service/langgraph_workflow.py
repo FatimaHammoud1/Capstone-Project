@@ -177,7 +177,8 @@ def rag_node(state: AppState):
     """
     print("\n🔍 RAG Node")
     
-    folder_path = "./rag/uploaded_files/"
+    # folder_path = "./rag/uploaded_files/"
+    folder_path = os.getenv("AI_DOCUMENTS_PATH", "./rag/uploaded_files/")
     my_rag_collection = get_db_collection()
     
     # Smart caching - only reindex if files changed
