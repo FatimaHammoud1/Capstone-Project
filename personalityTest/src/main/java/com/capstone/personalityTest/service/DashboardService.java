@@ -1,13 +1,16 @@
-package com.capstone.personalityTest.service.Exhibition;
+package com.capstone.personalityTest.service;
 
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.ExhibitionOverviewResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.FinancialAidAnalyticsResponse;
 import com.capstone.personalityTest.dto.ResponseDTO.Dashboard.ParticipationStatsResponse;
 import com.capstone.personalityTest.model.Enum.Exhibition.ActivityProviderRequestStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.ExhibitionStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.StudentRegistrationStatus;
 import com.capstone.personalityTest.model.Exhibition.*;
+import com.capstone.personalityTest.model.financial_aid.FinancialAidRequest;
 import com.capstone.personalityTest.repository.Exhibition.*;
+import com.capstone.personalityTest.repository.financial_aid.FinancialAidRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class ExhibitionDashboardService {
+public class DashboardService {
 
     private final ExhibitionRepository exhibitionRepository;
     private final ExhibitionFinancialRepository exhibitionFinancialRepository;
@@ -29,6 +32,7 @@ public class ExhibitionDashboardService {
     private final StudentRegistrationRepository studentRegistrationRepository;
     private final ActivityProviderRequestRepository activityProviderRequestRepository;
     private final BoothRepository boothRepository;
+    private final FinancialAidRepository financialAidRepository;
 
     /**
      * Get exhibition overview dashboard statistics
@@ -307,6 +311,49 @@ public class ExhibitionDashboardService {
             totalExpectedVisitors,
             actualAttendees,
             overallAttendanceRate
+        );
+    }
+
+    /**
+     * Get financial aid analytics
+     * @param orgId Optional organization ID filter
+     * @return FinancialAidAnalyticsResponse with requests grouped by university and major
+     */
+    public FinancialAidAnalyticsResponse getFinancialAidAnalytics(Long orgId) {
+        // Fetch financial aid requests (filtered by org if provided)
+        List<FinancialAidRequest> requests = orgId != null 
+            ? financialAidRepository.findByOrganizationId(orgId)
+            : financialAidRepository.findAll();
+
+        // Total requests count
+        long totalRequests = requests.size();
+
+        // Group by university name
+        Map<String, Long> requestsByUniversity = requests.stream()
+            .collect(Collectors.groupingBy(
+                FinancialAidRequest::getUniversityName,
+                Collectors.counting()
+            ));
+
+        // Group by field of study (major)
+        Map<String, Long> requestsByMajor = requests.stream()
+            .collect(Collectors.groupingBy(
+                FinancialAidRequest::getFieldOfStudy,
+                Collectors.counting()
+            ));
+
+        // Group by status
+        Map<String, Long> requestsByStatus = requests.stream()
+            .collect(Collectors.groupingBy(
+                request -> request.getStatus().name(),
+                Collectors.counting()
+            ));
+
+        return new FinancialAidAnalyticsResponse(
+            totalRequests,
+            requestsByUniversity,
+            requestsByMajor,
+            requestsByStatus
         );
     }
 }
