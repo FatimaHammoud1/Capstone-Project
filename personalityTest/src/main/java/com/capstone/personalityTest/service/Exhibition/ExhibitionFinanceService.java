@@ -1,6 +1,7 @@
 package com.capstone.personalityTest.service.Exhibition;
 
 import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFinancialResponse;
+import com.capstone.personalityTest.dto.ResponseDTO.Exhibition.RecommendedFeeResponse;
 import com.capstone.personalityTest.model.Enum.Exhibition.ActivityProviderRequestStatus;
 import com.capstone.personalityTest.model.Enum.Exhibition.ParticipationStatus;
 import com.capstone.personalityTest.model.Exhibition.*;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -36,14 +38,14 @@ public class ExhibitionFinanceService {
 
         // ----------------- Calculate Revenue -----------------
         BigDecimal totalRevenue = unis.stream()
-                .filter(u -> u.getStatus() == ParticipationStatus.CONFIRMED)
+                .filter(u -> u.getStatus() == ParticipationStatus.ATTENDED)
                 .map(UniversityParticipation::getParticipationFee)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // ----------------- Calculate Expenses -----------------
         // 1. Activity Provider Costs
         BigDecimal providerCosts = activityProviderRequestRepository
-                .findByExhibitionIdAndStatus(exhibitionId, ActivityProviderRequestStatus.APPROVED)
+                .findByExhibitionIdAndStatus(exhibitionId, ActivityProviderRequestStatus.ATTENDED)
                 .stream()
                 .map(ActivityProviderRequest::getTotalCost)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -113,13 +115,66 @@ public class ExhibitionFinanceService {
 
     // ----------------- Map to Response DTO -----------------
     private ExhibitionFinancialResponse mapToResponse(ExhibitionFinancial financial) {
-        return new com.capstone.personalityTest.dto.ResponseDTO.Exhibition.ExhibitionFinancialResponse(
+        return new ExhibitionFinancialResponse(
             financial.getId(),
             financial.getExhibition().getId(),
             financial.getTotalRevenue(),
             financial.getTotalExpenses(),
             financial.getNetProfit(),
             financial.getCalculatedAt()
+        );
+    }
+
+    // ----------------- Calculate Recommended University Fee -----------------
+    public RecommendedFeeResponse calculateRecommendedFee(
+            Long exhibitionId, 
+            int expectedUniversityCount,
+            BigDecimal profitMarginPercentage) {
+        
+        Exhibition exhibition = exhibitionRepository.findById(exhibitionId)
+                .orElseThrow(() -> new RuntimeException("Exhibition not found"));
+
+        // Validate inputs
+        if (expectedUniversityCount <= 0) {
+            throw new RuntimeException("Expected university count must be positive");
+        }
+        if (profitMarginPercentage == null || profitMarginPercentage.compareTo(BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("Profit margin must be non-negative");
+        }
+
+        // 1. Calculate Venue Rental Cost
+        BigDecimal venueRentalCost = calculateVenueRentalCost(exhibition);
+
+        // 2. Calculate Activity Provider Costs (APPROVED providers)
+        BigDecimal activityProviderCosts = activityProviderRequestRepository
+                .findByExhibitionIdAndStatus(exhibitionId, ActivityProviderRequestStatus.APPROVED)
+                .stream()
+                .map(ActivityProviderRequest::getTotalCost)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 3. Total Expected Costs
+        BigDecimal totalExpectedCosts = venueRentalCost.add(activityProviderCosts);
+
+        // 4. Break-even fee per university
+        BigDecimal breakEvenFeePerUniversity = totalExpectedCosts.divide(
+                BigDecimal.valueOf(expectedUniversityCount), 
+                2, 
+                RoundingMode.HALF_UP
+        );
+
+        // 5. Recommended fee with profit margin
+        BigDecimal recommendedFee = breakEvenFeePerUniversity.multiply(
+                BigDecimal.ONE.add(profitMarginPercentage)
+        ).setScale(2, RoundingMode.HALF_UP);
+
+        return new RecommendedFeeResponse(
+                totalExpectedCosts,
+                venueRentalCost,
+                activityProviderCosts,
+                expectedUniversityCount,
+                breakEvenFeePerUniversity,
+                profitMarginPercentage,
+                recommendedFee
         );
     }
 }

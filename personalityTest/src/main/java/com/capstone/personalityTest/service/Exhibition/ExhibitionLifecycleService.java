@@ -132,9 +132,7 @@ public class ExhibitionLifecycleService {
         exhibition.setUpdatedAt(LocalDateTime.now());
 
         Exhibition savedExhibition = exhibitionRepository.save(exhibition);
-        
-        // Automatically calculate financials after confirmation
-        financeService.calculateFinancials(exhibitionId);
+
         
         return mapToResponse(savedExhibition);
     }
@@ -202,8 +200,8 @@ public class ExhibitionLifecycleService {
         exhibition.setUpdatedAt(LocalDateTime.now());
 
         Exhibition savedExhibition = exhibitionRepository.save(exhibition);
-
-
+        
+        
         return mapToResponse(savedExhibition);
     }
 
