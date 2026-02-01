@@ -51,9 +51,9 @@ public class ModelServiceClient {
     /**
      * URL of Python ML Model Service
      * Configured in application.properties
-     * Default: http://localhost:5001
+
      */
-    @Value("${model.service.url:http://localhost:5001}")
+    @Value("${model.service.url}")
     private String modelServiceUrl;
 
     /**
