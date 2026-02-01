@@ -1,4 +1,6 @@
-# Python AI Service Dependencies
+# Force CPU-only PyTorch
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.1.2
 
 # FastAPI and server
 fastapi==0.109.0
