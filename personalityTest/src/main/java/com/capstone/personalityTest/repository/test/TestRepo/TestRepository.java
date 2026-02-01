@@ -8,5 +8,5 @@ import java.util.List;
 
 public interface TestRepository extends JpaRepository<Test, Long> {
     List<Test> findByStatusAndActive(TestStatus status, boolean active);
-
+    List<Test> findAllByBaseTestId(Long baseTestId);
 }
