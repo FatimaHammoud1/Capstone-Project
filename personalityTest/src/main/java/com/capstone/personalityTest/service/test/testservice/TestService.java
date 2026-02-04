@@ -168,4 +168,11 @@ public class TestService {
 
         return testMapper.toDto(testRepository.save(newTest));
     }
+
+    public List<TestResponse> getAllTestsByBaseId(Long baseId) {
+        return testRepository.findAllByBaseTestId(baseId)
+                .stream()
+                .map(testMapper::toDto)
+                .collect(Collectors.toList());
+    }
 }

@@ -91,4 +91,11 @@ public class TestController {
     public TestResponse createVersion(@RequestBody CreateVersionRequest request) {
         return testService.createVersion(request);
     }
+
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    @GetMapping("/base/{baseId}")
+    public ResponseEntity<List<TestResponse>> getAllTestsByBaseId(@PathVariable Long baseId) {
+        List<TestResponse> tests = testService.getAllTestsByBaseId(baseId);
+        return ResponseEntity.ok(tests);
+    }
 }
