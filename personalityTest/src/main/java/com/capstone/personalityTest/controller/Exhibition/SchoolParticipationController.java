@@ -61,7 +61,7 @@ public class SchoolParticipationController {
             @RequestParam(required = false) LocalDateTime confirmationDeadline,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        SchoolParticipationResponse accepted = participationService.acceptSchool(participationId, approved, confirmationDeadline, userDetails.getUsername());
+        SchoolParticipationResponse accepted = participationService.acceptSchool(participationId, approved, userDetails.getUsername());
         return ResponseEntity.ok(accepted);
     }
 

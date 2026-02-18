@@ -84,7 +84,7 @@ public class UniversityParticipationService {
     }
 
     // ----------------- University Registers -----------------
-    public UniversityParticipationResponse registerUniversity(Long participationId, int requestedBooths, Map<Long, Map<String, Object>> boothDetails, String universityEmail) {
+    public UniversityParticipationResponse registerUniversity(Long participationId, int requestedBooths, Map<Long, Map<String, Object>> boothDetails, Integer expectedVisitors, String universityEmail) {
         UniversityParticipation participation = participationRepository.findById(participationId)
                 .orElseThrow(() -> new RuntimeException("Participation request not found"));
 
@@ -138,6 +138,7 @@ public class UniversityParticipationService {
         // Save booth details JSON
         participation.setBoothDetails(boothDetails);
         participation.setApprovedBoothsCount(requestedBooths);
+        participation.setExpectedVisitors(expectedVisitors);
         participation.setRegisteredAt(LocalDateTime.now());
         participation.setStatus(ParticipationStatus.REGISTERED);
 
@@ -306,7 +307,9 @@ public class UniversityParticipationService {
         
         // Side effects: Remove university booths
         List<Booth> booths = boothRepository.findByUniversityParticipationId(participation.getId());
-        boothRepository.deleteAll(booths);
+        if (booths != null){
+            boothRepository.deleteAll(booths);
+        }
         
         UniversityParticipation saved = participationRepository.save(participation);
         return mapToResponse(saved);

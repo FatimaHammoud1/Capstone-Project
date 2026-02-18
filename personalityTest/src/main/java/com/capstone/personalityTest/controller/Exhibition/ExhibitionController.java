@@ -73,7 +73,7 @@ public class ExhibitionController {
 
     // ----------------- Get Available Booths -----------------
     @GetMapping("/{exhibitionId}/available-booths")
-    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER')")
+    @PreAuthorize("hasAnyRole('ORG_OWNER', 'DEVELOPER', 'ACTIVITY_PROVIDER' , 'UNIVERSITY_ADMIN')")
     public ResponseEntity<Map<String, Integer>> getAvailableBooths(@PathVariable Long exhibitionId) {
         return ResponseEntity.ok(exhibitionService.getAvailableBooths(exhibitionId));
     }

@@ -29,7 +29,6 @@ public class ExhibitionResponse {
     private Integer maxBoothsPerProvider;
     private Integer expectedVisitors;
     private Integer actualVisitors;
-    private String scheduleJson;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime finalizationDeadline;

@@ -67,8 +67,7 @@ public class ExhibitionService {
         exhibition.setEndTime(request.getEndTime());
         exhibition.setStandardBoothSqm(request.getStandardBoothSqm());
         exhibition.setExpectedVisitors(request.getExpectedVisitors());
-        // Schedule JSON is optional/generated later
-        exhibition.setScheduleJson(request.getScheduleJson());
+
 
         // Set initial status
         exhibition.setStatus(ExhibitionStatus.DRAFT);
@@ -136,7 +135,6 @@ public class ExhibitionService {
             exhibition.getMaxBoothsPerProvider(),
             exhibition.getExpectedVisitors(),
             exhibition.getActualVisitors(),
-            exhibition.getScheduleJson(),
             exhibition.getCreatedAt(),
             exhibition.getUpdatedAt(),
             exhibition.getFinalizationDeadline()

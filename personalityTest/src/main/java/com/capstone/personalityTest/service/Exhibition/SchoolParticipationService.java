@@ -42,11 +42,7 @@ public class SchoolParticipationService {
         if (!exhibition.getOrganization().getOwner().getId().equals(inviter.getId()) && !isDev) {
             throw new RuntimeException("Only ORG_OWNER can invite schools");
         }
-        
-        // Validate exhibition status: must be VENUE_APPROVED or PLANNING
-        if (exhibition.getStatus() != ExhibitionStatus.VENUE_APPROVED && exhibition.getStatus() != ExhibitionStatus.PLANNING) {
-            throw new RuntimeException("Can only invite schools after venue is approved");
-        }
+
         
         School school = schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new RuntimeException("School not found"));
@@ -104,18 +100,13 @@ public class SchoolParticipationService {
             participationRepository.save(participation);
             throw new RuntimeException("Response deadline has passed. Your invitation has been automatically cancelled.");
         }
+        if (expectedStudents == null || expectedStudents <= 0) {
+            throw new RuntimeException("Expected students count is required when accepting invitation");}
 
         if (accept) {
-            if (expectedStudents == null || expectedStudents <= 0) {
-                throw new RuntimeException("Expected students count is required when accepting invitation");
-            }
             participation.setExpectedVisitors(expectedStudents);
             participation.setStatus(ParticipationStatus.REGISTERED); // Changed from ACCEPTED to REGISTERED
-            participation.setRegisteredAt(LocalDateTime.now()); // Assuming we have registeredAt or re-use acceptedAt field logic?
-            // Entity has acceptedAt, invitedAt, confirmedAt. Let's use acceptedAt as the timestamp for this step or registeredAt if it exists?
-            // Checking fields: It has invitedAt, acceptedAt, confirmedAt. REGISTERED status usually implies "Signed Up".
-            // Let's set acceptedAt as the time of this action (School Response).
-            participation.setAcceptedAt(LocalDateTime.now()); 
+            participation.setRegisteredAt(LocalDateTime.now());
         } else {
             if (rejectionReason == null || rejectionReason.trim().isEmpty()) {
                 throw new RuntimeException("Rejection reason is required when declining invitation");
@@ -130,7 +121,7 @@ public class SchoolParticipationService {
 
   
     // ----------------- Accept School (Org Reviews Registration) -----------------
-    public SchoolParticipationResponse acceptSchool(Long participationId, boolean approved, LocalDateTime confirmationDeadline, String confirmerEmail) {
+    public SchoolParticipationResponse acceptSchool(Long participationId, boolean approved, String confirmerEmail) {
         UserInfo inviter = userInfoRepository.findByEmail(confirmerEmail)
                 .orElseThrow(() -> new RuntimeException("Confirmer not found"));
 
@@ -154,8 +145,7 @@ public class SchoolParticipationService {
         
         if (approved) {
             participation.setStatus(ParticipationStatus.ACCEPTED); // Org Approves -> ACCEPTED
-            participation.setConfirmationDeadline(confirmationDeadline);
-            participation.setConfirmedAt(LocalDateTime.now());
+            participation.setAcceptedAt(LocalDateTime.now());
         } else {
             participation.setStatus(ParticipationStatus.REJECTED); // Org Rejects -> REJECTED
         }
@@ -219,6 +209,13 @@ public class SchoolParticipationService {
 
         if (exhibition.getStatus() != ExhibitionStatus.CONFIRMED) {
             throw new RuntimeException("Cannot finalize participation before exhibition is CONFIRMED (schedule ready)");
+        }
+        
+        // Validate finalization deadline - auto-cancel if passed
+        if (exhibition.getFinalizationDeadline() != null && LocalDateTime.now().isAfter(exhibition.getFinalizationDeadline())) {
+            participation.setStatus(ParticipationStatus.CANCELLED);
+            participationRepository.save(participation);
+            throw new RuntimeException("Finalization deadline has passed. Your participation has been automatically cancelled.");
         }
 
         if (participation.getStatus() != ParticipationStatus.ACCEPTED) {
@@ -303,8 +300,7 @@ public class SchoolParticipationService {
             participation.getResponseDeadline(),
             participation.getInvitedAt(),
             participation.getAcceptedAt(),
-            participation.getRejectionReason(),
-            participation.getConfirmedAt()
+            participation.getRejectionReason()
         );
     }
 }

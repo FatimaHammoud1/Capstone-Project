@@ -173,27 +173,37 @@ public class AIIntegrationService {
      * @param attempt Test attempt with evaluation result
      * @return Personality code in format "X-Y-Z" (e.g., "I-S-E")
      */
-    private String extractPersonalityCode(TestAttempt attempt) {
-        // Check if ML prediction exists
-        return mlResultRepo.findByTestAttemptId(attempt.getId())
-                .map(mlResult -> {
-                    String rawCode = mlResult.getPredictedCode();
-                    log.info("   Using ML-predicted code (raw): {}", rawCode);
-                    
-                    // Format the code: "ISE" -> "I-S-E"
-                    String formattedCode = formatPersonalityCode(rawCode);
-                    log.info("   Formatted ML code: {}", formattedCode);
-                    
-                    return formattedCode;
-                })
-                .orElseGet(() -> {
+//    private String extractPersonalityCode(TestAttempt attempt) {
+//        // Check if ML prediction exists
+//        return mlResultRepo.findByTestAttemptId(attempt.getId())
+//                .map(mlResult -> {
+//                    String rawCode = mlResult.getPredictedCode();
+//                    log.info("   Using ML-predicted code (raw): {}", rawCode);
+//
+//                    // Format the code: "ISE" -> "I-S-E"
+//                    String formattedCode = formatPersonalityCode(rawCode);
+//                    log.info("   Formatted ML code: {}", formattedCode);
+//
+//                    return formattedCode;
+//                })
+//                .orElseGet(() -> {
+//                    // Fallback to traditional calculation
+//                    log.info("   Using traditional calculated code (no ML prediction found)");
+//                    String first = attempt.getEvaluationResult().getFirstMetric();
+//                    String second = attempt.getEvaluationResult().getSecondMetric();
+//                    String third = attempt.getEvaluationResult().getThirdMetric();
+//                    return first + "-" + second + "-" + third;
+//                });
+//    }
+
+        private String extractPersonalityCode(TestAttempt attempt) {
                     // Fallback to traditional calculation
                     log.info("   Using traditional calculated code (no ML prediction found)");
                     String first = attempt.getEvaluationResult().getFirstMetric();
                     String second = attempt.getEvaluationResult().getSecondMetric();
                     String third = attempt.getEvaluationResult().getThirdMetric();
                     return first + "-" + second + "-" + third;
-                });
+
     }
 
     /**

@@ -104,27 +104,7 @@ public class ExhibitionLifecycleService {
         unis = universityParticipationRepository.findByExhibitionId(exhibitionId);
         schools = schoolParticipationRepository.findByExhibitionId(exhibitionId);
 
-        // ----------------- Generate Schedule JSON -----------------
-        Map<String, Object> schedule = new HashMap<>();
-        schedule.put("activities", activityProviderRequestRepository
-                .findByExhibitionIdAndStatus(exhibitionId, ActivityProviderRequestStatus.APPROVED));
-        schedule.put("universities", unis.stream()
-                .filter(u -> u.getStatus() == ParticipationStatus.CONFIRMED)
-                .toList());
-        schedule.put("schools", schools.stream()
-                .filter(s -> s.getStatus() == ParticipationStatus.ACCEPTED)
-                .toList());
 
-        // Convert to JSON string
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-            
-            String scheduleJson = mapper.writeValueAsString(schedule);
-            exhibition.setScheduleJson(scheduleJson);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to generate schedule JSON", e);
-        }
 
         // State Transition
         exhibition.setStatus(ExhibitionStatus.CONFIRMED);
@@ -154,6 +134,11 @@ public class ExhibitionLifecycleService {
         // Validation: Must be CONFIRMED
         if (exhibition.getStatus() != ExhibitionStatus.CONFIRMED) {
             throw new RuntimeException("Exhibition must be CONFIRMED before starting");
+        }
+        
+        // Validation: Cannot start before scheduled start date
+        if (exhibition.getStartDate() != null && LocalDate.now().isBefore(exhibition.getStartDate())) {
+            throw new RuntimeException("Cannot start exhibition before the scheduled start date: " + exhibition.getStartDate());
         }
 
         // Validation: At least one FINALIZED university OR activity provider
@@ -223,7 +208,7 @@ public class ExhibitionLifecycleService {
             exhibition.getMaxBoothsPerProvider(),
             exhibition.getExpectedVisitors(),
             exhibition.getActualVisitors(),
-            exhibition.getScheduleJson(),
+
             exhibition.getCreatedAt(),
             exhibition.getUpdatedAt(),
             exhibition.getFinalizationDeadline()

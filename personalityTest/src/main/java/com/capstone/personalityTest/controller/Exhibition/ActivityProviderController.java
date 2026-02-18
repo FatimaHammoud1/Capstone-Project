@@ -52,6 +52,7 @@ public class ActivityProviderController {
         Integer boothsCount = (Integer) body.get("boothsCount");
         // Handle BigDecimal conversion safely
         BigDecimal totalCost = new BigDecimal(body.get("totalCost").toString());
+        Integer expectedVisitors = (Integer) body.get("expectedVisitors");
         
         // Parse activity IDs
         List<Long> activityIds = null;
@@ -71,7 +72,7 @@ public class ActivityProviderController {
         }
 
         ActivityProviderRequestResponse response = providerService.submitProposal(
-                requestId, proposalText, boothsCount, totalCost, activityIds, userDetails.getUsername());
+                requestId, proposalText, boothsCount, totalCost, activityIds, expectedVisitors, userDetails.getUsername());
         
         return ResponseEntity.ok(response);
     }
@@ -87,7 +88,7 @@ public class ActivityProviderController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         ActivityProviderRequestResponse request = providerService.reviewProviderProposal(
-                requestId, approve, confirmationDeadline, comments, userDetails.getUsername());
+                requestId, approve, comments, userDetails.getUsername());
         return ResponseEntity.ok(request);
     }
     

@@ -36,7 +36,6 @@ public class SchoolParticipation {
 
     private LocalDateTime responseDeadline; // acceptance deadline
 
-    private LocalDateTime confirmationDeadline; // deadline to confirm after approval
 
     private LocalDateTime invitedAt; // invitation time
 
@@ -46,7 +45,6 @@ public class SchoolParticipation {
 
     private String rejectionReason;
 
-    private LocalDateTime confirmedAt; // final confirmation
 
     private LocalDateTime finalizedAt; // finalization time
 

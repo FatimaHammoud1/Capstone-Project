@@ -85,7 +85,7 @@ public class ActivityProviderService {
 
     // ----------------- Submit Proposal (by Provider) -----------------
     // Updated to accept activityIds
-    public ActivityProviderRequestResponse submitProposal(Long requestId, String proposalText, Integer boothsCount, BigDecimal totalCost, List<Long> activityIds, String providerEmail) {
+    public ActivityProviderRequestResponse submitProposal(Long requestId, String proposalText, Integer boothsCount, BigDecimal totalCost, List<Long> activityIds, Integer expectedVisitors, String providerEmail) {
         UserInfo providerUser = userInfoRepository.findByEmail(providerEmail)
                 .orElseThrow(() -> new RuntimeException("Provider user not found"));
 
@@ -132,6 +132,7 @@ public class ActivityProviderService {
         request.setProviderProposal(proposalText);
         request.setProposedBoothsCount(boothsCount);
         request.setTotalCost(totalCost);
+        request.setExpectedVisitors(expectedVisitors);
         request.setStatus(ActivityProviderRequestStatus.PROPOSED);
         request.setProposedAt(LocalDateTime.now());
         
@@ -154,7 +155,7 @@ public class ActivityProviderService {
     }
 
     // ----------------- Approve or Reject Provider Proposal -----------------
-    public ActivityProviderRequestResponse reviewProviderProposal(Long requestId, boolean approve, LocalDateTime confirmationDeadline, String comments, String reviewerEmail) {
+    public ActivityProviderRequestResponse reviewProviderProposal(Long requestId, boolean approve, String comments, String reviewerEmail) {
         UserInfo reviewer = userInfoRepository.findByEmail(reviewerEmail)
                 .orElseThrow(() -> new RuntimeException("Reviewer not found"));
 
@@ -179,7 +180,6 @@ public class ActivityProviderService {
 
         if (approve) {
             request.setStatus(ActivityProviderRequestStatus.APPROVED);
-            request.setConfirmationDeadline(confirmationDeadline);
             request.setApprovedAt(LocalDateTime.now());
             request.setReviewedAt(LocalDateTime.now()); 
             request.setOrgResponse(comments);
@@ -316,7 +316,9 @@ public class ActivityProviderService {
         
         // Side effects: Remove related booths
         List<Booth> booths = boothRepository.findByActivityProviderRequestId(request.getId());
-        boothRepository.deleteAll(booths);
+        if (booths != null ){
+           boothRepository.deleteAll(booths);
+        }
 
         ActivityProviderRequest savedRequest = providerRequestRepository.save(request);
         return mapToResponse(savedRequest);

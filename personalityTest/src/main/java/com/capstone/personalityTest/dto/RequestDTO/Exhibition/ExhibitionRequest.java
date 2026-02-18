@@ -20,5 +20,5 @@ public class ExhibitionRequest {
     private LocalTime endTime;
     private Double standardBoothSqm; // booth size in sqm (e.g., 9.0)
     private Integer expectedVisitors;
-    private String scheduleJson;
+
 }

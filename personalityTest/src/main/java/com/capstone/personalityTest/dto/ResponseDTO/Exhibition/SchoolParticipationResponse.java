@@ -22,5 +22,5 @@ public class SchoolParticipationResponse {
     private LocalDateTime invitedAt;
     private LocalDateTime acceptedAt;
     private String rejectionReason;
-    private LocalDateTime confirmedAt;
+
 }

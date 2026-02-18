@@ -47,10 +47,11 @@ public class UniversityParticipationController {
             @PathVariable Long participationId,
             @RequestBody Map<Long, Map<String, Object>> boothDetails, // boothId -> {content, contributors}
             @RequestParam int requestedBooths,
+            @RequestParam int expectedVisitors,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         UniversityParticipationResponse registered = participationService.registerUniversity(
-                participationId, requestedBooths, boothDetails, userDetails.getUsername()
+                participationId, requestedBooths, boothDetails, expectedVisitors ,userDetails.getUsername()
         );
         return ResponseEntity.ok(registered);
     }

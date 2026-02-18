@@ -61,8 +61,6 @@ public class Exhibition {
 
     private Integer actualVisitors; // actual number of visitors who attended (tracked during exhibition)
 
-    @Column(columnDefinition = "TEXT")
-    private String scheduleJson; // generated schedule (booths & times)
 
     private LocalDateTime createdAt; // creation timestamp
 
