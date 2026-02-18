@@ -1,5 +1,4 @@
 
-```markdown
 # 🎓 Career Consultation Platform - Backend & AI Services
 
 A comprehensive digital platform that integrates AI-based personality testing, career guidance, exhibition management, and financial aid services. This repository contains the **Spring Boot backend** and **AI microservices** components.
